@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "krawl"
+version = "0.1.0"
+description = ""
+authors = ["Alec Hanefeld <alec@konek.to>"]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+PyGithub = "^1.54.1"
+toml = "^0.10.2"
+rdflib = "^5.0.0"
+ontospy = "^1.9.8"
+Owlready2 = "^0.27"
+toolz = "^0.11.1"
+datasette = "^0.55"
+pathvalidate = "^2.3.2"
+wikibase-api = "^0.1.2"
+langdetect = "^1.0.8"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+jupyter = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,65 @@
+@prefix : <https://github.com/ahane/krawler-test/0.12.0/> .
+@prefix okh: <http://purl.org/oseg/okhv2#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+:ClampRing a "http://purl.org/oseg/okhv2#Part" ;
+    rdfs:label "Clamp Ring" ;
+    okh:documentationLanguage "en-GB" ;
+    okh:export "https://github.com/ahane/krawler-test/0.12.0/ClampRing_export1",
+        "https://github.com/ahane/krawler-test/0.12.0/ClampRing_export2" ;
+    okh:image "/Documentation/Assembly_Guide/Parts_Print_2.jpg" ;
+    okh:licensor "Jens Meisner" ;
+    okh:manufacturingProcess "3D printed" ;
+    okh:material "PLA" ;
+    okh:outerDimension "cylinder(h=30, r=28)" ;
+    okh:outerDimensionDim "mm" ;
+    okh:source "https://github.com/ahane/krawler-test/0.12.0/ClampRing_source" ;
+    okh:spdxLicense "CC-BY-SA-4.0" ;
+    okh:tsdcID "COM-MAN" .
+
+:ClampRing_export1 a "http://purl.org/oseg/okhv2#ExportFile" ;
+    okh:fileFormat "" ;
+    okh:fileUrl <https://raw.githubusercontent.com/ahane/krawler-test/b03281f95bb5228508f2eedc166b8ced3e5eaae3/3DParts/ClampRing/ClampRing.pdf> .
+
+:ClampRing_export2 a "http://purl.org/oseg/okhv2#ExportFile" ;
+    okh:fileFormat "" ;
+    okh:fileUrl <https://raw.githubusercontent.com/ahane/krawler-test/b03281f95bb5228508f2eedc166b8ced3e5eaae3/3DParts/ClampRing/ClampRing.stl> .
+
+:ClampRing_source a "http://purl.org/oseg/okhv2#SourceFile" ;
+    okh:fileFormat "" ;
+    okh:fileUrl "/3DParts/ClampRing/ClampRing.scad" .
+
+:Ohloom a "http://purl.org/oseg/okhv2#Module" ;
+    rdfs:label "OHLOOM" ;
+    okh:bom <https://raw.githubusercontent.com/ahane/krawler-test/b03281f95bb5228508f2eedc166b8ced3e5eaae3/sBoM.csv> ;
+    okh:cpcPatentClass "D03D 35/00" ;
+    okh:documentationLanguage "en-GB" ;
+    okh:function "The Open Hardware Loom is a simple, hand-operated weaving loom made of wood, screws and 3D printed plastic pieces for the most part. It is simple to make and operate." ;
+    okh:image <https://raw.githubusercontent.com/ahane/krawler-test/b03281f95bb5228508f2eedc166b8ced3e5eaae3/Documentation/User_Guide/User_Guide.jpg> ;
+    okh:licensor "Jens Meisner" ;
+    okh:manifestFile <https://raw.githubusercontent.com/ahane/krawler-test/b03281f95bb5228508f2eedc166b8ced3e5eaae3/okh-sample-OHLOOM.toml> ;
+    okh:manufacturingInstructions <https://raw.githubusercontent.com/ahane/krawler-test/b03281f95bb5228508f2eedc166b8ced3e5eaae3/Documentation/Assembly_Guide/AssemblyGuide.md> ;
+    okh:okhv "2.0" ;
+    okh:outerDimension "cube(size = [400,350,150]" ;
+    okh:outerDimensionDim "mm" ;
+    okh:readme <https://raw.githubusercontent.com/ahane/krawler-test/b03281f95bb5228508f2eedc166b8ced3e5eaae3/README.md> ;
+    okh:repo <https://github.com/ahane/krawler-test> ;
+    okh:spdxLicense "CC-BY-SA-4.0" ;
+    okh:technologyReadinessLevel "http://purl.org/oseg/ontologies/OTLR#OTLR-5" ;
+    okh:timestamp "Fri, 26 Mar 2021 14:46:20 GMT" ;
+    okh:tsdcID "ASM-MEC" ;
+    okh:userManual <https://raw.githubusercontent.com/ahane/krawler-test/b03281f95bb5228508f2eedc166b8ced3e5eaae3/Documentation/User_Guide/UserGuide.md> ;
+    okh:version "0.12.0" ;
+    okh:versionOf <https://github.com/ahane/krawler-test> ;
+    :fabricWidth 400 ;
+    :fabricWidthDim "mm" .
+
+:fabricWidth a owl:DatatypeProperty ;
+    rdfs:label "fabric-width" ;
+    rdfs:subPropertyOf okh:functionalMetadata .
+
+:fabricWidthDim a owl:DatatypeProperty ;
+    rdfs:label "fabric-width-dim" ;
+    rdfs:subPropertyOf okh:functionalMetadata .

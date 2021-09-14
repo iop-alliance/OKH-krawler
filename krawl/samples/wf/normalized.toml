@@ -1,0 +1,13 @@
+name = "CoLabyrinth"
+repo = ""
+version = "20180920093005"
+spdx-license = "CC-BY-SA-4.0"
+licensor = "Anna Aflalo"
+documentation-language = "en"
+image = "https://wikifactory.com/files/RmlsZToxMTk4Ng=="
+function = "A kids game that teaches collaborative problem solving."
+[[files]]
+name = "/README.md"
+permalink = "https://wikifactory.com/files/RmlsZToxMjkzOQ=="
+mimetype = "text/markdown"
+
