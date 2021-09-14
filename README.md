@@ -47,13 +47,16 @@ Github specific env variables:
 (get one [here](https://github.com/settings/tokens)
 
 This can be any directory where the krawler can write its intermediary files.
+
+(just make sure it is not in a git dir or ignored by git as it will contain a lot of files)
+
 `KRAWLER_WORKDIR="..."`
 
 ## Execute
 
 `krawl/bin/gh.sh`
 
-To fetch project from github
+To fetch projects from github
 
 `krawl/bin/wf.sh`
 
