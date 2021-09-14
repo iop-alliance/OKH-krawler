@@ -11,9 +11,7 @@ Python >= 3.6
 
 See [here](https://python-poetry.org/docs/) how to install poetry
 
-Once you have `poetry` in your PATH.
-
-Install the project by entering the `krawl` dir (where the `pyproject.toml` file is located) and typing
+Once you have `poetry` in your PATH, install the project by entering the `krawl` dir (where the `pyproject.toml` file is located) and typing
 
 `poetry install`
 
@@ -35,8 +33,11 @@ Wikibase specifc env variables:
 Wikibase OAuth client:
 
 `KRAWLER_WB_CONSUMER_KEY="..."`
+
 `KRAWLER_WB_CONSUMER_SECRET="..."`
+
 `KRAWLER_WB_ACCESS_TOKEN="..."`
+
 `KRAWLER_WB_ACCESS_SECRET="..."`
 
 (ask your wikibase admin if you are unsure how to get this)
