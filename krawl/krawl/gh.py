@@ -23,7 +23,7 @@ g = Github(GITHUB_KEY)
 
 
 def is_okh_manifest_filename(s: str, ext: str) -> bool:
-    return s == f"okh.{ext}" or bool(re.match(f"^okh-[\w-]+\.{ext}$", s))
+    return s == f"okh.{ext}" or bool(re.match(r"^okh-[\w-]+\.{ext}$", s))
 
 
 def log(s: str):
