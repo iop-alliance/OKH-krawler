@@ -107,7 +107,7 @@ def saveraw(dct: dict, storagedir: Path) -> str:
     version = make_version(dct)
     dirpath = storagedir / dirname / version
     dirpath.mkdir(parents=True, exist_ok=True)
-    filepath = dirpath / f"record.json"
+    filepath = dirpath / "record.json"
     try:
         with open(filepath, "w") as file:
             json.dump(dct, file, indent=2, sort_keys=True)
