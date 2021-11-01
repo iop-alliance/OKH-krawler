@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 # coding: utf-8
+
+import os
 import argparse
-from krawl.config import ACCESS_SECRET, ACCESS_TOKEN, CONSUMER_KEY, CONSUMER_SECRET, N_THREADS, PASSWORD, USER
+from concurrent.futures import ThreadPoolExecutor
+
 from rdflib import Graph, RDF, RDFS
 import rdflib as r
+
+from krawl.config import ACCESS_SECRET, ACCESS_TOKEN, CONSUMER_KEY, CONSUMER_SECRET, N_THREADS, PASSWORD, USER
 from krawl.wikibase.api import API
 from krawl.namespaces import OKH
-from concurrent.futures import ThreadPoolExecutor
-import os
+
 
 # DATATYPES = {"timestamp": "time", "lastSeen": "time", "lastRequested": "time"}
 # TODO make sure the datetimes are corect in the ttl

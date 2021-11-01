@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
+
 import argparse
-from krawl.common import detailskey
-import rdflib as r
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 import toml
+import rdflib as r
 from rdflib import RDFS, OWL, RDF
+from krawl.common import detailskey
 from krawl.namespaces import OKH, OTLR
 
 graph = r.Graph()

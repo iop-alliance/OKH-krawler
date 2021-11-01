@@ -1,7 +1,12 @@
+
 from typing import Union
+import json
+import toml
+import yaml
+import requests
+from pathvalidate import sanitize_filename
 from krawl.config import WORKDIR
 from krawl.licenses import getlicenses
-import requests
 
 
 def download(url: str, file_name: str) -> bool:
@@ -27,7 +32,6 @@ def fetch(url: str) -> str:
 TOML = "toml"
 JSON = "json"
 YAML = "yml"
-import toml, json, yaml
 
 
 def parse(s: str, ext: str) -> dict:
@@ -48,11 +52,6 @@ def parse(s: str, ext: str) -> dict:
         return None
     else:
         raise ValueError(f"i cant read the extenison {ext}")
-
-
-from pathvalidate import sanitize_filename
-
-
 
 
 def setversion(manifest: Union[dict, None]):

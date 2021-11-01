@@ -1,26 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
-from datetime import datetime
-from krawl.common import detailskey, download, fetch, parse, setversion, validate, sanitize_filename
-from krawl.config import GITHUB_KEY, WORKDIR
-from krawl.db import (
-    Manifest,
-    Repo,
-    create_repo,
-    get_manifest,
-    insert,
-    migrate,
-)
-from github import Github, PaginatedList
-from pathlib import Path
-from urllib.parse import urljoin, urlparse, urlsplit, urlunparse
 
+import doctest
 import re
 import sqlite3
-import os
-from krawl.rdf import make_rdf
-import toml
+from datetime import datetime
+from urllib.parse import urlparse, urlsplit
+
 import requests
+import toml
+from github import Github, PaginatedList
+
+from krawl.common import (detailskey, fetch, parse, sanitize_filename,
+                          setversion, validate)
+from krawl.config import GITHUB_KEY, WORKDIR
+from krawl.db import Manifest, Repo, create_repo, get_manifest, insert, migrate
 
 g = Github(GITHUB_KEY)
 

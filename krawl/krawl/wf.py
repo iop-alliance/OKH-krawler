@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 # coding: utf-8
+
 from pathlib import Path
-from krawl.config import WORKDIR
-import requests
 from pprint import pprint
-from pathvalidate import sanitize_filename
-import dateutil.parser
 import json
 import os
+
+import requests
+from pathvalidate import sanitize_filename
+import dateutil.parser
+
+from krawl.config import WORKDIR
 
 headers = {"User-Agent": "oshi-krawl", "From": "alec@konek.to"}
 URL = "https://wikifactory.com/api/graphql"

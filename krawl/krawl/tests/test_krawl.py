@@ -1,5 +1,6 @@
-from ..gh import is_okh_manifest_filename
+
 from krawl import __version__
+from ..gh import is_okh_manifest_filename
 
 
 def test_version():

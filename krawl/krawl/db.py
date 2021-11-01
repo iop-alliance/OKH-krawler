@@ -1,5 +1,5 @@
+
 import sqlite3
-from sqlite3 import Connection
 from typing import NamedTuple, Optional
 
 sqlite3.register_adapter(bool, int)
