@@ -196,9 +196,12 @@ def fetch_gh(ext: str, con: sqlite3.Connection):
         print()
 
 
-if __name__ == "__main__":
+def main():
     con = sqlite3.connect(
         str(WORKDIR / "crawl.sqlite"), detect_types=sqlite3.PARSE_DECLTYPES
     )
     migrate(con)
     fetch_gh("toml", con)
+
+if __name__ == "__main__":
+    main()

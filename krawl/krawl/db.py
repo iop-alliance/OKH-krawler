@@ -118,9 +118,7 @@ def get_manifest(repo_id: int, sha: str, con: sqlite3.Connection) -> Optional[Ma
     return Manifest(*found[0])
 
 
-if __name__ == "__main__":
-    import tempfile
-
+def main():
     con = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_DECLTYPES)
     # con.row_factory = sqlite3.Row
     migrate(con)
@@ -163,3 +161,6 @@ if __name__ == "__main__":
 
     manifest_notfound = get_manifest(repo.id, "bbb", con)
     print(manifest_notfound)
+
+if __name__ == "__main__":
+    main()

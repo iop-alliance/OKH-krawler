@@ -101,7 +101,7 @@ def pushfile(file):
     module = makeentity(modules[0], g, itemids)
     return api.push(module)
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "files", metavar="files", help="filepaths to process", nargs="+"
@@ -121,3 +121,6 @@ if __name__ == "__main__":
     with ThreadPoolExecutor(max_workers=N_THREADS) as executor:
         for created_id in list(executor.map(pushfile, args.files)):
             print(f"{URL}/index.php?title=Item:{created_id}")
+
+if __name__ == "__main__":
+    main()

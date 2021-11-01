@@ -239,7 +239,7 @@ def isrelevant(rec):
     # return has_license and has_readme and has_files
     return True
 
-if __name__ == "__main__":
+def main():
     # argv = sysconf.argv[1:]
     # args = argparser.parse_args(argv)
     parser = argparse.ArgumentParser()
@@ -261,3 +261,6 @@ if __name__ == "__main__":
             print("[WF]     success. ", str(file))
         else:
             print("[WF]    skipping. ", str(file))
+
+if __name__ == "__main__":
+    main()
