@@ -182,10 +182,6 @@ def make_file_list(manifest, key, entityname, rdftype, BASE, extra=[]):
     return entity, l
 
 
-def make_manifest_list(manifest, BASE):
-    return make_file_list()
-
-
 def box(value):
     if isinstance(value, str) and value.startswith("http"):
         vboxed = r.URIRef(value)
