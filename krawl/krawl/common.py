@@ -36,7 +36,7 @@ def fetch(url: str) -> str:
 
 def parse(s: str, ext: str) -> dict:
     if len(s) > BYTES_PER_MB:
-        print("wont read manifests bigger than one MB")
+        print("will not read manifests bigger than one MB")
         return ""
     try:
         if ext == TOML:
@@ -46,11 +46,11 @@ def parse(s: str, ext: str) -> dict:
         elif ext == YAML:
             return yaml.safe_load(s)
     except Exception as e:
-        print("couldnt parse... ")
+        print("Failed to parse ...")
         print(" TRACE:", e)
         return None
     else:
-        raise ValueError(f"i cant read the extenison {ext}")
+        raise ValueError(f"Unknown extension {ext}")
 
 
 def setversion(manifest: Union[dict, None]):
