@@ -82,9 +82,8 @@ def getlang(dct):
         return None
     if len(desc.split(" ")) <= 2:
         return "en"
-    else:
-        lang = detect(desc)
-        return lang
+    lang = detect(desc)
+    return lang
 
 
 def getfiles(dct, check):
@@ -179,8 +178,7 @@ def getparts(dct):
 def getimage(dct):
     if dct.get("image") is None:
         return None
-    else:
-        return dct.get("image").get("permalink", None)
+    return dct.get("image").get("permalink", None)
 
 def getimagedetails(dct):
     img = getimage(dct)

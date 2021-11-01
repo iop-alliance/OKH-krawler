@@ -91,8 +91,7 @@ def get_repo(r: Repo, con):
         if len(found) > 1:
             print("found more than one matching repo..")
         return Repo(*found[0])
-    else:
-        return None
+    return None
 
 
 def create_repo(r: Repo, con: sqlite3.Connection):
@@ -100,15 +99,13 @@ def create_repo(r: Repo, con: sqlite3.Connection):
     found = get_repo(r, con)
     if found is not None:
         return found
-    else:
-        try:
-            insert(r, con)
-            return get_repo(r, con)
-        except sqlite3.IntegrityError as e:
-            if str(e).find("UNIQUE constraint failed") != -1:
-                return False
-            else:
-                raise e
+    try:
+        insert(r, con)
+        return get_repo(r, con)
+    except sqlite3.IntegrityError as e:
+        if str(e).find("UNIQUE constraint failed") != -1:
+            return False
+        raise e
 
 
 def get_manifest(repo_id: int, sha: str, con: sqlite3.Connection) -> Optional[Manifest]:
