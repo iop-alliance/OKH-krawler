@@ -137,7 +137,7 @@ def make_module_list(m):
     add(OKH.version, m.get("version"))
     add(
         OKH.release, None
-    )  # TODO look for 'release' in toml or if missing check for latest github release
+    )  # TODO look for 'release' in toml or if missing, check for latest github release
     add(OKH.spdxLicense, m.get("spdx-license"))
     add(OKH.licensor, m.get("licensor"))
     add(OKH.organisation, m.get("organisation "))
