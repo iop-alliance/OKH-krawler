@@ -38,12 +38,15 @@ def makeentity(subject, g, valuereps=None):
         print(pred)
         a, v = pred
         statement = None
-        if p: print("PRED: ", pred)
+        if p:
+            print("PRED: ", pred)
         if a == RDFS.label:
-            if p: print(f"{i} Label found", a == RDFS.label, v)
+            if p:
+                print(f"{i} Label found", a == RDFS.label, v)
             entity["label"] = v
         elif OKH in a:
-            if p: print("  OKH in a")
+            if p:
+                print("  OKH in a")
             prop = a.replace(OKH, "")
             statement = {
                 "property": prop,
@@ -51,18 +54,21 @@ def makeentity(subject, g, valuereps=None):
                 "_datatype": DATATYPES.get(prop, "wikibase-item"),
             }
             if isinstance(statement["value"], r.term.URIRef):
-                if p: print("   url")
+                if p:
+                    print("   url")
                 if base in statement["value"]:
                     # we got a sub item.. and keep the wikibase-item datatype
                     pass
                 else:
                     statement["_datatype"] = "url"
             if isinstance(statement["value"], r.term.Literal):
-                if p:print("   literal")
+                if p:
+                    print("   literal")
                 statement["_datatype"] = "string"
             statements.append(statement)
         elif str(RDF) in a:
-            if p: print("  RDF in a")
+            if p:
+                print("  RDF in a")
             prop = a.replace(str(RDF), "")
             statement = {
                 "property": prop,
@@ -70,18 +76,21 @@ def makeentity(subject, g, valuereps=None):
                 "_datatype": DATATYPES.get(prop, "wikibase-item"),
             }
             if isinstance(statement["value"], r.term.URIRef):
-                if p: print("   url")
+                if p:
+                    print("   url")
                 if base in statement["value"]:
                     # we got a sub item.. and keep the wikibase-item datatype
                     pass
                 else:
                     statement["_datatype"] = "url"
             if isinstance(statement["value"], r.term.Literal):
-                if p: print("   literal")
+                if p:
+                    print("   literal")
                 statement["_datatype"] = "text"
             statements.append(statement)
         else:
-            if p: print("   else", a)
+            if p:
+                print("   else", a)
     entity["statements"] = statements
     return entity
 
