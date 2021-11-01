@@ -50,14 +50,14 @@ def makeentity(subject, g, valuereps=None):
                 "value": valuereps.get(v, v),
                 "_datatype": DATATYPES.get(prop, "wikibase-item"),
             }
-            if type(statement["value"]) == r.term.URIRef:
+            if isinstance(statement["value"], r.term.URIRef):
                 if p: print("   url")
                 if base in statement["value"]:
                     # we got a sub item.. and keep the wikibase-item datatype
                     pass
                 else:
                     statement["_datatype"] = "url"
-            if type(statement["value"]) == r.term.Literal:
+            if isinstance(statement["value"], r.term.Literal):
                 if p:print("   literal")
                 statement["_datatype"] = "string"
             statements.append(statement)
@@ -69,14 +69,14 @@ def makeentity(subject, g, valuereps=None):
                 "value": valuereps.get(v, v),
                 "_datatype": DATATYPES.get(prop, "wikibase-item"),
             }
-            if type(statement["value"]) == r.term.URIRef:
+            if isinstance(statement["value"], r.term.URIRef):
                 if p: print("   url")
                 if base in statement["value"]:
                     # we got a sub item.. and keep the wikibase-item datatype
                     pass
                 else:
                     statement["_datatype"] = "url"
-            if type(statement["value"]) == r.term.Literal:
+            if isinstance(statement["value"], r.term.Literal):
                 if p: print("   literal")
                 statement["_datatype"] = "text"
             statements.append(statement)

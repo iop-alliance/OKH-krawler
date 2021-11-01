@@ -52,7 +52,7 @@ def make_part_list(manifest):
 
     def add(e, attribute, value):
         if value is not None:
-            if type(value) == str and value.startswith("http"):
+            if isinstance(value, str) and value.startswith("http"):
                 vboxed = r.URIRef(value)
             else:
                 vboxed = r.Literal(value)
@@ -121,7 +121,7 @@ def make_module_list(m):
 
     def add(attribute, value):
         if value is not None:
-            if type(value) == str and value.startswith("http"):
+            if isinstance(value, str) and value.startswith("http"):
                 vboxed = r.URIRef(value)
             else:
                 vboxed = r.Literal(value)
@@ -187,7 +187,7 @@ def make_manifest_list(manifest, BASE):
 
 
 def box(value):
-    if type(value) == str and value.startswith("http"):
+    if isinstance(value, str) and value.startswith("http"):
         vboxed = r.URIRef(value)
     else:
         vboxed = r.Literal(value)

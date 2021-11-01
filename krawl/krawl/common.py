@@ -117,7 +117,7 @@ def validate(manifest: Union[dict, None]):
         opi = manifest.get("operating-instructions", {})
         if isinstance(opi, dict) and opi.get("path") is not None:
             manifest["user-manual"] = opi.get("path")
-    assert type(manifest["repo"]) == str
+    assert isinstance(manifest["repo"], str)
     return manifest
 
 
