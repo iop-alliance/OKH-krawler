@@ -299,7 +299,7 @@ def make_rdf(manifest: dict, outpath: str, raise_errors=False) -> bool:
         return True
     except Exception as e:
         print(" RDF ERROR: Couldnt make rdf: ")
-        if raise_errors == True:
+        if raise_errors:
             raise e
         # exc_info = sys.exc_info()
         print(e)
