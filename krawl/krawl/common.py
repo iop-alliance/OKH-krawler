@@ -83,17 +83,17 @@ def validate(manifest: Union[dict, None]):
             + manifest.get("health-safety-notice", "")
         )
 
-        OTLR = "open-technology-readiness-level"
+        otrl = "open-technology-readiness-level"
         if manifest.get("made-independently", False):
-            manifest[OTLR] = "OTLR-5"
+            manifest[otrl] = "OTLR-5"
         elif manifest.get("made", False):
-            manifest[OTLR] = "OTLR-4"
+            manifest[otrl] = "OTLR-4"
         elif manifest.get("development-stage") == "prototype":
-            manifest[OTLR] = "OTLR-4"
+            manifest[otrl] = "OTLR-4"
 
-        license = manifest.get("license", {})
-        hwl = license.get("hardware")
-        docl = license.get("documentation")
+        m_license = manifest.get("license", {})
+        hwl = m_license.get("hardware")
+        docl = m_license.get("documentation")
         if hwl is not None:
             if hwl in licenses:
                 manifest["spdx-license"] = hwl

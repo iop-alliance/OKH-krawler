@@ -23,8 +23,8 @@ def getlicenseblacklists():
         "https://raw.githubusercontent.com/OPEN-NEXT/LOSH/master/Data%20Mapping/SPDX-blacklist"
     )
     elems = res.text.strip().split("\n")
-    l = {e.strip() for e in elems}
-    return l
+    license_id = {elem.strip() for elem in elems}
+    return license_id
 
 
 if __name__ == "__main__":
