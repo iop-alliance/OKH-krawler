@@ -16,6 +16,9 @@ from krawl.common import (detailskey, fetch, parse, sanitize_filename,
 from krawl.config import GITHUB_KEY, WORKDIR
 from krawl.db import Manifest, Repo, create_repo, get_manifest, insert, migrate
 
+GITHUB = "github"
+HOSTER = "github.com"
+RAW = "https://raw.githubusercontent.com"
 g = Github(GITHUB_KEY)
 
 
@@ -26,8 +29,6 @@ def is_okh_manifest_filename(s: str, ext: str) -> bool:
 def log(s: str):
     print(s)
 
-
-GITHUB = "github"
 
 def save(s: str, domain: str, repo: str, version: str, ext: str) -> str:
     dirname = sanitize_filename(repo.replace("/", "____"))
@@ -66,9 +67,6 @@ def getcommitsha(manifest):
 def safe_join(*args):
     stripped = [p.strip("/") for p in args]
     return "/".join(stripped)
-
-
-RAW = "https://raw.githubusercontent.com"
 
 
 def setperma(manifest, key, sha):
@@ -116,7 +114,6 @@ def makeperma(manifest, value, sha):
 
 
 def fetch_gh(ext: str, con: sqlite3.Connection):
-    HOSTER = "github.com"
     res = g.search_code(f"filename:okh.{ext}")
     print(f"Searching for okh.{ext}")
     for each in res:

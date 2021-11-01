@@ -31,65 +31,65 @@ def isvalid(node):
     # and len(node['contributionUpstream']['contribFile']['files']) > 0)
 
 
-query = """
+QUERY = """
 query Project($batchSize: Int, $cursor: String) {
   projects(first: $batchSize, after: $cursor) {
-		result {
+    result {
       pageInfo {
         hasNextPage
         startCursor
         endCursor
       }
       edges {
-    	node {
-        id
-        name
-        slug
-        lastActivityAt
-        license {
+        node {
+          id
+          name
+          slug
+          lastActivityAt
+          license {
             name
             title
             abreviation
-        }
-        image {
+          }
+          image {
             permalink
-        }
-        creatorProfile {
+          }
+          creatorProfile {
             fullName
             username
-        }
-        space {
+          }
+          space {
             id
             content {
-                slug
-                __typename
+              slug
+              __typename
             }
-        }
-      description
-      contributionUpstream {
-        contribFile(filepath: "README.md") {
-          dirname
-          filename
-          isFolder
-                    file {
-            permalink
+          }
+          description
+          contributionUpstream {
+            contribFile(filepath: "README.md") {
+              dirname
+              filename
+              isFolder
+              file {
+                permalink
+              }
+            }
+            files {
+              filename
+              dirname
+              contribution {
+                version
+              }
+              file {
+                mimeType
+                permalink
+              }
+            }
           }
         }
-        files {
-          filename
-          dirname
-          contribution {
-            version
-          }
-          file {
-            mimeType
-            permalink
-          }
-        }
-      }
       }
     }
-   }
   }
 }
 """
@@ -124,41 +124,40 @@ def fetch_wf(storagedir):
     curr_page = 0
     print("init wf fetch")
     with requests.Session() as session:
-      while has_next_page and curr_page < max_pages:
-          print("curr page:", curr_page)
-          print("cursor: ", cursor)
-          r = session.post(
-              URL,
-              json={"query": query, "variables": {"cursor": cursor, "batchSize": 50}},
-              headers=headers,
-              timeout=10
-          )
-          # r = requests.post(url, json={'query': q2 })
-          if not r.ok:
-              print(
-                  f"couldnt fetch wikifactory code: {r.status_code}, (cursor: {cursor})"
-              )
-              return
-          print(f"status: {r.status_code}")
-          payload = r.json()
-          try:
-              result = payload["data"]["projects"]["result"]
-              nodes = [d["node"] for d in result["edges"]]
-          except Exception as e:
-              print("Could read payload: ")
-              pprint(payload)
-              raise e
-          pageinfo = result["pageInfo"]
-          cursor = pageinfo["endCursor"]
-          for each in nodes:
-              if isvalid(each):
-                  filepath = saveraw(each, storagedir)
-
-                  print("saved: ", filepath)
-          curr_page += 1
-          has_next_page = pageinfo["hasNextPage"]
-          if not has_next_page:
-            print("last page was ", cursor)
+        while has_next_page and curr_page < max_pages:
+            print("curr page:", curr_page)
+            print("cursor: ", cursor)
+            r = session.post(
+                URL,
+                json={"query": QUERY, "variables": {"cursor": cursor, "batchSize": 50}},
+                headers=headers,
+                timeout=10
+            )
+            # r = requests.post(url, json={'query': q2 })
+            if not r.ok:
+                print(
+                    f"couldnt fetch wikifactory code: {r.status_code}, (cursor: {cursor})"
+                )
+                return
+            print(f"status: {r.status_code}")
+            payload = r.json()
+            try:
+                result = payload["data"]["projects"]["result"]
+                nodes = [d["node"] for d in result["edges"]]
+            except Exception as e:
+                print("Could read payload: ")
+                pprint(payload)
+                raise e
+            pageinfo = result["pageInfo"]
+            cursor = pageinfo["endCursor"]
+            for each in nodes:
+                if isvalid(each):
+                    filepath = saveraw(each, storagedir)
+                    print("saved: ", filepath)
+            curr_page += 1
+            has_next_page = pageinfo["hasNextPage"]
+            if not has_next_page:
+                print("last page was ", cursor)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,11 @@ from krawl.config import WORKDIR
 from krawl.licenses import getlicenses
 
 
+TOML = "toml"
+JSON = "json"
+YAML = "yml"
+BYTES_PER_MB = 1000000
+
 def download(url: str, file_name: str) -> bool:
     try:
         with open(file_name, "wb") as file:
@@ -29,13 +34,7 @@ def fetch(url: str) -> str:
         return
 
 
-TOML = "toml"
-JSON = "json"
-YAML = "yml"
-
-
 def parse(s: str, ext: str) -> dict:
-    BYTES_PER_MB = 1000000
     if len(s) > BYTES_PER_MB:
         print("wont read manifests bigger than one MB")
         return ""

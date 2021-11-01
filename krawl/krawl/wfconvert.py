@@ -11,6 +11,8 @@ from langdetect import detect
 from krawl.licenses import getlicenseblacklists, getlicenses
 from krawl.wf import make_version
 
+FORBIDDEN = -1
+
 
 def makerepo(dct):
     # TODO
@@ -48,9 +50,6 @@ def makerepo(dct):
         print("couldt get creator profile:")
         print(dct)
         return ""
-
-
-FORBIDDEN = -1
 
 
 def get_license(dct):
