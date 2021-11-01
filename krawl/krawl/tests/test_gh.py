@@ -35,4 +35,4 @@ def test_isgithubrepo():
     parsed = urlparse("https://github.com/ahane/krawler-test")
     print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
     print(parsed.hostname)
-    assert isgithurepo("https://github.com/ahane/krawler-test")
+    assert isgithubrepo("https://github.com/ahane/krawler-test")
