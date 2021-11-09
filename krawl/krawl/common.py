@@ -70,7 +70,7 @@ def move(dct, ak, bk):
 def validate(manifest: Union[dict, None]):
     licenses = getlicenses()
     if manifest.get("okhv", "1.0").split(".")[0] == "1":
-        # https://github.com/OPEN-NEXT/LOSH/blob/master/Data%20Mapping/data-mapping-OKHv1.md
+        # https://github.com/OPEN-NEXT/LOSH/blob/master/data_mapping/data-mapping-OKHv1.md
         manifest["okhv"] = "1.0"
         move(manifest, "title", "name")
         move(manifest, "documentation-home", "repo")
