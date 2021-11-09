@@ -5,7 +5,7 @@ description = ""
 authors = ["Alec Hanefeld <alec@konek.to>"]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = ">=3.6.1,<4.0"
 PyGithub = "^1.55"
 toml = "^0.10.2"
 rdflib = "^5.0.0"
@@ -14,6 +14,27 @@ langdetect = "^1.0.8"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
+poethepoet = "^0.10.0"
+yapf = "^0.31.0"
+isort = "^5.10.1"
+pylint = "^2.11.1"
+pytest-cov = "^3.0.0"
+
+[tool.poe.tasks]
+bump = {cmd = "bump2version --allow-dirty", help = "Bump the app version"}
+_clean = """
+rm -rf .coverage
+       .pytest_cache
+       dist
+       build
+       ./**/__pycache__
+"""
+clean = {ref = "_clean", help = "Clean up temporary files"}
+format = {shell = "isort . && yapf -i -r -vv -p .", help = "Format the code using YAPF"}
+lint = {cmd = "pylint ./krawl", help = "Use PyLint to evaluate the code quality"}
+_publish = {cmd = "poetry publish"}
+release = {sequence = ["format", "test", "build", "_publish"], help = "Create a release of the application and publish it on PyPi"}
+test = {cmd = "pytest --cov=jintaro tests", help = "Run the test suits"}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
