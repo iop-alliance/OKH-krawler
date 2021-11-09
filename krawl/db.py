@@ -1,4 +1,3 @@
-
 import sqlite3
 from typing import NamedTuple, Optional
 
@@ -83,9 +82,7 @@ def insert(tup: NamedTuple, con: sqlite3.Connection):
 
 def get_repo(r: Repo, con):
     cur = con.cursor()
-    res = cur.execute(
-        "select hoster, url, full_name, id from repos where url = ?", (r.url,)
-    )
+    res = cur.execute("select hoster, url, full_name, id from repos where url = ?", (r.url,))
     found = list(res.fetchall())
     if len(found) >= 1:
         if len(found) > 1:
@@ -161,6 +158,7 @@ def main():
 
     manifest_notfound = get_manifest(repo.id, "bbb", con)
     print(manifest_notfound)
+
 
 if __name__ == "__main__":
     main()

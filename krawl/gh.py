@@ -11,8 +11,7 @@ import requests
 import toml
 from github import Github, PaginatedList
 
-from krawl.common import (detailskey, fetch, parse, sanitize_filename,
-                          setversion, validate)
+from krawl.common import detailskey, fetch, parse, sanitize_filename, setversion, validate
 from krawl.config import GITHUB_KEY, WORKDIR
 from krawl.db import Manifest, Repo, create_repo, get_manifest, insert, migrate
 
@@ -43,6 +42,7 @@ def save(s: str, domain: str, repo: str, version: str, ext: str) -> str:
     except Exception as e:
         print("ERROR saving", e)
         return False
+
 
 def getreponame(manifest):
     repourl = manifest.get("repo")
@@ -137,9 +137,7 @@ def fetch_gh(ext: str, con: sqlite3.Connection):
             manifest = parse(stream, ext)
             manifest = setversion(manifest)
 
-            dirpath, filepath = save(
-                stream, GITHUB, f"{full_name}", manifest.get("version"), ext
-            )
+            dirpath, filepath = save(stream, GITHUB, f"{full_name}", manifest.get("version"), ext)
             print("..saved file", filepath)
             try:
                 print("..trying to validate")
@@ -197,11 +195,10 @@ def fetch_gh(ext: str, con: sqlite3.Connection):
 
 
 def main():
-    con = sqlite3.connect(
-        str(WORKDIR / "crawl.sqlite"), detect_types=sqlite3.PARSE_DECLTYPES
-    )
+    con = sqlite3.connect(str(WORKDIR / "crawl.sqlite"), detect_types=sqlite3.PARSE_DECLTYPES)
     migrate(con)
     fetch_gh("toml", con)
+
 
 if __name__ == "__main__":
     main()

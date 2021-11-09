@@ -1,18 +1,19 @@
-
-from typing import Union
 import json
+from typing import Union
+
+import requests
 import toml
 import yaml
-import requests
 from pathvalidate import sanitize_filename
+
 from krawl.config import WORKDIR
 from krawl.licenses import getlicenses
-
 
 TOML = "toml"
 JSON = "json"
 YAML = "yml"
 BYTES_PER_MB = 1000000
+
 
 def download(url: str, file_name: str) -> bool:
     try:
@@ -75,13 +76,8 @@ def validate(manifest: Union[dict, None]):
         move(manifest, "title", "name")
         move(manifest, "documentation-home", "repo")
         move(manifest, "archive-download", "release")
-        manifest["function"] = (
-            manifest.get("description", "")
-            + " "
-            + manifest.get("intended-use", "")
-            + " "
-            + manifest.get("health-safety-notice", "")
-        )
+        manifest["function"] = (manifest.get("description", "") + " " + manifest.get("intended-use", "") + " " +
+                                manifest.get("health-safety-notice", ""))
 
         otrl = "open-technology-readiness-level"
         if manifest.get("made-independently", False):

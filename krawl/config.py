@@ -1,5 +1,5 @@
-from pathlib import Path
 import os
+from pathlib import Path
 
 N_THREADS = 4
 WORKDIR = Path(os.environ.get("KRAWLER_WORKDIR"))

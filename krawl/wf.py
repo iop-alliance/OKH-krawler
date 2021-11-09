@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from pathlib import Path
-from pprint import pprint
 import json
 import os
+from pathlib import Path
+from pprint import pprint
 
+import dateutil.parser
 import requests
 from pathvalidate import sanitize_filename
-import dateutil.parser
 
 from krawl.config import WORKDIR
 
@@ -127,17 +127,19 @@ def fetch_wf(storagedir):
         while has_next_page and curr_page < max_pages:
             print("curr page:", curr_page)
             print("cursor: ", cursor)
-            r = session.post(
-                URL,
-                json={"query": QUERY, "variables": {"cursor": cursor, "batchSize": 50}},
-                headers=headers,
-                timeout=10
-            )
+            r = session.post(URL,
+                             json={
+                                 "query": QUERY,
+                                 "variables": {
+                                     "cursor": cursor,
+                                     "batchSize": 50
+                                 }
+                             },
+                             headers=headers,
+                             timeout=10)
             # r = requests.post(url, json={'query': q2 })
             if not r.ok:
-                print(
-                    f"couldnt fetch wikifactory code: {r.status_code}, (cursor: {cursor})"
-                )
+                print(f"couldnt fetch wikifactory code: {r.status_code}, (cursor: {cursor})")
                 return
             print(f"status: {r.status_code}")
             payload = r.json()

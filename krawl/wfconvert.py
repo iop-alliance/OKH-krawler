@@ -100,12 +100,7 @@ def getfiles(dct, check):
         partname = file['filename'].split('.')[0]
         ext = file['filename'].split('.')[-1].lower()
         if name != "README.md" and check(ext):
-            dct = {
-                    "name": partname,
-                    "permalink": inner["permalink"],
-                    "mimetype": inner["mimeType"],
-                    "ext": ext
-                }
+            dct = {"name": partname, "permalink": inner["permalink"], "mimetype": inner["mimeType"], "ext": ext}
 
             if check(ext):
                 export = f"{name}_export"
@@ -115,70 +110,77 @@ def getfiles(dct, check):
     else:
         return files
 
+
 PARTEXTENSIONS = [
-"3dm",
-"3dxml",
-"3KO",
-"3mf",
-"amf",
-"asab",
-"asat",
-"asm",
-"CATPart",
-"CATProduct",
-"CGR",
-"csg",
-"dae",
-"dgn",
-"dwg",
-"dxf",
-"fcstd",
-"html",
-"iam",
-"iges",
-"igs",
-"ipt",
-"iwb",
-"iwp",
-"jt",
-"j_t",
-"model",
-"obj",
-"off",
-"par",
-"pdf",
-"ply",
-"pod",
-"prc",
-"prt",
-"psm",
-"sab",
-"sat",
-"scad",
-"sldasm",
-"sldprt",
-"sms",
-"step",
-"stl",
-"stp",
-"svg",
-"u3d",
-"vda",
-"wrl",
-"x_t",
-"xcgm",
+    "3dm",
+    "3dxml",
+    "3KO",
+    "3mf",
+    "amf",
+    "asab",
+    "asat",
+    "asm",
+    "CATPart",
+    "CATProduct",
+    "CGR",
+    "csg",
+    "dae",
+    "dgn",
+    "dwg",
+    "dxf",
+    "fcstd",
+    "html",
+    "iam",
+    "iges",
+    "igs",
+    "ipt",
+    "iwb",
+    "iwp",
+    "jt",
+    "j_t",
+    "model",
+    "obj",
+    "off",
+    "par",
+    "pdf",
+    "ply",
+    "pod",
+    "prc",
+    "prt",
+    "psm",
+    "sab",
+    "sat",
+    "scad",
+    "sldasm",
+    "sldprt",
+    "sms",
+    "step",
+    "stl",
+    "stp",
+    "svg",
+    "u3d",
+    "vda",
+    "wrl",
+    "x_t",
+    "xcgm",
 ]
+
+
 def getparts(dct):
+
     def ispart(ext):
         return ext in PARTEXTENSIONS
-    return [dict(
-        name=f['name'],
-        export=[dict(fileFormat=f['ext'], fileUrl=f['permalink'])])  for f in getfiles(dct, ispart)]
+
+    return [
+        dict(name=f['name'], export=[dict(fileFormat=f['ext'], fileUrl=f['permalink'])]) for f in getfiles(dct, ispart)
+    ]
+
 
 def getimage(dct):
     if dct.get("image") is None:
         return None
     return dct.get("image").get("permalink", None)
+
 
 def getimagedetails(dct):
     img = getimage(dct)
@@ -202,6 +204,7 @@ def getreadme(dct):
         return None
     pl = file.get("permalink", None)
     return pl
+
 
 def getreadmedetails(dct):
     readme = getreadme(dct)
@@ -232,6 +235,7 @@ def convert(dct):
         "part": getparts(dct),
     }
 
+
 def isrelevant(rec):
     has_license = rec['spdx-license'] is not None
     has_readme = rec['readme'] is not None
@@ -239,13 +243,12 @@ def isrelevant(rec):
     # return has_license and has_readme and has_files
     return True
 
+
 def main():
     # argv = sysconf.argv[1:]
     # args = argparser.parse_args(argv)
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "files", metavar="files", help="filepaths to process", nargs="+"
-    )
+    parser.add_argument("files", metavar="files", help="filepaths to process", nargs="+")
     args = parser.parse_args()
     print("Starting WF convert")
     for file in args.files:
@@ -261,6 +264,7 @@ def main():
             print("[WF]     success. ", str(file))
         else:
             print("[WF]    skipping. ", str(file))
+
 
 if __name__ == "__main__":
     main()

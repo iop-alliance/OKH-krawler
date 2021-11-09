@@ -1,13 +1,11 @@
-
 from functools import lru_cache
+
 import requests
 
 
 @lru_cache()
 def getlicenses():
-    res = requests.get(
-        "https://raw.githubusercontent.com/spdx/license-list-data/master/json/licenses.json"
-    )
+    res = requests.get("https://raw.githubusercontent.com/spdx/license-list-data/master/json/licenses.json")
     elems = res.json()["licenses"]
 
     # res = requests.get("https://raw.githubusercontent.com/OPEN-NEXT/LOSH-Licenses/main/SPDX-allowlist.json")
@@ -30,8 +28,7 @@ def getlicenseblacklists():
         # My (hoijui) goal is, to get it available as CSV again;
         # see issue:
         # https://github.com/OPEN-NEXT/LOSH-Licenses/issues/1#issuecomment-963914298
-        "https://raw.githubusercontent.com/OPEN-NEXT/LOSH/master/Data%20Mapping/SPDX-blacklist"
-    )
+        "https://raw.githubusercontent.com/OPEN-NEXT/LOSH/master/Data%20Mapping/SPDX-blacklist")
     elems = res.text.strip().split("\n")
     license_id = {elem.strip() for elem in elems}
     return license_id

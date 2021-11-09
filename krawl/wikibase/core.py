@@ -1,21 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os
 import argparse
+import os
 from concurrent.futures import ThreadPoolExecutor
 
-from rdflib import Graph, RDF, RDFS
 import rdflib as r
+from rdflib import RDF, RDFS, Graph
 
 from krawl.config import ACCESS_SECRET, ACCESS_TOKEN, CONSUMER_KEY, CONSUMER_SECRET, N_THREADS, PASSWORD, USER
-from krawl.wikibase.api import API
 from krawl.namespaces import OKH
-
+from krawl.wikibase.api import API
 
 # DATATYPES = {"timestamp": "time", "lastSeen": "time", "lastRequested": "time"}
 # TODO make sure the datetimes are corect in the ttl
-DATATYPES= {}
+DATATYPES = {}
 URL = os.environ.get("KRAWLER_WB_HOST", "https://losh.ose-germany.de")
 
 
@@ -101,35 +100,36 @@ def makeitems(l, g):
         items.append(makeentity(each, g))
     return items
 
+
 def pushfile(file):
     g = Graph()
     g.parse(file, format="ttl")
     items, modules = makeentitylists(g)
-    items = [makeentity(i,g) for i in items]
+    items = [makeentity(i, g) for i in items]
     itemids = api.push_many(items)
     module = makeentity(modules[0], g, itemids)
     return api.push(module)
 
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "files", metavar="files", help="filepaths to process", nargs="+"
-    )
+    parser.add_argument("files", metavar="files", help="filepaths to process", nargs="+")
     args = parser.parse_args()
     print('got n files: ', len(args.files))
     api = API(
-            URL,
-            USER,
-            PASSWORD,
-            CONSUMER_KEY,
-            CONSUMER_SECRET,
-            ACCESS_TOKEN,
-            ACCESS_SECRET,
-            RECONCILEPROPID,
-        )
+        URL,
+        USER,
+        PASSWORD,
+        CONSUMER_KEY,
+        CONSUMER_SECRET,
+        ACCESS_TOKEN,
+        ACCESS_SECRET,
+        RECONCILEPROPID,
+    )
     with ThreadPoolExecutor(max_workers=N_THREADS) as executor:
         for created_id in list(executor.map(pushfile, args.files)):
             print(f"{URL}/index.php?title=Item:{created_id}")
+
 
 if __name__ == "__main__":
     main()

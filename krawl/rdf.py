@@ -4,27 +4,29 @@
 import argparse
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
-import toml
+
 import rdflib as r
-from rdflib import RDFS, OWL, RDF
+import toml
+from rdflib import OWL, RDF, RDFS
+
 from krawl.common import detailskey
 from krawl.namespaces import OKH, OTLR
 
 graph = r.Graph()
 
+
 def make_base_ns(m):
     parts = urlparse(m["repo"])
-    base = urlunparse(
-        components=(
-            parts.scheme,
-            parts.netloc,
-            str(Path(parts.path, m.get("version", ""))),
-            "",
-            "",
-            "",
-        )
-    )
+    base = urlunparse(components=(
+        parts.scheme,
+        parts.netloc,
+        str(Path(parts.path, m.get("version", ""))),
+        "",
+        "",
+        "",
+    ))
     return f"{base}/"
+
 
 def make_OTRL(m):
     v = m.get("open-technology-readiness-level")
@@ -100,10 +102,10 @@ def make_part_list(manifest):
             export = getattr(BASE, export_name)
             add(p, OKH.export, export)
             add(export, RDF.type, OKH.ExportFile)
-            if isinstance(export_url,str):
+            if isinstance(export_url, str):
                 add(export, OKH.fileUrl, export_url)
                 ext = export_url.split('.')[-1]
-                if(ext != export_url):
+                if (ext != export_url):
                     add(export, OKH.fileFormat, ext)
             if isinstance(export_url, dict):
                 add(export, OKH.fileUrl, export_url['fileUrl'])
@@ -135,9 +137,7 @@ def make_module_list(m):
     add(OKH.repoHost, m.get("repoHost"))
     add(OKH.dataSource, m.get("dataSource"))
     add(OKH.version, m.get("version"))
-    add(
-        OKH.release, None
-    )  # TODO look for 'release' in toml or if missing, check for latest github release
+    add(OKH.release, None)  # TODO look for 'release' in toml or if missing, check for latest github release
     add(OKH.spdxLicense, m.get("spdx-license"))
     add(OKH.licensor, m.get("licensor"))
     add(OKH.organisation, m.get("organisation "))
@@ -200,11 +200,7 @@ def make_graph(manifest):
     g.bind("", BASE)
 
     l, module = make_module_list(manifest)
-    l.extend(
-        make_functional_metadata_list(
-            module, manifest.get("functional-metadata", {}), BASE
-        )
-    )
+    l.extend(make_functional_metadata_list(module, manifest.get("functional-metadata", {}), BASE))
 
     manifest_e, manifest_l = make_file_list(
         manifest,
@@ -310,17 +306,16 @@ def make_rdf(manifest: dict, outpath: str, raise_errors=False) -> bool:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "files", metavar="files", help="filepaths to process", nargs="+"
-    )
+    parser.add_argument("files", metavar="files", help="filepaths to process", nargs="+")
     args = parser.parse_args()
     for file in args.files:
         filepath = Path(file)
         print(f"[RDF] converting: {filepath}")
         with open(file, 'r') as f:
             manifest = toml.loads(f.read())
-        make_rdf(manifest, filepath.parent/ "rdf.ttl", True)
+        make_rdf(manifest, filepath.parent / "rdf.ttl", True)
         print(f"[RDF]    success: {filepath}")
+
 
 if __name__ == "__main__":
     main()

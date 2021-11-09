@@ -1,8 +1,10 @@
 import json
-from krawl.config import N_THREADS
+import re
+
 import requests
 from requests_oauthlib import OAuth1
-import re
+
+from krawl.config import N_THREADS
 
 
 class API:
@@ -30,9 +32,7 @@ class API:
 
     def _init_session(self, username, password):
         self.S = requests.Session()
-        self.S.mount('https://', requests.adapters.HTTPAdapter(pool_maxsize=N_THREADS,
-                                    max_retries=3,
-                                    pool_block=True))
+        self.S.mount('https://', requests.adapters.HTTPAdapter(pool_maxsize=N_THREADS, max_retries=3, pool_block=True))
 
         # Step 1: GET request to fetch login token
         PARAMS_0 = {
@@ -107,9 +107,7 @@ class API:
         label = prop["property"]
         datatype = prop.get("_datatype", "string")
         print("will try to create prop")
-        prop = json.dumps(
-            {"labels": {"en": {"language": "en", "value": label}}, "datatype": datatype}
-        )
+        prop = json.dumps({"labels": {"en": {"language": "en", "value": label}}, "datatype": datatype})
         e = self.S.post(
             self.API_URL,
             data=dict(
@@ -191,9 +189,7 @@ class API:
                     print("created or found prop: ", propid)
                 else:
                     print("tried to create prop but faild: ", propname, type(propid))
-                entity["statements"] = API.replaceprop(
-                    propname, propid, entity["statements"]
-                )
+                entity["statements"] = API.replaceprop(propname, propid, entity["statements"])
                 return self._reconcile(entity, attempt + 1)
             print(f"Reconcile status code: {res.status_code}")
         resbody = res.json()
