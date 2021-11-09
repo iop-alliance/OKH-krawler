@@ -11,6 +11,7 @@ toml = "^0.10.2"
 rdflib = "^5.0.0"
 pathvalidate = "^2.3.2"
 langdetect = "^1.0.8"
+PyYAML = "^6.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
