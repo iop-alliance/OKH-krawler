@@ -115,63 +115,49 @@ def saveraw(dct: dict, storagedir: Path) -> str:
 
 
 def fetch_wf(storagedir):
-    results = []
-    resultids = set()
     cursor = ""
     has_next_page = True
     max_pages = int(os.environ.get("MAX_WF_PAGES", "999999"))
     curr_page = 0
     print("init wf fetch")
-    while has_next_page and curr_page < max_pages:
-        print("curr page:", curr_page)
-        print("cursor: ", cursor)
-        r = requests.post(
-            URL,
-            json={"query": query, "variables": {"cursor": cursor, "batchSize": 50}},
-            headers=headers,
-        )
-        # r = requests.post(url, json={'query': q2 })
-        if not r.ok:
-            print(
-                f"couldnt fetch wikifactory code: {r.status_code}, (cursor: {cursor})"
-            )
-            return
-        print(f"status: {r.status_code}")
-        payload = r.json()
-        try:
-            result = payload["data"]["projects"]["result"]
-            nodes = [d["node"] for d in result["edges"]]
-        except Exception as e:
-            print("Could read payload: ")
-            pprint(payload)
-            raise e
-        pageinfo = result["pageInfo"]
-        cursor = pageinfo["endCursor"]
-        for each in nodes:
-            if isvalid(each):
-                filepath = saveraw(each, storagedir)
+    with requests.Session() as session:
+      while has_next_page and curr_page < max_pages:
+          print("curr page:", curr_page)
+          print("cursor: ", cursor)
+          r = session.post(
+              URL,
+              json={"query": query, "variables": {"cursor": cursor, "batchSize": 50}},
+              headers=headers,
+              timeout=10
+          )
+          # r = requests.post(url, json={'query': q2 })
+          if not r.ok:
+              print(
+                  f"couldnt fetch wikifactory code: {r.status_code}, (cursor: {cursor})"
+              )
+              return
+          print(f"status: {r.status_code}")
+          payload = r.json()
+          try:
+              result = payload["data"]["projects"]["result"]
+              nodes = [d["node"] for d in result["edges"]]
+          except Exception as e:
+              print("Could read payload: ")
+              pprint(payload)
+              raise e
+          pageinfo = result["pageInfo"]
+          cursor = pageinfo["endCursor"]
+          for each in nodes:
+              if isvalid(each):
+                  filepath = saveraw(each, storagedir)
 
-                print("saved: ", filepath)
-        curr_page += 1
-        has_next_page = pageinfo["hasNextPage"]
+                  print("saved: ", filepath)
+          curr_page += 1
+          has_next_page = pageinfo["hasNextPage"]
+          if not has_next_page:
+            print("last page was ", cursor)
 
 
 if __name__ == "__main__":
     # Execute the parse_args() method
-    import doctest
-
-    doctest.testmod()
-    # # parser = argparse.ArgumentParser()
-    # # parser.add_argument(
-    # #     "workdir",
-    # #     metavar="workdir",
-    # #     type=Path,
-    # #     help="where to look for files",
-    # #     default=".",
-    # # )
-    # # args = parser.parse_args()
-    # # print(args)
-    # # dest = Path(os.getcwd()) / args.workdir
-    # print("will save to ", dest)
-    # fetch_wf(dest)
     fetch_wf(WF_WORKDIR)

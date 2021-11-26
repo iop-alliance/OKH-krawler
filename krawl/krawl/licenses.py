@@ -7,9 +7,12 @@ def getlicenses():
     res = requests.get(
         "https://raw.githubusercontent.com/spdx/license-list-data/master/json/licenses.json"
     )
+    elems = res.json()["licenses"]
 
-    elems = res.json()
-    l = {l["licenseId"] for l in elems["licenses"]}
+    # res = requests.get("https://raw.githubusercontent.com/OPEN-NEXT/LOSH-Licenses/main/SPDX-allowlist.json")
+    # elems_losh = res.json()
+    # elems.extend(elems_losh)
+    l = {l["licenseId"] for l in elems}
     return l
 
 

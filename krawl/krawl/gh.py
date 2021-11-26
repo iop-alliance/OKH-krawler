@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 from datetime import datetime
-from krawl.common import detailskey, download, fetch, parse, save, setversion, validate
+from krawl.common import detailskey, download, fetch, parse, setversion, validate, sanitize_filename
 from krawl.config import GITHUB_KEY, WORKDIR
 from krawl.db import (
     Manifest,
@@ -35,6 +35,19 @@ def log(s: str):
 
 GITHUB = "github"
 
+def save(s: str, domain: str, repo: str, version: str, ext: str) -> str:
+    dirname = sanitize_filename(repo.replace("/", "____"))
+    versionname = sanitize_filename(version.replace(".", "_"))
+    dirpath = WORKDIR / "github" / dirname / versionname
+    dirpath.mkdir(parents=True, exist_ok=True)
+    filepath = dirpath / f"okh.{ext}"
+    try:
+        with open(filepath, "wb") as file:
+            file.write(s.encode("utf8"))
+        return dirpath, filepath
+    except Exception as e:
+        print("ERROR saving", e)
+        return False
 
 def getreponame(manifest):
     repourl = manifest.get("repo")
@@ -43,15 +56,16 @@ def getreponame(manifest):
     except Exception as e:
         print("...couldnt read repo")
         print(e)
-        return None
+        raise Exception('couldnt read repo')
     if len(reponame.split("/")) != 2:
         print(f".... {repourl} is enot a valid repourl")
-        return None
+        raise Exception('is no')
     return reponame
 
 
 def getcommitsha(manifest):
-    repo = g.get_repo(getreponame(manifest))
+    reponame = getreponame(manifest)
+    repo = g.get_repo(reponame)
     return repo.get_commits()[0].sha
 
 
@@ -111,7 +125,6 @@ def fetch_gh(ext: str, con: sqlite3.Connection):
     HOSTER = "github.com"
     res = g.search_code(f"filename:okh.{ext}")
     print(f"Searching for okh.{ext}")
-    # TODO what about multiple manifests per file?
     for each in res:
         if not is_okh_manifest_filename(each.name, ext):
             continue
@@ -144,44 +157,48 @@ def fetch_gh(ext: str, con: sqlite3.Connection):
             except Exception as e:
                 print("...failure validate.. ")
                 print(e)
+            try:
+                print(each.download_url)
+                manifestpath = each.download_url
 
-            print(each.download_url)
-            manifestpath = each.download_url
+                manifest["manifest-file"] = manifestpath
+                manifest["timestamp"] = each.last_modified
+                if isgithubrepo(manifest):
+                    commitsha = getcommitsha(manifest)
+                    setperma(manifest, "readme", commitsha)
+                    setperma(manifest, "image", commitsha)
+                    setperma(manifest, "bom", commitsha)
+                    setperma(manifest, "manufacturing-instructions", commitsha)
+                    setperma(manifest, "user-manual", commitsha)
+                    for part in manifest.get("part", []):
+                        setperma(part, "source", commitsha)
+                        setperma(part, "imge", commitsha)
+                        exports = []
+                        for export in part.get("export", []):
+                            exports.append(makeperma(manifest, export, commitsha))
+                        if exports:
+                            part["export"] = exports
+                manifest['dataSource'] = 'github'
+                manifest['repoHost'] = 'github'
 
-            manifest["manifest-file"] = manifestpath
-            manifest["timestamp"] = each.last_modified
-            if isgithubrepo(manifest):
-                commitsha = getcommitsha(manifest)
-                setperma(manifest, "readme", commitsha)
-                setperma(manifest, "image", commitsha)
-                setperma(manifest, "bom", commitsha)
-                setperma(manifest, "manufacturing-instructions", commitsha)
-                setperma(manifest, "user-manual", commitsha)
-                for part in manifest.get("part", []):
-                    setperma(part, "source", commitsha)
-                    setperma(part, "imge", commitsha)
-                    exports = []
-                    for export in part.get("export", []):
-                        exports.append(makeperma(manifest, export, commitsha))
-                    if exports:
-                        part["export"] = exports
-
-            with (dirpath / "normalized.toml").open("wb") as f:
-                f.write(toml.dumps(manifest).encode("utf8"))
-            if ext == "toml":
-                print("TOML!")
-            print("  download success: ", filepath)
-            new_manifest = Manifest(
-                repo_id=repo.id,
-                original_name=each.name,
-                sha=each.sha,
-                download_url=each.download_url,
-                download_success=True,
-                filepath=str(filepath),
-                fileformat=ext,
-            )
-            insert(new_manifest, con)
-            print("created db record")
+                with (dirpath / "normalized.toml").open("wb") as f:
+                    f.write(toml.dumps(manifest).encode("utf8"))
+                if ext == "toml":
+                    print("TOML!")
+                print("  download success: ", filepath)
+                new_manifest = Manifest(
+                    repo_id=repo.id,
+                    original_name=each.name,
+                    sha=each.sha,
+                    download_url=each.download_url,
+                    download_success=True,
+                    filepath=str(filepath),
+                    fileformat=ext,
+                )
+                insert(new_manifest, con)
+                print("created db record")
+            except Exception:
+                print('error processing...')
             # make_rdf(manifest, dirpath / "okh.ttl")
         else:
             print("  .. already exists")
@@ -189,15 +206,8 @@ def fetch_gh(ext: str, con: sqlite3.Connection):
 
 
 if __name__ == "__main__":
-    # Execute the parse_args() method
-    import doctest
-
-    doctest.testmod()
-
     con = sqlite3.connect(
         str(WORKDIR / "crawl.sqlite"), detect_types=sqlite3.PARSE_DECLTYPES
     )
     migrate(con)
-    # fetch_gh("yml", con)
-    # fetch_gh("json", con)
     fetch_gh("toml", con)

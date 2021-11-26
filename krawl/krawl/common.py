@@ -53,19 +53,6 @@ def parse(s: str, ext: str) -> dict:
 from pathvalidate import sanitize_filename
 
 
-def save(s: str, domain: str, repo: str, version: str, ext: str) -> str:
-    dirname = sanitize_filename(repo.replace("/", "____"))
-    versionname = sanitize_filename(version.replace(".", "_"))
-    dirpath = WORKDIR / "github" / dirname / versionname
-    dirpath.mkdir(parents=True, exist_ok=True)
-    filepath = dirpath / f"okh.{ext}"
-    try:
-        with open(filepath, "wb") as file:
-            file.write(s.encode("utf8"))
-        return dirpath, filepath
-    except Exception as e:
-        print("ERROR saving", e)
-        return False
 
 
 def setversion(manifest: Union[dict, None]):

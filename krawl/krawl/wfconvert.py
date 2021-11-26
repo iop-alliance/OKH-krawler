@@ -52,15 +52,16 @@ def get_license(dct):
     valid = getlicenses()
     license = dct.get("license", {})
     if license is None:
-        return "N/A"
+        return None
     license = license.get("abreviation", "na")
     if license not in valid:
         print("[WF/LicenseMatching] ", license, " is not valid spdx")
-        return "BAD"
+        return None
     blacklist = getlicenseblacklists()
     if license in blacklist:
         print("[WF/LicenseMatching] ", license, " is forbidden, will drop")
-        return FORBIDDEN
+        return None
+    return f"https://spdx.org/licenses/{license}"
     return license
 
 
@@ -85,27 +86,94 @@ def getlang(dct):
         return lang
 
 
-def getfiles(dct):
+def getfiles(dct, check):
     files = []
     if dct.get("contributionUpstream") is None:
         return None
     for file in dct.get("contributionUpstream", {}).get("files", []):
         inner = file.get("file")
         if inner is None:
-            print("will skip, no file")
             continue
         if inner.get("permalink") is None:
-            print("will skip, no permalink")
             continue
-        files.append(
-            {
-                "name": f"{file['dirname']}/{file['filename']}",
-                "permalink": inner["permalink"],
-                "mimetype": inner["mimeType"],
-            }
-        )
-    return files
+        name = str(Path(file['dirname']) / Path(file['filename']))
+        partname = file['filename'].split('.')[0]
+        ext = file['filename'].split('.')[-1].lower()
+        if name != "README.md" and check(ext):
+            dct = {
+                    "name": partname,
+                    "permalink": inner["permalink"],
+                    "mimetype": inner["mimeType"],
+                    "ext": ext
+                }
 
+            if check(ext):
+                export = f"{name}_export"
+            files.append(dct)
+    if files == []:
+        return None
+    else:
+        return files
+
+PARTEXTENSIONS = [
+"3dm",
+"3dxml",
+"3KO",
+"3mf",
+"amf",
+"asab",
+"asat",
+"asm",
+"CATPart",
+"CATProduct",
+"CGR",
+"csg",
+"dae",
+"dgn",
+"dwg",
+"dxf",
+"fcstd",
+"html",
+"iam",
+"iges",
+"igs",
+"ipt",
+"iwb",
+"iwp",
+"jt",
+"j_t",
+"model",
+"obj",
+"off",
+"par",
+"pdf",
+"ply",
+"pod",
+"prc",
+"prt",
+"psm",
+"sab",
+"sat",
+"scad",
+"sldasm",
+"sldprt",
+"sms",
+"step",
+"stl",
+"stp",
+"svg",
+"u3d",
+"vda",
+"wrl",
+"x_t",
+"xcgm",
+]
+def getparts(dct):
+    def ispart(ext):
+        return ext in PARTEXTENSIONS
+    return [dict(
+        name=f['name'],
+        export=[dict(fileFormat=f['ext'], fileUrl=f['permalink'])])  for f in getfiles(dct, ispart)]
 
 def getimage(dct):
     if dct.get("image") is None:
@@ -113,58 +181,65 @@ def getimage(dct):
     else:
         return dct.get("image").get("permalink", None)
 
+def getimagedetails(dct):
+    img = getimage(dct)
+    if img is None:
+        return None
+    return dict(
+        originalUrl=img,
+        permaUrl=img,
+    )
+
 
 def getreadme(dct):
-    if dct.get("contributionUpstream") is None:
+    files = dct.get("contributionUpstream", {})
+    if files is None:
         return None
-    else:
-        # return (
-        #     dct.get("contributionUpstream", {})
-        #     .get("contribFile", {})
-        #     .get("file", {})
-        #     .get("permalink")
-        # )
+    cf = files.get("contribFile", {})
+    if cf is None:
         return None
+    file = cf.get("file", {})
+    if file is None:
+        return None
+    pl = file.get("permalink", None)
+    return pl
+
+def getreadmedetails(dct):
+    readme = getreadme(dct)
+    if readme is None:
+        return None
+    return dict(
+        originalUrl=readme,
+        permaUrl=readme,
+        fileFormat="md",
+    )
 
 
 def convert(dct):
     return {
         "name": dct.get("name"),
+        "dataSource": "Wikifactory",
+        "repoHost": "Wikifactory",
         "repo": makerepo(dct),
         "version": make_version(dct),
         "spdx-license": get_license(dct),
         "licensor": dct.get("creatorProfile", {}).get("fullName"),
         "readme": getreadme(dct),
+        "readme__details": getreadmedetails(dct),
         "documentation-language": getlang(dct),
         "image": getimage(dct),
+        "image__details": getimagedetails(dct),
         "function": getfunction(dct),
-        "files": getfiles(dct),
+        "part": getparts(dct),
     }
 
+def isrelevant(rec):
+    has_license = rec['spdx-license'] is not None
+    has_readme = rec['readme'] is not None
+    has_files = rec['part'] is not None or rec['export'] is not None
+    # return has_license and has_readme and has_files
+    return True
 
-# - =? okhv = "2.0"
-# - name = "OHLOOM"
-# - repo = "https://gitlab.com/OSEGermany/ohloom"
-# - version = "0.10.0"
-# ? release = "https://gitlab.com/OSEGermany/ohloom/-/tags/ohloom-0.10.0"
-# - spdx-license = "CC-BY-SA-4.0"
-# - licensor = "Jens Meisner"
-# - readme = "README.md"
-# - image = "/Documentation/User_Guide/User_Guide.jpg"
-# - documentation-language = "en"
-# ? open-technology-readiness-level = "OTLR-5"
-# - function = "The Open Hardware Loom is a simple, hand-operated weaving loom made of wood, screws and 3D printed plastic pieces for the most part. It is simple to make and operate."
-# ? cpc-patent-class = "D03D 35/00"
-# ? tsdc-id = "ASM-MEC"
-# ? bom = "sBoM.csv"
-# ? manufacturing-instructions = "/Documentation/Assembly_Guide/AssemblyGuide.md"
-# ?user-manual = "/Documentation/User_Guide/UserGuide.md"
-# ?outer-dimension-dim = "mm"
-# ?outer-dimension = "cube(size = [400,350,150]"
-# ?risk-assessment = "risky"
-# ?[functional-metadata]
-# fabric-width-dim = "mm"
-# fabric-width = 400
 import argparse
 from pathlib import Path
 
@@ -177,19 +252,16 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     print("Starting WF convert")
-    print(args.files)
     for file in args.files:
         file = Path(file)
         with open(file, "r") as f:
             data = json.load(f)
-        normalized = convert(data)
         print("[WF] Converting: ", str(file))
-        with (file.parent / "normalized.toml").open("wb") as f:
-            f.write(toml.dumps(normalized).encode("utf8"))
-        print("[WF] sucess!", str(file))
-
-        # with open("../samples/wf/recordforbidden.json", "r") as f:
-        #     data = json.load(f)
-        #     normalized = convert(data)
-        #     print(normalized)
-        #     print(toml.dumps(normalized))
+        normalized = convert(data)
+        relevant = isrelevant(normalized)
+        if relevant:
+            with (file.parent / "normalized.toml").open("wb") as f:
+                f.write(toml.dumps(normalized).encode("utf8"))
+            print("[WF]     success. ", str(file))
+        else:
+            print("[WF]    skipping. ", str(file))

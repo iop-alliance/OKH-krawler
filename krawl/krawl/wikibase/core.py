@@ -9,7 +9,6 @@ from krawl.namespaces import OKH
 from concurrent.futures import ThreadPoolExecutor
 import os
 
-RECONCILEPROPID = "P1344"
 # DATATYPES = {"timestamp": "time", "lastSeen": "time", "lastRequested": "time"}
 # TODO make sure the datetimes are corect in the ttl
 DATATYPES= {}
@@ -78,15 +77,11 @@ def makeentity(subject, g, valuereps=None):
             statements.append(statement)
         else:
             if p: print("   else", a)
-            # print(f'{i} external prop: ')
-            # statement = {"property": a, "string": v, "_datatype": "string"}
-            # print("  ", a, v)
-            # statements.append(statement)
     entity["statements"] = statements
     return entity
 
 
-def makeitems(l, g ):
+def makeitems(l, g):
     items = []
     for each in l:
         items.append(makeentity(each, g))

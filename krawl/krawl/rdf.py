@@ -99,8 +99,14 @@ def make_part_list(manifest):
             export = getattr(BASE, export_name)
             add(p, OKH.export, export)
             add(export, RDF.type, OKH.ExportFile)
-            add(export, OKH.fileUrl, export_url)
-            add(export, OKH.fileFormat, "")  # TODO parse *.XXX
+            if isinstance(export_url,str):
+                add(export, OKH.fileUrl, export_url)
+                ext = export_url.split('.')[-1]
+                if(ext != export_url):
+                    add(export, OKH.fileFormat, ext)
+            if isinstance(export_url, dict):
+                add(export, OKH.fileUrl, export_url['fileUrl'])
+                add(export, OKH.fileFormat, export_url['fileFormat'])
 
         # export files
 
@@ -125,6 +131,8 @@ def make_module_list(m):
     add(RDFS.label, m.get("name"))
     add(OKH.versionOf, m.get("repo"))
     add(OKH.repo, m.get("repo"))
+    add(OKH.repoHost, m.get("repoHost"))
+    add(OKH.dataSource, m.get("dataSource"))
     add(OKH.version, m.get("version"))
     add(
         OKH.release, None
@@ -158,12 +166,14 @@ def make_functional_metadata_list(module, functional_metadata, BASE):
 
 
 def make_file_list(manifest, key, entityname, rdftype, BASE, extra=[]):
+    parentname = f"{manifest.get('name')} v{manifest.get('version')}"
     l = list()
     manifest_details = manifest.get(detailskey(key))
     if manifest_details is None:
         return None, []
     entity = getattr(BASE, entityname)
     l.append((entity, RDF.type, rdftype))
+    l.append((entity, RDFS.label, box(f"{entityname} of {parentname}")))
     for a, v in extra:
         l.append((entity, a, v))
     for key, value in manifest_details.items():
@@ -190,9 +200,7 @@ def make_graph(manifest):
     g.bind("owl", OWL)
     g.bind("otlr", OTLR)
     BASE = r.Namespace(make_base_ns(manifest))
-    print(BASE)
     g.bind("", BASE)
-    print(dict(g.namespaces()))
 
     l, module = make_module_list(manifest)
     l.extend(
@@ -311,55 +319,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     for file in args.files:
         filepath = Path(file)
+        print(f"[RDF] converting: {filepath}")
         with open(file, 'r') as f:
             manifest = toml.loads(f.read())
-    # manifest["manifest-file"] = "http://githubcom/ahane/krawler-test"
-    # manifest["manifest-file__details"] = dict(
-    #     originalUrl="http://original",
-    #     permaUrl="http://permaurl",
-    #     lastSeen="2021-04-01T12:00:00",
-    #     lastRequested="2021-04-01T12:00:00",
-    #     fileFormat="md",
-    # )
-
-    # manifest["readme"] = "http://githubcom/ahane/krawler-test/readme.md"
-    # manifest["readme__details"] = dict(
-    #     originalUrl="http://originalReadmoe",
-    #     permaUrl="http://permaurlReadme",
-    #     lastSeen="2021-04-01T13:00:00",
-    #     lastRequested="2021-04-01T13:00:01",
-    #     fileFormat="md",
-    # )
-    # manifest["image"] = "http://githubcom/ahane/krawler-test/image.jpg"
-    # manifest["image__details"] = dict(
-    #     originalUrl="http://originalimage",
-    #     permaUrl="http://permaurlimage",
-    #     lastSeen="2021-04-01T14:00:00",
-    #     lastRequested="2021-04-01T14:00:01",
-    #     fileFormat="jpg",
-    # )
-    # manifest[
-    #     "manufacturing-instructions"
-    # ] = "http://githubcom/ahane/krawler-test/manu.md"
-    # manifest["manufacturing-instructions__details"] = dict(
-    #     originalUrl="http://originalmanu",
-    #     permaUrl="http://permaurlmanu",
-    #     lastSeen="2021-04-01T15:00:00",
-    #     lastRequested="2021-04-01T15:00:01",
-    #     fileFormat="md",
-    # )
-    # manifest["user-manual"] = "http://githubcom/ahane/krawler-test/usermanu.md"
-    # manifest["user-manual__details"] = dict(
-    #     originalUrl="http://originaluser",
-    #     lastSeen="2021-04-01T16:00:00",
-    #     lastRequested="2021-04-01T16:00:01",
-    # )
-    # manifest["bom"] = "http://githubcom/ahane/krawler-test/bom.csv"
-    # manifest["bom_details"] = dict(
-    #     originalUrl="http://originalbom",
-    #     permaUrl="http://permaurlbom",
-    #     lastSeen="2021-04-01T17:00:00",
-    #     lastRequested="2021-04-01T17:00:01",
-    #     fileFormat="csv",
-    # )
         make_rdf(manifest, filepath.parent/ "rdf.ttl", True)
+        print(f"[RDF]    success: {filepath}")

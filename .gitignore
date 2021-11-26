@@ -1,6 +1,7 @@
 .env
 # krawler specific
 workdir/
+export/
 .vscode/
 
 # Byte-compiled / optimized / DLL files
