@@ -2,37 +2,63 @@ import json
 import re
 
 import requests
-from requests_oauthlib import OAuth1
+from oauthlib.oauth2 import BackendApplicationClient
+from requests_oauthlib import OAuth2Session
 
-from krawl.config import N_THREADS
+import krawl.config as config
 
 
 class API:
-    CSRF_TOKEN = None
-    S = None
-    AUTH = None
 
     def __init__(
         self,
         url,
-        username,
-        password,
-        consumer_key,
-        consumer_secret,
-        access_token,
-        access_secret,
-        reconcilepropid="P1344",
+        reconcilepropid,
+        client_id,
+        client_secret,
+        token_url,
     ):
+        self.reconciler_url = f"{url}/rest.php/wikibase-reconcile-edit/v0/edit"
+        self.api_url = f"{url}/api.php"
+
         self.reconcilepropid = reconcilepropid
 
-        self.RECONCILER_URL = f"{url}/rest.php/wikibase-reconcile-edit/v0/edit"
-        self.API_URL = f"{url}/api.php"
-        self.AUTH = OAuth1(consumer_key, consumer_secret, access_token, access_secret)
-        self._init_session(username, password)
+        self.session = requests.Session()
+        self.session.mount(
+            "https://",
+            requests.adapters.HTTPAdapter(
+                pool_maxsize=config.N_THREADS,
+                max_retries=3,
+                pool_block=True,
+            ),
+        )
+        self._login_oauth2(client_id, client_secret, token_url)
 
-    def _init_session(self, username, password):
-        self.S = requests.Session()
-        self.S.mount('https://', requests.adapters.HTTPAdapter(pool_maxsize=N_THREADS, max_retries=3, pool_block=True))
+    def _login_oauth2(self, client_id: str, client_secret: str, token_url: str) -> None:
+        """Login using OAuth v2 protocol and add auth information to the session
+        for future requests.
+
+        This actually requires a refresh of access tokens every 3600 seconds, so
+        a proper request handler needs to be implemented to handle the token
+        refresh.
+
+        Args:
+            client_id (str): OAuth v2 ID of the client. In WB referred to as
+                client key.
+            client_secret (str): OAuth v2 secret of the client.
+            token_url (str): REST endpoint for requesting new access tokens.
+                See: https://www.mediawiki.org/wiki/Extension:OAuth#OAuth_2.0_REST_endpoints
+        """
+        # using client_credentials grant to get access tokens
+        client = BackendApplicationClient(client_id=client_id)
+        oauth = OAuth2Session(client=client)
+        token = oauth.fetch_token(token_url=token_url, client_id=client_id, client_secret=client_secret)
+
+        # add access token to every request
+        self.session.headers.update({"Authorization": f"Bearer {token['access_token']}"})
+
+    def _login_username_password(self, username, password):
+        # https://www.mediawiki.org/wiki/API:Login#Python
 
         # Step 1: GET request to fetch login token
         PARAMS_0 = {
@@ -42,7 +68,7 @@ class API:
             "format": "json",
         }
 
-        R = self.S.get(url=self.API_URL, params=PARAMS_0)
+        R = self.session.get(url=self.api_url, params=PARAMS_0)
         DATA = R.json()
 
         LOGIN_TOKEN = DATA["query"]["tokens"]["logintoken"]
@@ -58,12 +84,12 @@ class API:
             "format": "json",
         }
 
-        R = self.S.post(self.API_URL, data=PARAMS_1)
+        R = self.session.post(self.api_url, data=PARAMS_1)
 
         # Step 3: GET request to fetch CSRF token
         PARAMS_2 = {"action": "query", "meta": "tokens", "format": "json"}
 
-        R = self.S.get(url=self.API_URL, params=PARAMS_2)
+        R = self.session.get(url=self.api_url, params=PARAMS_2)
         DATA = R.json()
 
         CSRF_TOKEN = DATA["query"]["tokens"]["csrftoken"]
@@ -75,12 +101,11 @@ class API:
         data = {
             "action": "wbsetlabel",
             "id": entityid,
-            "token": self.CSRF_TOKEN,
             "format": "json",
             "language": "en",
             "value": value,
         }
-        R = self.S.post(self.API_URL, data=data)
+        R = self.session.post(self.api_url, data=data)
         if R.ok:
             print(f"set label of {entityid} to {value}")
             return True
@@ -108,14 +133,13 @@ class API:
         datatype = prop.get("_datatype", "string")
         print("will try to create prop")
         prop = json.dumps({"labels": {"en": {"language": "en", "value": label}}, "datatype": datatype})
-        e = self.S.post(
-            self.API_URL,
+        e = self.session.post(
+            self.api_url,
             data=dict(
                 action="wbeditentity",
                 new="property",
                 data=prop,
                 format="json",
-                token=self.CSRF_TOKEN,
             ),
         )
         res = e.json()
@@ -130,15 +154,15 @@ class API:
             return (True, res["entity"]["id"])
 
     def push(self, entity):
-        ok, entityid = self._reconcile(entity)
-        if ok:
-            self.setlabel(entityid, entity)
+        entityid = self._reconcile(entity)
+        self.setlabel(entityid, entity)
         return entityid
 
     def push_many(self, entities):
         items = {}
         for each in entities:
-            items[(self.push(each))] = each
+            entity_id = self.push(each)
+            items[entity_id] = each
         return items
 
     def _reconcile(self, entity, attempt=1):
@@ -160,21 +184,19 @@ class API:
             },
         }
         print("Sending request: ", entity['label'])
-        res = self.S.post(
-            url=self.RECONCILER_URL,
+        res = self.session.post(
+            url=self.reconciler_url,
             params={"format": "json"},
             json=data,
-            auth=self.AUTH,
             headers={"Content-Type": "application/json"},
         )
 
-        if res.status_code == 500:
-            print("Error 500 when reconciling")
-            print("   ", res.content.decode("utf8"))
-            return False, None
+        if res.status_code == 200:
+            resbody = res.json()
+            return resbody["entityId"]
 
-        resbody = res.json()
-        if res.status_code == 400:
+        elif res.status_code == 400:
+            resbody = res.json()
             # We are probably missing a property in wikibase
             msg = resbody["messageTranslations"]["en"]
             if "Could not find property" in msg:
@@ -192,9 +214,17 @@ class API:
                 entity["statements"] = API.replaceprop(propname, propid, entity["statements"])
                 return self._reconcile(entity, attempt + 1)
             print(f"Reconcile status code: {res.status_code}")
-        resbody = res.json()
-        if res.status_code == 200 and resbody["success"]:
-            return True, resbody["entityId"]
 
-        print("Got Status ", res.status_code)
-        return False, resbody
+        print(f"Error {res.status_code} when reconciling")
+        print("   ", res.content.decode("utf8"))
+
+        raise requests.RequestException(response=res)
+
+
+api = API(
+    url=config.URL,
+    reconcilepropid=config.RECONCILEPROPID,
+    client_id=config.WB_CLIENT_ID,
+    client_secret=config.WB_CLIENT_SECRET,
+    token_url=config.WB_TOKEN_URL,
+)

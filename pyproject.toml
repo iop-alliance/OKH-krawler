@@ -4,14 +4,24 @@ version = "0.1.0"
 description = ""
 authors = ["Alec Hanefeld <alec@konek.to>"]
 
+[tool.poetry.scripts]
+krawl = "krawl.cli:main"
+
 [tool.poetry.dependencies]
-python = ">=3.6.1,<4.0"
+python = ">=3.7,<4.0"
 PyGithub = "^1.55"
 toml = "^0.10.2"
 rdflib = "^5.0.0"
 pathvalidate = "^2.3.2"
 langdetect = "^1.0.8"
 PyYAML = "^6.0"
+requests-oauthlib = "^1.3.0"
+requests = "^2.26.0"
+python-dateutil = "^2.8.2"
+validators = "^0.18.2"
+gql = "^2.0.0"
+Cerberus = "^1.3.4"
+cleo = "^0.8.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
@@ -20,6 +30,7 @@ yapf = "^0.31.0"
 isort = "^5.10.1"
 pylint = "^2.11.1"
 pytest-cov = "^3.0.0"
+pytest-icdiff = "^0.5"
 
 [tool.poe.tasks]
 bump = {cmd = "bump2version --allow-dirty", help = "Bump the app version"}
@@ -31,7 +42,7 @@ rm -rf .coverage
        ./**/__pycache__
 """
 clean = {ref = "_clean", help = "Clean up temporary files"}
-format = {shell = "isort . && yapf -i -r -vv -p .", help = "Format the code using YAPF"}
+format = {shell = "isort krawl && yapf -i -r -vv -p krawl", help = "Format the code using YAPF"}
 lint = {cmd = "pylint ./krawl", help = "Use PyLint to evaluate the code quality"}
 _publish = {cmd = "poetry publish"}
 release = {sequence = ["format", "test", "build", "_publish"], help = "Create a release of the application and publish it on PyPi"}

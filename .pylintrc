@@ -19,6 +19,7 @@ load-plugins=pylint.extensions.docparams,
 disable=invalid-name,
         missing-docstring,
         redefined-builtin,
+        too-few-public-methods,
         abstract-method
 
 

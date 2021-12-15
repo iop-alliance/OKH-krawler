@@ -7,7 +7,7 @@ import yaml
 from pathvalidate import sanitize_filename
 
 from krawl.config import WORKDIR
-from krawl.licenses import getlicenses
+from krawl.licenses import get_licenses
 
 TOML = "toml"
 JSON = "json"
@@ -69,7 +69,7 @@ def move(dct, ak, bk):
 
 
 def validate(manifest: Union[dict, None]):
-    licenses = getlicenses()
+    licenses = get_licenses()
     if manifest.get("okhv", "1.0").split(".")[0] == "1":
         # https://github.com/OPEN-NEXT/LOSH/blob/master/data_mapping/data-mapping-OKHv1.md
         manifest["okhv"] = "1.0"

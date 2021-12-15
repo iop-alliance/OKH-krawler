@@ -8,9 +8,9 @@ from concurrent.futures import ThreadPoolExecutor
 import rdflib as r
 from rdflib import RDF, RDFS, Graph
 
-from krawl.config import ACCESS_SECRET, ACCESS_TOKEN, CONSUMER_KEY, CONSUMER_SECRET, N_THREADS, PASSWORD, USER
+import krawl.config as config
 from krawl.namespaces import OKH
-from krawl.wikibase.api import API
+from krawl.wikibase.api import api
 
 # DATATYPES = {"timestamp": "time", "lastSeen": "time", "lastRequested": "time"}
 # TODO make sure the datetimes are corect in the ttl
@@ -31,7 +31,7 @@ def makeentity(subject, g, valuereps=None):
         valuereps = {}
     entity = {"label": None}
     base = dict(g.namespaces())['']
-    statements = [{"property": RECONCILEPROPID, "value": str(subject)}]
+    statements = [{"property": config.RECONCILEPROPID, "value": str(subject)}]
     predicates = g.predicate_objects(subject)
     for i, pred in enumerate(predicates):
         print(pred)
@@ -116,17 +116,7 @@ def main():
     parser.add_argument("files", metavar="files", help="filepaths to process", nargs="+")
     args = parser.parse_args()
     print('got n files: ', len(args.files))
-    api = API(
-        URL,
-        USER,
-        PASSWORD,
-        CONSUMER_KEY,
-        CONSUMER_SECRET,
-        ACCESS_TOKEN,
-        ACCESS_SECRET,
-        RECONCILEPROPID,
-    )
-    with ThreadPoolExecutor(max_workers=N_THREADS) as executor:
+    with ThreadPoolExecutor(max_workers=config.N_THREADS) as executor:
         for created_id in list(executor.map(pushfile, args.files)):
             print(f"{URL}/index.php?title=Item:{created_id}")
 

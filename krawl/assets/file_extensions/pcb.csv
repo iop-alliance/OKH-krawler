@@ -1,0 +1,5 @@
+extension,format,encoding,category
+brd,open,text,source
+pro,open,text,source
+sch,open,text,source
+kicad_pcb,open,text,source
