@@ -53,7 +53,7 @@ class ProjectStorageFile(ProjectStorage):
     def search(self,
                platform: str | None = None,
                owner: str | None = None,
-               repo: str | None = None) -> Generator[Project, None, None]:
+               name: str | None = None) -> Generator[Project, None, None]:
         raise NotImplementedError()
 
     def delete(self, id: str) -> None:

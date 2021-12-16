@@ -173,15 +173,15 @@ class WikifactoryFetcher(Fetcher):
 
     PLATFORM = "wikifactory.com"
 
-    def __init__(self, state_storage: FetcherStateStorage, batch_size=50, retries=3, timeout=10) -> None:
+    def __init__(self, state_storage: FetcherStateStorage, batch_size=None, retries=3, timeout=None) -> None:
         self._state_storage = state_storage
-        self._batch_size = batch_size
+        self._batch_size = batch_size or 50
         self._transport = RequestsHTTPTransport(
             url="https://wikifactory.com/api/graphql",
             headers={"User-Agent": config.USER_AGENT},
             verify=True,
             retries=retries,
-            timeout=timeout,
+            timeout=timeout or 10,
         )
         self._client = GQLClient(
             transport=self._transport,

@@ -1,9 +1,8 @@
 import logging
 from urllib.parse import urlparse
 
-from cleo import Command
-
 import krawl.config as config
+from krawl.cli.command import KrawlCommand
 from krawl.fetcher.factory import FetcherFactory, is_fetcher_available
 from krawl.serializer.rdf import RDFProjectSerializer
 from krawl.serializer.yaml import YAMLProjectSerializer
@@ -15,7 +14,7 @@ from krawl.validator.strict import StrictValidator
 log = logging.getLogger("url-fetch-command")
 
 
-class FetchURLCommand(Command):
+class FetchURLCommand(KrawlCommand):
     """Fetch projects from given URLs.
 
     url

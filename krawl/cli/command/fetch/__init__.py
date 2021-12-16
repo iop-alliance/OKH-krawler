@@ -1,15 +1,14 @@
-from cleo import Command
-
+from krawl.cli.command import KrawlCommand
 from krawl.cli.command.fetch.fetcher import FetcherXCommand
 from krawl.cli.command.fetch.url import FetchURLCommand
 from krawl.fetcher.factory import available_fetchers
 
 
-def _dynamic_fetcher_commands() -> list[Command]:
+def _dynamic_fetcher_commands() -> list[KrawlCommand]:
     return [FetcherXCommand(fetcher) for fetcher in available_fetchers()]
 
 
-class FetchCommand(Command):
+class FetchCommand(KrawlCommand):
     """Fetch a project from a platform.
 
     fetch

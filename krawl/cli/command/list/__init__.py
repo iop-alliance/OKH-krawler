@@ -1,9 +1,8 @@
-from cleo import Command
-
+from krawl.cli.command import KrawlCommand
 from krawl.cli.command.list.fetchers import ListFetchersCommand
 
 
-class ListCommand(Command):
+class ListCommand(KrawlCommand):
     """Fetch a project from a platform.
 
     list

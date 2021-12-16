@@ -1,10 +1,7 @@
-import json
 import logging
 
-from cleo import Command
-
 import krawl.config as config
-# from krawl.fetcher import fetch, fetchers
+from krawl.cli.command import KrawlCommand
 from krawl.fetcher.factory import FetcherFactory
 from krawl.fetcher.wikifactory import WikifactoryFetcher
 from krawl.serializer.json import JSONProjectSerializer
@@ -19,12 +16,14 @@ from krawl.validator.strict import StrictValidator
 log = logging.getLogger("wikifactory-fetch-command")
 
 
-class FetcherXCommand(Command):
-    """Command for fetchting all projects from {}.
+class FetcherXCommand(KrawlCommand):
+    """Fetch all projects from {}.
 
     xxx
         {--s|start-over : Don't start at last saved state}
         {--n|no-validate : Don't validate project before saving it}
+        {--b|batch-size= : Number of requests to perform at a time}
+        {--t|timeout= : Max seconds to wait for a not responding service}
     """
 
     def __init__(self, name):
@@ -33,13 +32,15 @@ class FetcherXCommand(Command):
         self._config.set_name(name)
         self._config.set_description(self._config._description.format(name))
 
-        fetcher_state_storage = FetcherStateStorageFile(config.WORKDIR)
-        fetcher_factory = FetcherFactory(fetcher_state_storage)
-        self._fetcher = fetcher_factory.get_fetcher(name)
-
     def handle(self):
         start_over = self.option("start-over")
         no_validate = self.option("no-validate")
+        batch_size = self.option_int("batch-size", default=25, min=1)
+        timeout = self.option_int("batch-size", default=10, min=0)
+
+        fetcher_state_storage = FetcherStateStorageFile(config.WORKDIR)
+        fetcher_factory = FetcherFactory(state_storage=fetcher_state_storage, batch_size=batch_size, timeout=timeout)
+        self._fetcher = fetcher_factory.get_fetcher(self.name)
 
         if no_validate:
             validator = DummyValidator()

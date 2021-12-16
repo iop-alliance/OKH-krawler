@@ -81,7 +81,6 @@ class Project:
         project.manufacturing_instructions = File.from_dict(data.get("manufacturing-instructions"))
         project.user_manual = File.from_dict(data.get("user-manual"))
         project.outer_dimensions_mm = data.get("outer-dimensions-mm", None)
-
         project.part = [Part.from_dict(p) for p in data.get("part", [])]
         project.software = [Software.from_dict(s) for s in data.get("software", [])]
         return project
@@ -310,9 +309,7 @@ class File:
 class User:
     """User data model."""
 
-    __slots__ = [
-        "name", "email", "username", "language"
-    ]
+    __slots__ = ["name", "email", "username", "language"]
 
     def __init__(self) -> None:
         self.name: str = None

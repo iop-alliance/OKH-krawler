@@ -245,7 +245,7 @@ class WikifactoryNormalizer(Normalizer):
         return cls._parse_file(image_raw)
 
     @classmethod
-    def _get_info_file(cls, names, files):
+    def _get_info_file(cls, names, files) -> File:
         for file in files:
             # only consider files in root dir
             if len(file.path.parents) > 1:

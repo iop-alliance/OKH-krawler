@@ -5,16 +5,15 @@ from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
 import rdflib
-from rdflib import graph
 import validators
 
-from krawl.common import detailskey
 from krawl.namespaces import OKH, OTLR
 from krawl.project import Project
 from krawl.serializer import ProjectSerializer
 
 # Useful info about RDF:
 # https://medium.com/wallscope/understanding-linked-data-formats-rdf-xml-vs-turtle-vs-n-triples-eb931dbe9827
+
 
 class RDFProjectSerializer(ProjectSerializer):
 
@@ -112,7 +111,8 @@ class RDFProjectSerializer(ProjectSerializer):
                 source_subject = namespace[f"{partname}_source"]
                 cls.add(graph, part_subject, OKH.source, source_subject)
                 cls.add(graph, source_subject, rdflib.RDF.type, OKH.SourceFile)
-                cls.add(graph, source_subject, rdflib.RDFS.label, f"Source File of {part.name} of {project.name} v{project.version}")
+                cls.add(graph, source_subject, rdflib.RDFS.label,
+                        f"Source File of {part.name} of {project.name} v{project.version}")
                 cls.add_file(graph, source_subject, part.source)
 
             # export
@@ -120,7 +120,8 @@ class RDFProjectSerializer(ProjectSerializer):
                 export_subject = namespace[f"{partname}_export{i+1}"]
                 cls.add(graph, part_subject, OKH.export, export_subject)
                 cls.add(graph, export_subject, rdflib.RDF.type, OKH.ExportFile)
-                cls.add(graph, export_subject, rdflib.RDFS.label, f"Export File of {part.name} of {project.name} v{project.version}")
+                cls.add(graph, export_subject, rdflib.RDFS.label,
+                        f"Export File of {part.name} of {project.name} v{project.version}")
                 cls.add_file(graph, export_subject, file)
 
             # image
@@ -128,7 +129,8 @@ class RDFProjectSerializer(ProjectSerializer):
                 image_subject = namespace[f"{partname}_image"]
                 cls.add(graph, part_subject, OKH.image, image_subject)
                 cls.add(graph, image_subject, rdflib.RDF.type, OKH.Image)
-                cls.add(graph, image_subject, rdflib.RDFS.label, f"Image of {part.name} of {project.name} v{project.version}")
+                cls.add(graph, image_subject, rdflib.RDFS.label,
+                        f"Image of {part.name} of {project.name} v{project.version}")
                 cls.add_file(graph, image_subject, part.image)
 
             part_subjects.append(part_subject)
@@ -146,7 +148,8 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.dataSource, project.meta.source)
         cls.add(graph, module_subject, OKH.repoHost, project.meta.host)
         cls.add(graph, module_subject, OKH.version, project.version)
-        cls.add(graph, module_subject, OKH.release, None)  # TODO look for 'release' in toml or if missing, check for latest github release
+        cls.add(graph, module_subject, OKH.release,
+                None)  # TODO look for 'release' in toml or if missing, check for latest github release
         if project.license.is_spdx:
             cls.add(graph, module_subject, OKH.spdxLicense, project.license)
         else:
@@ -194,7 +197,7 @@ class RDFProjectSerializer(ProjectSerializer):
     #     return entity, l
 
     @classmethod
-    def _add_file_x(cls, graph, namespace, project, key, entityname, rdftype):
+    def _add_info_file(cls, graph, namespace, project, key, entityname, rdftype):
         parentname = f"{project.name} v{project.version}"
         file = getattr(project, key) if hasattr(project, key) else None
         if file is None:
@@ -219,7 +222,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
         module_subject = cls._add_module(graph, namespace, project)
 
-        readme_subject = cls._add_file_x(
+        readme_subject = cls._add_info_file(
             graph=graph,
             namespace=namespace,
             project=project,
@@ -230,7 +233,7 @@ class RDFProjectSerializer(ProjectSerializer):
         if readme_subject is not None:
             cls.add(graph, module_subject, OKH.hasReadme, readme_subject)
 
-        manifest_file_subject = cls._add_file_x(
+        manifest_file_subject = cls._add_info_file(
             graph=graph,
             namespace=namespace,
             project=project,
@@ -242,7 +245,7 @@ class RDFProjectSerializer(ProjectSerializer):
             cls.add(graph, manifest_file_subject, OKH.okhv, project.okhv)
             cls.add(graph, module_subject, OKH.hasBoM, manifest_file_subject)
 
-        image_subject = cls._add_file_x(
+        image_subject = cls._add_info_file(
             graph=graph,
             namespace=namespace,
             project=project,
@@ -253,7 +256,7 @@ class RDFProjectSerializer(ProjectSerializer):
         if image_subject is not None:
             cls.add(graph, module_subject, OKH.hasImage, image_subject)
 
-        bom_subject = cls._add_file_x(
+        bom_subject = cls._add_info_file(
             graph=graph,
             namespace=namespace,
             project=project,
@@ -264,7 +267,7 @@ class RDFProjectSerializer(ProjectSerializer):
         if bom_subject is not None:
             cls.add(graph, module_subject, OKH.hasBoM, bom_subject)
 
-        manufacturing_instructions_subject = cls._add_file_x(
+        manufacturing_instructions_subject = cls._add_info_file(
             graph=graph,
             namespace=namespace,
             project=project,
@@ -275,7 +278,7 @@ class RDFProjectSerializer(ProjectSerializer):
         if manufacturing_instructions_subject is not None:
             cls.add(graph, module_subject, OKH.hasBoM, manufacturing_instructions_subject)
 
-        user_manual_subject = cls._add_file_x(
+        user_manual_subject = cls._add_info_file(
             graph=graph,
             namespace=namespace,
             project=project,

@@ -1,15 +1,13 @@
-from cleo import Command
+from krawl.cli.command import KrawlCommand
+from krawl.fetcher.factory import available_fetchers
 
-from krawl.fetcher.factory import FetcherFactory
 
-
-class ListFetchersCommand(Command):
+class ListFetchersCommand(KrawlCommand):
     """List available fetchers.
 
     fetchers
     """
 
     def handle(self):
-        fetcher_factory = FetcherFactory(None)
-        for fetcher in fetcher_factory.get_fetchers():
-            self.line(fetcher.PLATFORM)
+        for name in available_fetchers():
+            self.line(name)

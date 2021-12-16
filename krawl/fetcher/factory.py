@@ -8,7 +8,7 @@ from krawl.fetcher.wikifactory import WikifactoryFetcher
 from krawl.project import Project
 from krawl.storage import FetcherStateStorage
 
-# use dict for faster lookups
+# use dict instead of list for faster lookups
 fetcher_classes = {
     WikifactoryFetcher.PLATFORM: WikifactoryFetcher,
 }
@@ -16,7 +16,7 @@ fetcher_classes = {
 
 class FetcherFactory:
 
-    def __init__(self, state_storage: FetcherStateStorage, batch_size=10, timeout=10) -> None:
+    def __init__(self, state_storage: FetcherStateStorage, batch_size=None, timeout=None) -> None:
         self._fetchers = {}
         self._init_fetchers(state_storage, batch_size, timeout)
 
@@ -37,8 +37,8 @@ class FetcherFactory:
         return self._fetchers[platform].fetch(id)
 
     def _init_fetchers(self, state_storage, batch_size, timeout):
-        for fetcher_class in fetcher_classes.values():
-            self._fetchers[fetcher_class.PLATFORM] = fetcher_class(state_storage, batch_size, timeout)
+        for name, fetcher_class in fetcher_classes.items():
+            self._fetchers[name] = fetcher_class(state_storage=state_storage, batch_size=batch_size, timeout=timeout)
 
 
 def available_fetchers() -> list[str]:
