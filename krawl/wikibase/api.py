@@ -33,6 +33,7 @@ class API:
             ),
         )
         self._login_oauth2(client_id, client_secret, token_url)
+        self._create_csrf_token()
 
     def _login_oauth2(self, client_id: str, client_secret: str, token_url: str) -> None:
         """Login using OAuth v2 protocol and add auth information to the session
@@ -56,6 +57,16 @@ class API:
 
         # add access token to every request
         self.session.headers.update({"Authorization": f"Bearer {token['access_token']}"})
+
+    def _create_csrf_token(self):
+        # Step 3: GET request to fetch CSRF token
+        PARAMS_2 = {"action": "query", "meta": "tokens", "format": "json"}
+
+        R = self.session.get(url=self.api_url, params=PARAMS_2)
+        DATA = R.json()
+
+        CSRF_TOKEN = DATA["query"]["tokens"]["csrftoken"]
+        self.CSRF_TOKEN = CSRF_TOKEN
 
     def _login_username_password(self, username, password):
         # https://www.mediawiki.org/wiki/API:Login#Python
@@ -140,6 +151,7 @@ class API:
                 new="property",
                 data=prop,
                 format="json",
+                token=self.CSRF_TOKEN,
             ),
         )
         res = e.json()
