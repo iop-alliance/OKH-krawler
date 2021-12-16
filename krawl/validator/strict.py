@@ -72,7 +72,7 @@ class StrictValidator(Validator):
             return [f"{title} must be of type string"]
         if min is not None and len(string) < min:
             return [f"{title} is to short (<{min})"]
-        if min is not None and len(string) < min:
+        if max is not None and len(string) > max:
             return [f"{title} is to long (>{max})"]
         return []
 
