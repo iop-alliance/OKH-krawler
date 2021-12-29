@@ -5,8 +5,6 @@ import requests
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
-import krawl.config as config
-
 
 class API:
 
@@ -27,7 +25,7 @@ class API:
         self.session.mount(
             "https://",
             requests.adapters.HTTPAdapter(
-                pool_maxsize=config.N_THREADS,
+                pool_maxsize=4,
                 max_retries=3,
                 pool_block=True,
             ),
@@ -115,9 +113,11 @@ class API:
             "format": "json",
             "language": "en",
             "value": value,
+            "token": self.CSRF_TOKEN,
         }
+
         R = self.session.post(self.api_url, data=data)
-        if R.ok:
+        if R.ok and not R.json().get("error"):
             print(f"set label of {entityid} to {value}")
             return True
         else:
@@ -205,7 +205,8 @@ class API:
 
         if res.status_code == 200:
             resbody = res.json()
-            return resbody["entityId"]
+            if resbody["success"]:
+                return resbody["entityId"]
 
         elif res.status_code == 400:
             resbody = res.json()
@@ -231,12 +232,3 @@ class API:
         print("   ", res.content.decode("utf8"))
 
         raise requests.RequestException(response=res)
-
-
-api = API(
-    url=config.URL,
-    reconcilepropid=config.RECONCILEPROPID,
-    client_id=config.WB_CLIENT_ID,
-    client_secret=config.WB_CLIENT_SECRET,
-    token_url=config.WB_TOKEN_URL,
-)

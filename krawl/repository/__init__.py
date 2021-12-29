@@ -5,8 +5,11 @@ from collections.abc import Generator
 from krawl.project import Project
 
 
-class ProjectStorage:
+class ProjectRepository:
     """Interface for storing crawled projects metadata."""
+
+    NAME = None
+    CONFIG_SCHEMA = None
 
     def load(self, id) -> Project:
         raise NotImplementedError()
@@ -30,7 +33,7 @@ class ProjectStorage:
         raise NotImplementedError()
 
 
-class FetcherStateStorage:
+class FetcherStateRepository:
 
     def load(self, fetcher: str) -> dict:
         raise NotImplementedError()

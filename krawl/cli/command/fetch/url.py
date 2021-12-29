@@ -1,14 +1,15 @@
-import logging
-from urllib.parse import urlparse
+from __future__ import annotations
 
-import krawl.config as config
+import logging
+from pathlib import Path
+
+from clikit.api.args.format import Option
+
 from krawl.cli.command import KrawlCommand
-from krawl.fetcher.factory import FetcherFactory, is_fetcher_available
-from krawl.serializer.rdf import RDFProjectSerializer
-from krawl.serializer.yaml import YAMLProjectSerializer
-from krawl.storage.fetcher_state_storage_file import FetcherStateStorageFile
-from krawl.storage.project_storage_file import ProjectStorageFile
-from krawl.validator.dummy import DummyValidator
+from krawl.fetcher.factory import FetcherFactory
+from krawl.project import ProjectID
+from krawl.repository.factory import ProjectRepositoryFactory
+from krawl.repository.fetcher_state import FetcherStateRepositoryFile
 from krawl.validator.strict import StrictValidator
 
 log = logging.getLogger("url-fetch-command")
@@ -19,46 +20,62 @@ class FetchURLCommand(KrawlCommand):
 
     url
         {url* : URLs to fetch from}
-        {--n|no-validate : Don't validate project before saving it}
     """
+
+    def __init__(self):
+        super().__init__()
+        self._config.add_option(
+            long_name="repository",
+            short_name="r",
+            default=["file"],
+            flags=Option.MULTI_VALUED,
+            description=
+            f"Repository to save the projects to (available: {', '.join(ProjectRepositoryFactory.list_available_repositories())})",
+        )
+        self._config.add_option(
+            long_name="report",
+            flags=Option.REQUIRED_VALUE,
+            description="Path of reporting file",
+        )
+        # add options from config schema
+        self._config_schema = self._load_config_schema()
+        self._add_options_from_schema(schema=self._config_schema)
 
     def handle(self):
         urls = self.argument("url")
-        no_validate = self.option("no-validate")
-
-        fetcher_state_storage = FetcherStateStorageFile(config.WORKDIR)
-        fetcher_factory = FetcherFactory(fetcher_state_storage)
+        enabled_repositories = self.option("repository")
+        report_path = Path(self.option("report")) if self.option("report") else None
 
         # parse urls
         ids = []
+        required_fetchers = set()
         for url in urls:
-            parsed_url = urlparse(url)
-            platform = parsed_url.hostname
-            splitted_path = parsed_url.path.split("/")
-            if len(splitted_path) < 3:
-                self.line_error(f"invalid URL '{url}'")
-                return 1
-            owner, name = splitted_path[1:3]
-            id = f"{platform}/{owner}/{name}"
+            id = ProjectID.from_url(url)
+            required_fetchers.add(id.platform)
             ids.append(id)
-            if not is_fetcher_available(id):
-                self.line_error(f"no fetcher available for '{platform}'")
-                return 1
 
-        # fetch to projects
-        if no_validate:
-            validator = DummyValidator()
-        else:
-            validator = StrictValidator()
-        yaml_serializer = YAMLProjectSerializer()
-        yaml_storage = ProjectStorageFile(base_path=config.WORKDIR, extension="yml", serializer=yaml_serializer)
-        rdf_serializer = RDFProjectSerializer()
-        rdf_storage = ProjectStorageFile(base_path=config.WORKDIR, extension="ttl", serializer=rdf_serializer)
+        # load, normalize and validate config
+        config = self._load_config(enabled_repositories=enabled_repositories, enabled_fetchers=required_fetchers)
+
+        # initialize fetchers and repositories
+        if config.database.type == "file":
+            fetcher_state_repository = FetcherStateRepositoryFile(config.database.path)
+        fetcher_factory = FetcherFactory(fetcher_state_repository, config.fetchers, list(required_fetchers))
+        repository_factory = ProjectRepositoryFactory(config.repositories, enabled_repositories)
+        validator = StrictValidator()
+
+        # perform the deed
+        report = []
         for id in ids:
             project = fetcher_factory.fetch(id)
             ok, reason = validator.validate(project)
             if not ok:
                 log.info("Skipping project '%s' because: %s", project.id, reason[0])
+                report.append(f"Skipped '{project.id}': {', '.join(reason)}")
                 continue
-            yaml_storage.store(project)
-            rdf_storage.store(project)
+            repository_factory.store(project)
+            report.append(f"Added '{project.id}'")
+
+        if report_path:
+            with report_path.open("w") as f:
+                f.writelines(report)

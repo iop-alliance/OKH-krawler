@@ -53,7 +53,7 @@ class WikifactoryNormalizer(Normalizer):
         project.meta.source = raw["fetcher"]
         project.meta.host = raw["fetcher"]
         project.meta.owner = raw["parentSlug"]
-        project.meta.name = raw["slug"]
+        project.meta.repo = raw["slug"]
         project.meta.created_at = datetime.fromisoformat(raw["dateCreated"])
         project.meta.last_visited = raw["lastVisited"]
         project.meta.last_changed = datetime.fromisoformat(raw["lastUpdated"])
@@ -111,8 +111,7 @@ class WikifactoryNormalizer(Normalizer):
         raw_license = cls._get_key(raw, "license", "abreviation")  # must be spelled wrong, because it is in the schema
         if not raw_license:
             return None
-        name = LICENSE_MAPPING[raw_license]
-        license = licenses.get_by_id_or_name(name)
+        license = licenses.get_by_id_or_name(LICENSE_MAPPING.get(raw_license))
         return license
 
     @classmethod

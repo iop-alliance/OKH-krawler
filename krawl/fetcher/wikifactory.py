@@ -8,15 +8,16 @@ from gql import Client as GQLClient
 from gql import gql
 from gql.transport.requests import RequestsHTTPTransport
 
-import krawl.config as config
-from krawl.exceptions import FetcherException
+from krawl.config import Config
+from krawl.exceptions import FetchingException
 from krawl.fetcher import Fetcher
 from krawl.normalizer.wikifactory import WikifactoryNormalizer
-from krawl.project import Project
-from krawl.storage import FetcherStateStorage
+from krawl.project import Project, ProjectID
+from krawl.repository import FetcherStateRepository
 
 log = logging.getLogger("wikifactory-fetcher")
 
+#pylint: disable=consider-using-f-string
 PROJECT_FIELDS = """
 name
 description
@@ -137,6 +138,7 @@ query project($space: String, $slug: String) {
     }
 }
 """ % PROJECT_FIELDS)
+#pylint: enable=consider-using-f-string
 
 
 class WikifactoryFetcher(Fetcher):
@@ -171,14 +173,57 @@ class WikifactoryFetcher(Fetcher):
 
     """
 
-    PLATFORM = "wikifactory.com"
+    NAME = "wikifactory.com"
+    CONFIG_SCHEMA = {
+        "type": "dict",
+        "default": {},
+        "meta": {
+            "long_name": "wikifactory",
+        },
+        "schema": {
+            "batch_size": {
+                "type": "integer",
+                "default": 25,
+                "min": 1,
+                "meta": {
+                    # used in CLI
+                    "long_name": "batch-size",
+                    "description": "Number of requests to perform at a time"
+                }
+            },
+            "timeout": {
+                "type": "integer",
+                "default": 10,
+                "min": 1,
+                "meta": {
+                    "long_name": "timeout",
+                    "description": "Max seconds to wait for a not responding service"
+                }
+            },
+            "retries": {
+                "type": "integer",
+                "default": 3,
+                "min": 0,
+                "meta": {
+                    "long_name": "retries",
+                    "description": "Number of retries of requests in cases of network errors"
+                }
+            },
+        },
+    }
 
-    def __init__(self, state_storage: FetcherStateStorage, batch_size=None, retries=3, timeout=None) -> None:
-        self._state_storage = state_storage
-        self._batch_size = batch_size or 50
+    def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
+        self._state_repository = state_repository
+        self._batch_size = config.batch_size
+        timeout = config.timeout
+        retries = config.retries
+        self._normalizer = WikifactoryNormalizer()
+
+        # client for GRAPHQL requests
         self._transport = RequestsHTTPTransport(
             url="https://wikifactory.com/api/graphql",
-            headers={"User-Agent": config.USER_AGENT},
+            headers={"User-Agent": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH"
+                    },  #FIXME: use user agent defined in config
             verify=True,
             retries=retries,
             timeout=timeout or 10,
@@ -187,21 +232,19 @@ class WikifactoryFetcher(Fetcher):
             transport=self._transport,
             fetch_schema_from_transport=False,
         )
-        self._normalizer = WikifactoryNormalizer()
 
-    def fetch(self, id: str) -> Project:
+    def fetch(self, id: ProjectID) -> Project:
         log.debug("fetching project %s", id)
-        owner, name = self._parse_id(id)
-        params = {"space": owner, "slug": name}
+        params = {"space": id.owner, "slug": id.repo}
         try:
             result = self._client.execute(QUERY_PROJECT_BY_SLUG, variable_values=params)
         except Exception as e:
-            raise FetcherException(f"failed to fetch project '{id}'") from e
+            raise FetchingException(f"failed to fetch project '{id}'") from e
         if not result:
-            raise FetcherException(f"project '{id}' not found")
+            raise FetchingException(f"project '{id}' not found")
         # enrich result
         result = result["project"]["result"]
-        result["fetcher"] = self.PLATFORM
+        result["fetcher"] = self.NAME
         result["lastVisited"] = datetime.now(timezone.utc)
         return self._normalizer.normalize(result)
 
@@ -210,22 +253,21 @@ class WikifactoryFetcher(Fetcher):
         cursor = ""
         num_fetched_projects = 0
         if start_over:
-            self._state_storage.delete(self.PLATFORM)
+            self._state_repository.delete(self.NAME)
         else:
-            state = self._state_storage.load(self.PLATFORM)
+            state = self._state_repository.load(self.NAME)
             if state:
                 cursor = state.get("cursor", "")
                 num_fetched_projects = state.get("num_fetched_projects", 0)
 
         while has_next_page:
-            log.debug("WikiFactory: fetching projects %d to %d", num_fetched_projects,
-                      num_fetched_projects + self._batch_size)
+            log.debug("fetching projects %d to %d", num_fetched_projects, num_fetched_projects + self._batch_size)
 
             params = {"cursor": cursor, "batchSize": self._batch_size}
             try:
                 result = self._client.execute(QUERY_PROJECTS, variable_values=params)
             except Exception as e:
-                raise FetcherException(f"failed to fetch projects from WikiFactory: {e}") from e
+                raise FetchingException(f"failed to fetch projects from WikiFactory: {e}") from e
 
             raw = result["projects"]["result"]
             pageinfo = raw["pageInfo"]
@@ -235,16 +277,17 @@ class WikifactoryFetcher(Fetcher):
             last_visited = datetime.now(timezone.utc)
             for edge in raw["edges"]:
                 raw_project = edge["node"]
-                raw_project["fetcher"] = self.PLATFORM
+                raw_project["fetcher"] = self.NAME
                 raw_project["lastVisited"] = last_visited
                 project = self._normalizer.normalize(raw_project)
                 log.debug("yield project %s", project.id)
                 yield project
 
             # save current progress
-            self._state_storage.store(self.PLATFORM, {
+            self._state_repository.store(self.NAME, {
                 "cursor": cursor,
                 "num_fetched_projects": num_fetched_projects,
             })
 
-        log.debug("Successfully fetched %d projects from Wikifactory", num_fetched_projects)
+        self._state_repository.delete(self.NAME)
+        log.debug("fetched %d projects from Wikifactory", num_fetched_projects)

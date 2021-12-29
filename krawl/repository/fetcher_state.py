@@ -4,12 +4,12 @@ import json
 import logging
 from pathlib import Path
 
-from krawl.storage import FetcherStateStorage
+from krawl.repository import FetcherStateRepository
 
-log = logging.getLogger("fetcher-state-storage")
+log = logging.getLogger("fetcher-state-repository")
 
 
-class FetcherStateStorageFile(FetcherStateStorage):
+class FetcherStateRepositoryFile(FetcherStateRepository):
     """Storing and loading the state of a fetcher."""
 
     def __init__(self, base_path: Path):
@@ -18,7 +18,7 @@ class FetcherStateStorageFile(FetcherStateStorage):
     def load(self, fetcher: str) -> dict:
         path = self._get_path(fetcher)
         if not path.exists():
-            log.debug("state storage for fetcher '%s' doesn't exist, returning empty default", fetcher)
+            log.debug("state repository for fetcher '%s' doesn't exist, returning empty default", fetcher)
             return {}
         serialized = path.read_text()
         deserialized = json.loads(serialized)
@@ -35,7 +35,7 @@ class FetcherStateStorageFile(FetcherStateStorage):
         path = self._get_path(fetcher)
         if not path.exists():
             return False
-        log.debug("deleting state storage of fetcher '%s' (%s)", fetcher, str(path))
+        log.debug("deleting state repository of fetcher '%s' (%s)", fetcher, str(path))
         path.unlink()
         return True
 

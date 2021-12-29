@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from krawl.cli.command import KrawlCommand
-from krawl.fetcher.factory import available_fetchers
+from krawl.fetcher.factory import FetcherFactory
 
 
 class ListFetchersCommand(KrawlCommand):
@@ -9,5 +11,5 @@ class ListFetchersCommand(KrawlCommand):
     """
 
     def handle(self):
-        for name in available_fetchers():
+        for name in FetcherFactory.list_available_fetchers():
             self.line(name)

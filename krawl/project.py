@@ -2,8 +2,70 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
+
+import validators
 
 from krawl.licenses import License, get_by_id_or_name
+
+
+class ProjectID:
+    """ProjectID serves as an identifier for projects, that can be used by the
+    appropriate fetcher to fetch the projects metadata.
+
+    Args:
+        platform (str): The domain of the platform.
+        owner (str): User or group that owns the project.
+        repo (str): Name of the project repository.
+        path (str): Canoncial path of the manifest file inside the repository, if any.
+    """
+
+    __slots__ = ["platform", "owner", "repo", "path"]
+
+    def __init__(self, platform: str, owner: str, repo: str, path: str = None) -> None:
+        self.platform: str = platform
+        self.owner: str = owner
+        self.repo: str = repo
+        self.path: str = path
+
+    def __str__(self) -> str:
+        if self.path:
+            return f"{self.platform}/{self.owner}/{self.repo}/{self.path}"
+        return f"{self.platform}/{self.owner}/{self.repo}"
+
+    @classmethod
+    def from_url(cls, url: str) -> ProjectID:
+        if not validators.url(url):
+            raise ValueError(f"invalid URL '{url}'")
+        parsed_url = urlparse(url)
+        platform = parsed_url.hostname
+        full_path = Path(parsed_url.path).relative_to("/")
+
+        # platform specific parsing
+        if platform == "github.com" or platform == "raw.githubusercontent.com":
+            path_parts = full_path.parts
+            if len(path_parts) < 3:
+                raise ValueError(f"invalid manifest URL '{url}'")
+            owner = path_parts[0]
+            repo = path_parts[1]
+            if platform == "github.com" and path_parts[2] == "blob":
+                if len(path_parts) < 5:
+                    raise ValueError(f"invalid manifest URL '{url}'")
+                path = Path(*path_parts[4:])
+            elif platform == "raw.githubusercontent.com":
+                if len(path_parts) < 4:
+                    raise ValueError(f"invalid manifest URL '{url}'")
+                path = Path(*path_parts[3:])
+            else:
+                #TODO: are there any other GitHub URLs to consider?
+                raise ValueError(f"invalid manifest URL '{url}'")
+            return cls(platform, str(owner), str(repo), str(path))
+
+        # all other platforms
+        if not len(full_path.parts) == 2:
+            raise ValueError(f"invalid URL '{url}'")
+        owner, repo = full_path.parts
+        return cls(platform, str(owner), str(repo))
 
 
 class Project:
@@ -118,24 +180,27 @@ class Project:
         }
 
     @property
-    def id(self) -> str:
+    def id(self) -> ProjectID:
         """Generates an ID in form of 'platform/owner/name'"""
-        return f"{self.meta.source}/{self.meta.owner}/{self.meta.name}"
+        return ProjectID(self.meta.source, self.meta.owner, self.meta.repo, self.meta.path)
 
 
 class Meta:
     """Metadata for internal use."""
 
-    __slots__ = ["source", "host", "owner", "name", "created_at", "last_visited", "last_changed", "history", "score"]
+    __slots__ = [
+        "source", "host", "owner", "repo", "path", "created_at", "last_visited", "last_changed", "history", "score"
+    ]
 
     def __init__(self) -> None:
-        self.source = None  # where the manifest was found
-        self.host = None  # where the project is hosted
-        self.owner = None
-        self.name = None
+        self.source: str = None  # where the manifest was found
+        self.host: str = None  # where the project is hosted
+        self.owner: str = None
+        self.repo: str = None
+        self.path: str = None
         self.created_at: datetime = None
-        self.last_visited = None
-        self.last_changed = None
+        self.last_visited: datetime = None
+        self.last_changed: datetime = None
         self.history = None
         # internally calculated score for project importance to decide re-visit schedule
         self.score = None
@@ -148,7 +213,8 @@ class Meta:
         meta.source = data.get("source", None)
         meta.host = data.get("host", None)
         meta.owner = data.get("owner", None)
-        meta.name = data.get("name", None)
+        meta.repo = data.get("repo", None)
+        meta.path = data.get("path", None)
         meta.created_at = _parse_date(data.get("created-at"))
         meta.last_visited = _parse_date(data.get("last-visited"))
         meta.last_changed = _parse_date(data.get("last-changed"))
@@ -161,7 +227,8 @@ class Meta:
             "source": self.source,
             "host": self.source,
             "owner": self.owner,
-            "name": self.name,
+            "repo": self.repo,
+            "path": self.path,
             "created-at": self.created_at.isoformat() if self.created_at is not None else None,
             "last-visited": self.last_visited.isoformat() if self.last_visited is not None else None,
             "last-changed": self.last_changed.isoformat() if self.last_changed is not None else None,

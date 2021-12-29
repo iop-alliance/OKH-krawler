@@ -127,6 +127,8 @@ def get_by_id(id: str) -> License:
 
 
 def get_by_id_or_name(id_or_name: str) -> License:
+    if not id_or_name:
+        return None
     normalized = _normalize_name(id_or_name)
     if normalized in _licenses:
         return _licenses[normalized]

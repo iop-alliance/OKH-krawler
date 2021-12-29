@@ -2,26 +2,36 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-from krawl.exceptions import FetcherException
-from krawl.project import Project
+from krawl.exceptions import FetchingException
+from krawl.project import Project, ProjectID
 
 
 class Fetcher:
     """Interface for fetching projects."""
 
-    PLATFORM = None
+    # Domain name of the platform
+    NAME = None
+    # configuration validation schema, see Cerberus for more information:
+    # https://docs.python-cerberus.org/en/stable/validation-rules.html
+    CONFIG_SCHEMA = None
 
-    def fetch(self, id: str) -> Project:
+    def fetch(self, id: ProjectID) -> Project:
+        """Fetch metadata of a single project.
+
+        Args:
+            id (ProjectID): The project to be fetched.
+        """
         raise NotImplementedError()
 
     def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
-        raise NotImplementedError()
+        """Find and fetch metadata of all projects on the platform.
 
-    def _parse_id(self, id: str) -> tuple[str, str]:
-        splitted = id.split("/")
-        if not len(splitted) == 3:
-            raise FetcherException(f"invalid id '{id}'")
-        platform, owner, name = splitted
-        if platform != self.PLATFORM:
-            raise FetcherException(f"'{self.PLATFORM}' fetcher cannot handle '{platform}'")
-        return owner, name
+        Args:
+            start_over (bool, optional): Start the search and fetching process
+                over again instead of starting at the last fetched batch.
+                Defaults to True.
+
+        Yields:
+            Generator[Project, None, None]: The next project found and fetched.
+        """
+        raise NotImplementedError()

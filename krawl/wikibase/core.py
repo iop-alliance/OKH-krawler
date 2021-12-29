@@ -1,21 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import argparse
-import os
-from concurrent.futures import ThreadPoolExecutor
-
 import rdflib as r
 from rdflib import RDF, RDFS, Graph
 
-import krawl.config as config
-from krawl.namespaces import OKH
-from krawl.wikibase.api import api
+from krawl.serializer.rdf import OKH
 
 # DATATYPES = {"timestamp": "time", "lastSeen": "time", "lastRequested": "time"}
 # TODO make sure the datetimes are corect in the ttl
 DATATYPES = {}
-URL = os.environ.get("KRAWLER_WB_HOST", "https://losh.ose-germany.de")
 
 
 def makeentitylists(graph):
@@ -25,26 +18,25 @@ def makeentitylists(graph):
     return [list(items), list(modules)]
 
 
-def makeentity(subject, g, valuereps=None):
-    p = False
+def makeentity(reconcile_property, subject, g, valuereps=None):
     if valuereps is None:
         valuereps = {}
     entity = {"label": None}
     base = dict(g.namespaces())['']
-    statements = [{"property": config.RECONCILEPROPID, "value": str(subject)}]
+    statements = [{"property": reconcile_property, "value": str(subject)}]
     predicates = g.predicate_objects(subject)
     for i, pred in enumerate(predicates):
         print(pred)
         a, v = pred
         statement = None
-        if p:
+        if pred:
             print("PRED: ", pred)
         if a == RDFS.label:
-            if p:
+            if pred:
                 print(f"{i} Label found", a == RDFS.label, v)
             entity["label"] = v
         elif OKH in a:
-            if p:
+            if pred:
                 print("  OKH in a")
             prop = a.replace(OKH, "")
             statement = {
@@ -53,7 +45,7 @@ def makeentity(subject, g, valuereps=None):
                 "_datatype": DATATYPES.get(prop, "wikibase-item"),
             }
             if isinstance(statement["value"], r.term.URIRef):
-                if p:
+                if pred:
                     print("   url")
                 if base in statement["value"]:
                     # we got a sub item.. and keep the wikibase-item datatype
@@ -61,12 +53,12 @@ def makeentity(subject, g, valuereps=None):
                 else:
                     statement["_datatype"] = "url"
             if isinstance(statement["value"], r.term.Literal):
-                if p:
+                if pred:
                     print("   literal")
                 statement["_datatype"] = "string"
             statements.append(statement)
         elif str(RDF) in a:
-            if p:
+            if pred:
                 print("  RDF in a")
             prop = a.replace(str(RDF), "")
             statement = {
@@ -75,7 +67,7 @@ def makeentity(subject, g, valuereps=None):
                 "_datatype": DATATYPES.get(prop, "wikibase-item"),
             }
             if isinstance(statement["value"], r.term.URIRef):
-                if p:
+                if pred:
                     print("   url")
                 if base in statement["value"]:
                     # we got a sub item.. and keep the wikibase-item datatype
@@ -83,43 +75,29 @@ def makeentity(subject, g, valuereps=None):
                 else:
                     statement["_datatype"] = "url"
             if isinstance(statement["value"], r.term.Literal):
-                if p:
+                if pred:
                     print("   literal")
                 statement["_datatype"] = "text"
             statements.append(statement)
         else:
-            if p:
+            if pred:
                 print("   else", a)
     entity["statements"] = statements
     return entity
 
 
-def makeitems(l, g):
+def makeitems(reconcile_property, l, g):
     items = []
     for each in l:
-        items.append(makeentity(each, g))
+        items.append(makeentity(reconcile_property, each, g))
     return items
 
 
-def pushfile(file):
+def pushfile(reconcile_property, file):
     g = Graph()
     g.parse(file, format="ttl")
     items, modules = makeentitylists(g)
-    items = [makeentity(i, g) for i in items]
+    items = [makeentity(reconcile_property, i, g) for i in items]
     itemids = api.push_many(items)
-    module = makeentity(modules[0], g, itemids)
+    module = makeentity(reconcile_property, modules[0], g, itemids)
     return api.push(module)
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("files", metavar="files", help="filepaths to process", nargs="+")
-    args = parser.parse_args()
-    print('got n files: ', len(args.files))
-    with ThreadPoolExecutor(max_workers=config.N_THREADS) as executor:
-        for created_id in list(executor.map(pushfile, args.files)):
-            print(f"{URL}/index.php?title=Item:{created_id}")
-
-
-if __name__ == "__main__":
-    main()

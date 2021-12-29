@@ -5,7 +5,7 @@ from typing import Any
 
 import validators
 
-from krawl.fetcher.factory import is_fetcher_available
+from krawl.fetcher.factory import FetcherFactory
 from krawl.project import Project
 from krawl.validator import Validator, _known_languages, non_zero_length_string, version
 
@@ -16,11 +16,11 @@ class StrictValidator(Validator):
         reasons = []
         # meta data
         reasons.extend(self._validate_string("meta.source", project.meta.source))
-        if project.meta.source and not is_fetcher_available(project.meta.source):
+        if project.meta.source and not FetcherFactory.is_fetcher_available(project.meta.source):
             reasons.append(f"no fetcher for '{project.meta.source}' available")
         reasons.extend(self._validate_string("meta.host", project.meta.host))
         reasons.extend(self._validate_string("meta.owner", project.meta.owner, min=3, max=256))
-        reasons.extend(self._validate_string("meta.name", project.meta.name, min=3, max=256))
+        reasons.extend(self._validate_string("meta.repo", project.meta.repo, min=3, max=256))
 
         # spec conformance
         reasons.extend(self._validate_string("name", project.name, min=3, max=256))
@@ -30,7 +30,7 @@ class StrictValidator(Validator):
         reasons.extend(self._validate_string("licensor", project.licensor, min=3, max=256))
         reasons.extend(self._validate_string("organization", project.organization, min=3, max=256, missing_ok=True))
         # reasons.extend(self._validate_url("readme", project.readme))
-        reasons.extend(self._validate_in_list("language code", project.documentation_language, _known_languages))
+        # reasons.extend(self._validate_in_list("language code", project.documentation_language, _known_languages)) #TODO: need to add more codes
 
         if not non_zero_length_string(project.version):
             reasons.append("missing version")

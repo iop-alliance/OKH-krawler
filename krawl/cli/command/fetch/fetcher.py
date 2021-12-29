@@ -1,60 +1,71 @@
-import logging
+from __future__ import annotations
 
-import krawl.config as config
+import logging
+from pathlib import Path
+
+from clikit.api.args.format import Option
+
 from krawl.cli.command import KrawlCommand
 from krawl.fetcher.factory import FetcherFactory
-from krawl.fetcher.wikifactory import WikifactoryFetcher
-from krawl.serializer.json import JSONProjectSerializer
-from krawl.serializer.rdf import RDFProjectSerializer
-from krawl.serializer.toml import TOMLProjectSerializer
-from krawl.serializer.yaml import YAMLProjectSerializer
-from krawl.storage.fetcher_state_storage_file import FetcherStateStorageFile
-from krawl.storage.project_storage_file import ProjectStorageFile
-from krawl.validator.dummy import DummyValidator
+from krawl.repository.factory import ProjectRepositoryFactory
+from krawl.repository.fetcher_state import FetcherStateRepositoryFile
 from krawl.validator.strict import StrictValidator
 
-log = logging.getLogger("wikifactory-fetch-command")
+log = logging.getLogger("fetch-command")
 
 
 class FetcherXCommand(KrawlCommand):
-    """Fetch all projects from {}.
-
-    xxx
-        {--s|start-over : Don't start at last saved state}
-        {--n|no-validate : Don't validate project before saving it}
-        {--b|batch-size= : Number of requests to perform at a time}
-        {--t|timeout= : Max seconds to wait for a not responding service}
-    """
 
     def __init__(self, name):
         super().__init__()
         self.name = name
         self._config.set_name(name)
-        self._config.set_description(self._config._description.format(name))
+        self._config.set_description(f"Find and fetch all projects from {name}.")
+        self._config.add_option(
+            long_name="repository",
+            short_name="r",
+            default=["file"],
+            flags=Option.MULTI_VALUED,
+            description=
+            f"Repository to save the projects to (available: {', '.join(FetcherFactory.list_available_fetchers())})",
+        )
+        self._config.add_option(
+            long_name="report",
+            flags=Option.REQUIRED_VALUE,
+            description="Path of reporting file",
+        )
+        # add options from config schema
+        self._config_schema = self._load_config_schema(enabled_fetchers=[name])
+        self._add_options_from_schema(schema=self._config_schema)
 
     def handle(self):
         start_over = self.option("start-over")
-        no_validate = self.option("no-validate")
-        batch_size = self.option_int("batch-size", default=25, min=1)
-        timeout = self.option_int("batch-size", default=10, min=0)
+        enabled_repositories = self.option("repository")
+        report_path = Path(self.option("report")) if self.option("report") else None
 
-        fetcher_state_storage = FetcherStateStorageFile(config.WORKDIR)
-        fetcher_factory = FetcherFactory(state_storage=fetcher_state_storage, batch_size=batch_size, timeout=timeout)
-        self._fetcher = fetcher_factory.get_fetcher(self.name)
+        # load, normalize and validate config
+        config = self._load_config(enabled_repositories=enabled_repositories, enabled_fetchers=[self.name])
 
-        if no_validate:
-            validator = DummyValidator()
-        else:
-            validator = StrictValidator()
-        yaml_serializer = YAMLProjectSerializer()
-        yaml_storage = ProjectStorageFile(base_path=config.WORKDIR, extension="yml", serializer=yaml_serializer)
-        rdf_serializer = RDFProjectSerializer()
-        rdf_storage = ProjectStorageFile(base_path=config.WORKDIR, extension="ttl", serializer=rdf_serializer)
+        # initialize fetchers and repositories
+        if config.database.type == "file":
+            fetcher_state_repository = FetcherStateRepositoryFile(config.database.path)
+        fetcher_factory = FetcherFactory(fetcher_state_repository, config.fetchers, [self.name])
+        repository_factory = ProjectRepositoryFactory(config.repositories, enabled_repositories)
+        fetcher = fetcher_factory.get(self.name)
+        validator = StrictValidator()
+
+        # perform the deed
+        report = []
         log.info("fetching all projects from %s", self.name)
-        for project in self._fetcher.fetch_all(start_over=start_over):
+        for project in fetcher.fetch_all(start_over=start_over):
             ok, reason = validator.validate(project)
             if not ok:
                 log.info("Skipping project '%s' because: %s", project.id, reason[0])
+                report.append(f"Skipped '{project.id}': {', '.join(reason)}")
                 continue
-            yaml_storage.store(project)
-            rdf_storage.store(project)
+            repository_factory.store(project)
+            report.append(f"Added '{project.id}'")
+
+        if report_path:
+            with report_path.open("w") as f:
+                f.writelines(report)

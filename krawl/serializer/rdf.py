@@ -7,12 +7,14 @@ from urllib.parse import urlparse, urlunparse
 import rdflib
 import validators
 
-from krawl.namespaces import OKH, OTLR
 from krawl.project import Project
 from krawl.serializer import ProjectSerializer
 
 # Useful info about RDF:
 # https://medium.com/wallscope/understanding-linked-data-formats-rdf-xml-vs-turtle-vs-n-triples-eb931dbe9827
+
+OKH = rdflib.Namespace("https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl#")
+OTLR = rdflib.Namespace("http://purl.org/oseg/ontologies/OTLR#")
 
 
 class RDFProjectSerializer(ProjectSerializer):
@@ -60,7 +62,7 @@ class RDFProjectSerializer(ProjectSerializer):
     @staticmethod
     def add(graph: rdflib.Graph, subject, predicate, object):
         if object is not None:
-            if isinstance(object, str) and validators.url(object):
+            if isinstance(object, str) and object.startswith("http") and validators.url(object):
                 object = rdflib.URIRef(object)
             elif isinstance(object, datetime):
                 object = rdflib.Literal(object.isoformat())
@@ -97,9 +99,9 @@ class RDFProjectSerializer(ProjectSerializer):
             cls.add(graph, part_subject, OKH.documentationLanguage, get_fallback(part, "documentation_language"))
             license = get_fallback(part, "license")
             if license and license.is_spdx:
-                cls.add(graph, part_subject, OKH.spdxLicense, license)
+                cls.add(graph, part_subject, OKH.spdxLicense, license.reference[:-5])
             else:
-                cls.add(graph, part_subject, OKH.alternativeLicense, license)
+                cls.add(graph, part_subject, OKH.alternativeLicense, license.reference[:-5])
             cls.add(graph, part_subject, OKH.licensor, get_fallback(part, "licensor"))
             cls.add(graph, part_subject, OKH.material, part.material)
             cls.add(graph, part_subject, OKH.manufacturingProcess, part.manufacturing_process)
@@ -112,7 +114,7 @@ class RDFProjectSerializer(ProjectSerializer):
                 cls.add(graph, part_subject, OKH.source, source_subject)
                 cls.add(graph, source_subject, rdflib.RDF.type, OKH.SourceFile)
                 cls.add(graph, source_subject, rdflib.RDFS.label,
-                        f"Source File of {part.name} of {project.name} v{project.version}")
+                        f"Source File of {part.name} of {project.name} {project.version}")
                 cls.add_file(graph, source_subject, part.source)
 
             # export
@@ -121,7 +123,7 @@ class RDFProjectSerializer(ProjectSerializer):
                 cls.add(graph, part_subject, OKH.export, export_subject)
                 cls.add(graph, export_subject, rdflib.RDF.type, OKH.ExportFile)
                 cls.add(graph, export_subject, rdflib.RDFS.label,
-                        f"Export File of {part.name} of {project.name} v{project.version}")
+                        f"Export File of {part.name} of {project.name} {project.version}")
                 cls.add_file(graph, export_subject, file)
 
             # image
@@ -130,7 +132,7 @@ class RDFProjectSerializer(ProjectSerializer):
                 cls.add(graph, part_subject, OKH.image, image_subject)
                 cls.add(graph, image_subject, rdflib.RDF.type, OKH.Image)
                 cls.add(graph, image_subject, rdflib.RDFS.label,
-                        f"Image of {part.name} of {project.name} v{project.version}")
+                        f"Image of {part.name} of {project.name} {project.version}")
                 cls.add_file(graph, image_subject, part.image)
 
             part_subjects.append(part_subject)
@@ -148,14 +150,14 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.dataSource, project.meta.source)
         cls.add(graph, module_subject, OKH.repoHost, project.meta.host)
         cls.add(graph, module_subject, OKH.version, project.version)
-        cls.add(graph, module_subject, OKH.release,
-                None)  # TODO look for 'release' in toml or if missing, check for latest github release
+        cls.add(graph, module_subject, OKH.release, project.release)
         if project.license.is_spdx:
-            cls.add(graph, module_subject, OKH.spdxLicense, project.license)
+            cls.add(graph, module_subject, OKH.spdxLicense, project.license.reference[:-5])
         else:
-            cls.add(graph, module_subject, OKH.alternativeLicense, project.license)
+            cls.add(graph, module_subject, OKH.alternativeLicense, project.license.reference[:-5])
         cls.add(graph, module_subject, OKH.licensor, project.licensor)
-        cls.add(graph, module_subject, OKH.organization, project.organization)
+        # TODO: rename organisation to organization
+        cls.add(graph, module_subject, OKH.organisation, project.organization)
         # cls.add(graph, module_subject, OKH.contributorCount, None)  ## TODO see if github api can do this
 
         # graph, add(OKH.timestamp, project.timestamp)
@@ -182,7 +184,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
     # def _make_file_list(self, project, key, entityname, rdftype, BASE, extra=None):
     #     extra = [] if extra is None else extra
-    #     parentname = f"{project.name} v{project.version}"
+    #     parentname = f"{project.name} {project.version}"
     #     l = []
     #     value = getattr(project, detailskey(key)) if hasattr(project, detailskey(key)) else None
     #     if value is None:
@@ -198,7 +200,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
     @classmethod
     def _add_info_file(cls, graph, namespace, project, key, entityname, rdftype):
-        parentname = f"{project.name} v{project.version}"
+        parentname = f"{project.name} {project.version}"
         file = getattr(project, key) if hasattr(project, key) else None
         if file is None:
             return None
@@ -227,7 +229,7 @@ class RDFProjectSerializer(ProjectSerializer):
             namespace=namespace,
             project=project,
             key="readme",
-            entityname=f"Readme",
+            entityname="Readme",
             rdftype=OKH.Readme,
         )
         if readme_subject is not None:
@@ -261,7 +263,7 @@ class RDFProjectSerializer(ProjectSerializer):
             namespace=namespace,
             project=project,
             key="bom",
-            entityname="Bill of Materials",
+            entityname="BillOfMaterials",
             rdftype=OKH.BoM,
         )
         if bom_subject is not None:
