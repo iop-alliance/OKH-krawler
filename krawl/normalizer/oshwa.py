@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import urllib.parse
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -43,7 +44,9 @@ LICENSE_MAPPING = {
     "CC BY-SA": "CC-BY-SA-4.0",
     "GPL-3.0": "GPL-3.0-only",
     "OHL": "TAPR-OHL-1.0",
-    "CERN OHL": "CERN-OHL-1.2"
+    "CERN OHL": "CERN-OHL-1.2",
+    "CERN": "CERN-OHL-1.2",
+    "alternativeLicense": "MIT"
 }
 
 
@@ -75,22 +78,25 @@ LICENSE_MAPPING = {
 class OshwaNormalizer(Normalizer):
 
     def normalize(self, raw: dict) -> Project:
+
         project = Project()
         project.meta.source = raw["fetcher"]
         project.meta.host = raw["fetcher"]
         project.meta.owner = raw["responsibleParty"]
-        project.meta.repo = f"https://certification.oshwa.org/{raw['oshwaUid']}.html"
-        project.meta.created_at = datetime.fromisoformat(raw["certificationDate"])
+        project.meta.repo = self._normalize_repo(raw)
+        project.meta.created_at = self._normalize_created_at(raw)  ## TODO can be not set
         project.meta.last_visited = raw["lastVisited"]
+
+        if "crabik" in project.meta.repo:
+            print(raw)
 
         log.debug("normalizing '%s'", project.id)
         project.name = raw["projectName"]
-
-        project.repo = f"https://certification.oshwa.org/{raw['oshwaUid']}.html"
-        project.version = raw['projectVersion']
+        project.repo = self._normalize_repo(raw)
+        project.version = urllib.parse.quote(self._get_key(raw, 'projectVersion', default="0.1.0"))  ## todo can be none
         project.release = ""
-        project.license = self._normalize_license(raw) ##  TODO Oshwa projects have 3 license ! how do we handle those?
-        project.licensor = raw['publicContact']
+        project.license = self._normalize_license(raw)
+        project.licensor = raw['responsibleParty']
         # project.organization = self._normalize_organization(raw)
         # project.readme = self._get_info_file(["README"], files) ## TODO fetch readme from github???
         # project.contribution_guide = self._get_info_file(["CONTRIBUTING"], files)
@@ -125,6 +131,15 @@ class OshwaNormalizer(Normalizer):
         return last
 
     @classmethod
+    def _normalize_created_at(cls, raw: dict):
+        certification_date = raw.get("certificationDate")
+
+        if not certification_date:
+            return datetime.fromisoformat("1970-01-01 00:00:00")
+
+        return datetime.fromisoformat(raw["certificationDate"])
+
+    @classmethod
     def _normalize_organization(cls, raw: dict):
         parent_type = raw["parentContent"]["type"]
         if parent_type == "initiative":
@@ -133,11 +148,17 @@ class OshwaNormalizer(Normalizer):
 
     @classmethod
     def _normalize_license(cls, raw: dict):
-        raw_license = cls._get_key(raw, "documentationLicense", "documentationLicense")
+        raw_license = cls._get_key(raw, "hardwareLicense")
+
+        ## TODO clear this with moe
+
         if not raw_license:
             return None
-        license = licenses.get_by_id_or_name(LICENSE_MAPPING.get(raw_license))
-        return license
+
+        if raw_license == "None" or raw_license == "Other":
+            return None
+
+        return licenses.get_by_id_or_name(LICENSE_MAPPING.get(raw_license))
 
     @classmethod
     def _normalize_function(cls, raw: dict):
@@ -158,6 +179,17 @@ class OshwaNormalizer(Normalizer):
         if lang == "unknown":
             return "en"
         return lang
+
+    @classmethod
+    def _normalize_repo(cls, raw: dict):
+        doc_url = raw.get('documentationUrl')
+
+        ## TODO can be none
+
+        if not doc_url:
+            return f"https://certification.oshwa.org/{raw['oshwaUid']}.html"
+
+        return doc_url
 
     @classmethod
     def _parse_file(cls, file_raw: dict) -> File:
