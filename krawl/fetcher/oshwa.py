@@ -1,4 +1,5 @@
 import logging
+import math
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator
@@ -59,22 +60,29 @@ class OshwaFetcher(Fetcher):
         },
     }
 
-    def fetch(self, id: ProjectID) -> Project:
-        pass
+    def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
 
-    def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
+        self._state_repository = state_repository
+        self._normalizer = OshwaNormalizer()
 
-        offset = 0
+        self._repo_cache = {}
+        self._rate_limit = {}
 
-        response = self._session.get(
-            url="https://certificationapi.oshwa.org/api/projects",
-            params={'limit': 1000, 'offset': offset},
+        retry = Retry(
+            total=config.retries,
+            backoff_factor=15,
+            status_forcelist=self.RETRY_CODES,
         )
 
-        if response.status_code > 205:
-            raise FetchingException(f"failed to fetch projects from GitHub: {response.text}")
-
-        data = response.json()
+        self._session = requests.Session()
+        self._session.mount(
+            "https://",
+            HTTPAdapter(max_retries=retry),
+        )
+        self._session.headers.update({
+            "User-Agent": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH",  # FIXME: use user agent defined in config
+            "Authorization": f"Bearer {config.access_token}",
+        })
 
         # {
         #     "oshwaUid": "SE000004",
@@ -102,37 +110,42 @@ class OshwaFetcher(Fetcher):
         #     "certificationDate": "2020-05-04T00:00-04:00"
         # },
 
-        last_visited = datetime.now(timezone.utc)
-        for item in data['items']:
-            oshwa_logger.info(f"Convert item {item.get('projectName')}..")
+    def fetch(self, id: ProjectID) -> Project:
+        pass
 
-            item['lastVisited'] = last_visited
-            item["fetcher"] = self.NAME
+    def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
 
-            project = self._normalizer.normalize(item)
-            oshwa_logger.debug("yield project %s", project.id)
-            yield project
+        offset = 0
+        has_more = True
+        page = 1
 
-    def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
+        while has_more:
 
-        self._state_repository = state_repository
-        self._normalizer = OshwaNormalizer()
+            response = self._session.get(
+                url="https://certificationapi.oshwa.org/api/projects",
+                params={'limit': 1000, 'offset': offset},
+            )
 
-        self._repo_cache = {}
-        self._rate_limit = {}
+            if response.status_code > 205:
+                raise FetchingException(f"failed to fetch projects from GitHub: {response.text}")
 
-        retry = Retry(
-            total=config.retries,
-            backoff_factor=15,
-            status_forcelist=self.RETRY_CODES,
-        )
+            data = response.json()
 
-        self._session = requests.Session()
-        self._session.mount(
-            "https://",
-            HTTPAdapter(max_retries=retry),
-        )
-        self._session.headers.update({
-            "User-Agent": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH",  # FIXME: use user agent defined in config
-            "Authorization": f"Bearer {config.access_token}",
-        })
+            pages = math.ceil(data['total'] / data['limit'])
+
+            if pages > page:
+                offset += 1000
+            else:
+                has_more = False
+
+            last_visited = datetime.now(timezone.utc)
+
+            for item in data['items']:
+                oshwa_logger.info(f"Convert item {item.get('projectName')}..")
+
+                item['lastVisited'] = last_visited
+                item["fetcher"] = self.NAME
+
+                project = self._normalizer.normalize(item)
+                oshwa_logger.debug("yield project %s", project.id)
+                yield project

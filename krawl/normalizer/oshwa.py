@@ -87,9 +87,6 @@ class OshwaNormalizer(Normalizer):
         project.meta.created_at = self._normalize_created_at(raw)  ## TODO can be not set
         project.meta.last_visited = raw["lastVisited"]
 
-        if "crabik" in project.meta.repo:
-            print(raw)
-
         log.debug("normalizing '%s'", project.id)
         project.name = raw["projectName"]
         project.repo = self._normalize_repo(raw)
@@ -108,7 +105,7 @@ class OshwaNormalizer(Normalizer):
         project.attestation = None
         project.publication = None
         project.standard_compliance = None
-        project.cpc_patent_class = None
+        project.cpc_patent_class = self._normalize_classification(raw) ## TODO where to add the cpc_classification
         project.tsdc = None
         project.bom = None
         project.manufacturing_instructions = None
@@ -138,6 +135,48 @@ class OshwaNormalizer(Normalizer):
             return datetime.fromisoformat("1970-01-01 00:00:00")
 
         return datetime.fromisoformat(raw["certificationDate"])
+
+    @classmethod
+    def _normalize_classification(cls, raw: dict):
+        primary_type = raw.get("primaryType")
+        additional_type = raw.get("additionalType")
+
+        unmappable_categories = [
+            "Arts",
+            "Education",
+            "Environmental",
+            "Manufacturing",
+            "Other",
+            "Science",
+            "Tool"
+        ]
+
+        if primary_type in unmappable_categories:
+            if additional_type is None:
+                return ""
+            if len(additional_type) == 0:
+                return ""
+            else:
+                return additional_type
+
+        mapping_primary_to_cpc = {
+            "3D Printing": "B33Y",
+            "Agriculture": "A01",
+            "Electronics": "H",
+            "Enclosure": "F16M",
+            "Home Connection": "H04W",
+            "IOT": "H04",
+            "Robotics": "B25J9 / 00",
+            "Sound": "H04R",
+            "Space": "B64G",
+            "Wearables": "H"
+        }
+
+        try:
+            cpc = mapping_primary_to_cpc[primary_type]
+            return cpc
+        except KeyError:
+            return primary_type
 
     @classmethod
     def _normalize_organization(cls, raw: dict):
