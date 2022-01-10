@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import logging
-import urllib.parse
-from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -10,9 +8,8 @@ from langdetect import LangDetectException
 from langdetect import detect as detect_language
 
 import krawl.licenses as licenses
-from krawl.file_formats import get_formats
 from krawl.normalizer import Normalizer, strip_html
-from krawl.project import File, Part, Project
+from krawl.project import File, Project
 
 log = logging.getLogger("thingiverse-normalizer")
 log.setLevel(logging.DEBUG)

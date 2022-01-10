@@ -1,9 +1,7 @@
 import logging
 import math
 from datetime import datetime, timezone, timedelta
-from pathlib import Path
 from typing import Generator
-from urllib.parse import urlparse
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -126,7 +124,7 @@ class ThingiverseFetcher(Fetcher):
         while has_more:
 
             response = self._session.get(
-                url="https://api.thingiverse.com/search/soldering",
+                url="https://api.thingiverse.com/search/",
                 params={"page": page, "type": "things"},
             )
 

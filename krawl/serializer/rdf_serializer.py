@@ -6,6 +6,7 @@ from urllib.parse import urlparse, urlunparse
 
 import rdflib
 import validators
+from rdflib import URIRef
 
 from krawl.errors import SerializerError
 from krawl.project import Project
@@ -150,7 +151,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
             # export
             for i, file in enumerate(part.export):
-                export_subject = namespace[f"{partname}_export{i+1}"]
+                export_subject = namespace[f"{partname}_export{i + 1}"]
                 cls.add(graph, part_subject, OKH.export, export_subject)
                 cls.add(graph, export_subject, rdflib.RDF.type, OKH.ExportFile)
                 cls.add(graph, export_subject, rdflib.RDFS.label,
@@ -216,6 +217,10 @@ class RDFProjectSerializer(ProjectSerializer):
         for index in project.specific_api_data:
             cls.add(graph, module_subject,
                     URIRef(f"https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl#{index}"),
+                    project.specific_api_data[index])
+
+        for index in project.specific_api_data:
+            cls.add(graph, module_subject, URIRef(f"https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl#{index}"),
                     project.specific_api_data[index])
 
         return module_subject

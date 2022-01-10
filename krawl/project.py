@@ -100,6 +100,8 @@ class Project:
         self.part: list[Part] = []
         self.software: list[Software] = []
 
+        self.specific_api_data = dict()
+
     @classmethod
     def from_dict(cls, data: dict) -> Project:
         if data is None:
@@ -131,6 +133,7 @@ class Project:
         project.user_manual = File.from_dict(data.get("user-manual"))
         project.part = [Part.from_dict(p) for p in data.get("part", [])]
         project.software = [Software.from_dict(s) for s in data.get("software", [])]
+        project.specific_api_data = data.get('specific_api_data')
         return project
 
     def as_dict(self) -> dict:
@@ -158,10 +161,11 @@ class Project:
             "tsdc": self.tsdc,
             "bom": self.bom.as_dict() if self.bom is not None else None,
             "manufacturing-instructions": self.manufacturing_instructions.as_dict()
-                                          if self.manufacturing_instructions is not None else None,
+            if self.manufacturing_instructions is not None else None,
             "user-manual": self.user_manual.as_dict() if self.user_manual is not None else None,
             "part": [p.as_dict() for p in self.part],
             "software": [s.as_dict() for s in self.software],
+            "specific_api_data": self.specific_api_data
         }
 
     @property
