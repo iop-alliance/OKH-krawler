@@ -7,6 +7,7 @@ from pathlib import Path
 from time import sleep
 from urllib.parse import urlparse, urlunparse
 
+import gitlab as gitlab
 import requests
 from gql import Client as GQLClient
 from gql import gql
@@ -23,7 +24,10 @@ from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.project import Project, ProjectID
 from krawl.repository import FetcherStateRepository
 
-log = logging.getLogger("github-fetcher")
+import gitlab
+
+log = logging.getLogger("gitlab-fetcher")
+log.setLevel(logging.DEBUG)
 
 #pylint: disable=consider-using-f-string
 RATELIMIT_FIELDS = """
@@ -95,7 +99,7 @@ query ($owner: String!, $name: String!) {
 #pylint: enable=consider-using-f-string
 
 
-class GitHubFetcher(Fetcher):
+class GitLabFetcher(Fetcher):
     """Fetcher for projects on GitHub.com.
 
     GitHub offers a GraphQL API, that is used by the fetcher to get all projects
@@ -174,41 +178,43 @@ class GitHubFetcher(Fetcher):
         self._repo_cache = {}
         self._rate_limit = {}
 
-        retry = Retry(
-            total=config.retries,
-            backoff_factor=15,
-            status_forcelist=self.RETRY_CODES,
-        )
+        # retry = Retry(
+        #     total=config.retries,
+        #     backoff_factor=15,
+        #     status_forcelist=self.RETRY_CODES,
+        # )
+        #
+        # # search over files one with rest api?? TODO
+        # # curl --header "PRIVATE-TOKEN: glpat-F-oVbzHsB6Fx8eT-z96R" "https://gitlab.com/api/v4/search?scope=blobs&search=okhv%20extension:toml"
+        #
+        # # client for GRAPHQL requests
+        # self._transport = RequestsHTTPTransportRetries(
+        #     url="https://gitlab.com/api/graphql",
+        #     headers={
+        #         "User-Agent": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH",  #FIXME: use user agent defined in config
+        #         "Authorization": f"Bearer {config.access_token}",
+        #     },
+        #     verify=True,
+        #     retries=retry,
+        #     timeout=config.timeout,
+        # )
+        # self._graphql_client = GQLClient(
+        #     transport=self._transport,
+        #     fetch_schema_from_transport=False,
+        # )
+        #
+        # # client REST requests (used because the GRAPHQL API doesn't support code searches)
+        # self._session = requests.Session()
+        # self._session.mount(
+        #     "https://",
+        #     HTTPAdapter(max_retries=retry),
+        # )
+        # self._session.headers.update({
+        #     "User-Agent": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH",  #FIXME: use user agent defined in config
+        #     "Authorization": f"token {config.access_token}",
+        # })
 
-        # search over files one with rest api?? TODO
-        # curl --header "PRIVATE-TOKEN: glpat-F-oVbzHsB6Fx8eT-z96R" "https://gitlab.com/api/v4/search?scope=blobs&search=okhv%20extension:toml"
-
-        # client for GRAPHQL requests
-        self._transport = RequestsHTTPTransportRetries(
-            url="https://gitlab.com/api/graphql",
-            headers={
-                "User-Agent": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH",  #FIXME: use user agent defined in config
-                "Authorization": f"Bearer {config.access_token}",
-            },
-            verify=True,
-            retries=retry,
-            timeout=config.timeout,
-        )
-        self._graphql_client = GQLClient(
-            transport=self._transport,
-            fetch_schema_from_transport=False,
-        )
-
-        # client REST requests (used because the GRAPHQL API doesn't support code searches)
-        self._session = requests.Session()
-        self._session.mount(
-            "https://",
-            HTTPAdapter(max_retries=retry),
-        )
-        self._session.headers.update({
-            "User-Agent": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH",  #FIXME: use user agent defined in config
-            "Authorization": f"token {config.access_token}",
-        })
+        self.gl = gitlab.Gitlab(private_token=config.access_token)
 
     def fetch(self, id: ProjectID) -> Project:
         log.debug("fetching project %s", id)
@@ -243,6 +249,14 @@ class GitHubFetcher(Fetcher):
         rate_limit_reset = datetime(1, 1, 1, 0, 0, tzinfo=timezone.utc)
         while True:
             log.debug("fetching projects %d to %d", num_fetched_projects, num_fetched_projects + self._batch_size)
+
+
+            files = self.gl.search(gitlab.const.SEARCH_SCOPE_BLOBS, "extension:toml")
+
+
+            print(files)
+
+            return
 
             # primary rate limits
             # https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting

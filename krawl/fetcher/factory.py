@@ -6,6 +6,7 @@ from krawl.config import Config
 from krawl.errors import FetcherError
 from krawl.fetcher import Fetcher
 from krawl.fetcher.github import GitHubFetcher
+from krawl.fetcher.gitlab import GitLabFetcher
 from krawl.fetcher.oshwa import OshwaFetcher
 from krawl.fetcher.thingiverse import ThingiverseFetcher
 from krawl.fetcher.wikifactory import WikifactoryFetcher
@@ -16,7 +17,8 @@ _fetcher_classes = {
     WikifactoryFetcher.NAME: WikifactoryFetcher,
     GitHubFetcher.NAME: GitHubFetcher,
     OshwaFetcher.NAME: OshwaFetcher,
-    ThingiverseFetcher.NAME: ThingiverseFetcher
+    ThingiverseFetcher.NAME: ThingiverseFetcher,
+    GitLabFetcher.NAME: GitLabFetcher
 }
 
 
