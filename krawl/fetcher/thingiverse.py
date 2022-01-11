@@ -79,6 +79,8 @@ class ThingiverseFetcher(Fetcher):
 
         self._repo_cache = {}
         self._rate_limit = {}
+        self._request_counter = 0
+        self._request_start_time = None
 
         retry = Retry(
             total=config.retries,
@@ -99,20 +101,31 @@ class ThingiverseFetcher(Fetcher):
     def fetch(self, id: ProjectID) -> Project:
         pass
 
-    def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
+    def _do_request(self, url, params = {}):
+        response = self._session.get(
+            url=url,
+            params=params
+        )
 
-        has_more = True
-        page = 1
+        self._request_start_time = datetime.now(timezone.utc)
+        self._request_counter += 1
+
+        if response.status_code > 205:
+            raise FetchingException(f"failed to fetch projects from Thingiverse: {response.text}")
+
+        return response.json()
+
+    def fetch_all(self, start_over=False) -> Generator[Project, None, None]:
+
+        id_cursor = 0
         projects_counter = 0
-        fetched_projects = dict()
 
         if start_over:
             self._state_repository.delete(self.NAME)
         else:
             state = self._state_repository.load(self.NAME)
             if state:
-                page = state.get("page", 1)
-                fetched_projects = state.get("fetched_projects", dict())
+                id_cursor = state.get("id_cursor", 1)
 
         # the approach
         #
@@ -121,70 +134,43 @@ class ThingiverseFetcher(Fetcher):
         # * the search results dont have all need information
         # * we need to query every project to obtain the description,
 
-        while has_more:
+        data = self._do_request("https://api.thingiverse.com/search",
+                                {'sort': 'newest', "type": "things", "per_page": 1})
 
-            response = self._session.get(
-                url="https://api.thingiverse.com/search/",
-                params={"page": page, "type": "things"},
-            )
+        last_thing_id = data['hits'].pop(0)['id']
+        last_visited = datetime.now(timezone.utc)
 
-            if response.status_code > 205:
-                raise FetchingException(f"failed to fetch projects from Thingiverse: {response.text}")
+        while id_cursor < last_thing_id:
+            id_cursor += 1
+            thingiverse_logger.info("Try to fetch thing with id %d", id_cursor)
+            try:
+                thing = self._do_request(f"https://api.thingiverse.com/things/{id_cursor}")
 
-            data = response.json()
+                thingiverse_logger.info(f"Convert thing {thing.get('name')}..")
 
-            pages = math.ceil(data['total'] / 10)
+                thing['lastVisited'] = last_visited
+                thing["fetcher"] = self.NAME
 
-            if pages > page:
-                page += 1
-                has_more = False  # TODO  remove
-            else:
-                has_more = False
-
-            last_visited = datetime.now(timezone.utc)
-
-            for item in data['hits']:
-
-                if item['id'] in fetched_projects:
-                    if fetched_projects[item['id']] > last_visited.timestamp() - timedelta(days=30).total_seconds():
-                        thingiverse_logger.info('Skipping: Project already fetched')
-                        continue
-
-                projects_counter += 1
-                thingiverse_logger.info(f"Convert item {item.get('name')}..")
-
-                item['lastVisited'] = last_visited
-                item["fetcher"] = self.NAME
-
-                single_project = self._fetch_raw(item['id'])
-                complete_project = {**item, **single_project}
-
-                project = self._normalizer.normalize(complete_project)
+                project = self._normalizer.normalize(thing)
                 if not project:
-                    thingiverse_logger.warning("project with name %s could not be normalized", complete_project['name'])
+                    thingiverse_logger.warning("project with name %s could not be normalized", thing['name'])
                     continue
 
-                catch_license(single_project['license'])
+                projects_counter += 1
+
+                catch_license(thing['license'])
                 thingiverse_logger.debug("%d yield project %s", projects_counter, project.id)
+                thingiverse_logger.info("%d requests triggered", self._request_counter)
                 print_licenses()
-                fetched_projects.update({item['id']: last_visited.timestamp()})
                 yield project
 
-            # save current progress
-            self._state_repository.store(self.NAME, {
-                "page": page,
-                "fetched_projects": fetched_projects
-            })
+                # save current progress
+                self._state_repository.store(self.NAME, {
+                    "id_cursor": id_cursor,
+                })
+
+            except FetchingException as e:
+                thingiverse_logger.info(e)
+                continue
 
         # self._state_repository.delete(self.NAME)
-
-    def _fetch_raw(self, thingiverse_id: str) -> dict:
-
-        response = self._session.get(
-            url=f"https://api.thingiverse.com/things/{thingiverse_id}",
-        )
-
-        if response.status_code > 205:
-            raise FetchingException(f"failed to fetch project from Thingiverse: {response.text}")
-
-        return response.json()

@@ -83,7 +83,7 @@ class ThingiverseNormalizer(Normalizer):
             project.software = []
             return project
         except Exception as e:
-            log.warning(e.with_traceback())
+            log.warning(e.with_traceback(None))
             log.debug(raw)
             return None
 
