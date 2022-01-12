@@ -1,4 +1,0 @@
-#!/bin/bash
-set -e
-
-find $KRAWLER_WORKDIR -name normalized.toml -exec python  -m krawl.rdf {} +
