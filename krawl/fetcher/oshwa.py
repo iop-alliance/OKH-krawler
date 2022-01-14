@@ -122,5 +122,9 @@ class OshwaFetcher(Fetcher):
                 item["fetcher"] = self.NAME
 
                 project = self._normalizer.normalize(item)
+
+                if project is None:
+                    continue
+
                 oshwa_logger.debug("yield project %s", project.id)
                 yield project

@@ -1,10 +1,21 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 
 from krawl.licenses import License, get_by_id_or_name
 from krawl.platform_url import PlatformURL
+
+
+class UploadMethods(Enum):
+    AUTO = "auto"  # via api direct
+    MANIFEST = "manifest"  # via api and manifest
+    MANIFEST_SCRIPT = "manifest-script"  # via script
+    MANUAL = "manual"
+
+    def __str__(self):
+        return self.value
 
 
 class UploadMethods(Enum):
@@ -99,11 +110,14 @@ class Project:
         self.user_manual: File = None
         self.part: list[Part] = []
         self.software: list[Software] = []
+        self.upload_method = None
+        self.source = []
+        self.export = []
 
         self.specific_api_data = dict()
 
     @classmethod
-    def from_dict(cls, data: dict) -> Project:
+    def from_dict(cls, data: dict) -> Project | None:
         if data is None:
             return None
         project = cls()
@@ -134,6 +148,7 @@ class Project:
         project.part = [Part.from_dict(p) for p in data.get("part", [])]
         project.software = [Software.from_dict(s) for s in data.get("software", [])]
         project.specific_api_data = data.get('specific_api_data')
+        project.upload_method = data.get('upload_method')
         return project
 
     def as_dict(self) -> dict:
@@ -165,7 +180,8 @@ class Project:
             "user-manual": self.user_manual.as_dict() if self.user_manual is not None else None,
             "part": [p.as_dict() for p in self.part],
             "software": [s.as_dict() for s in self.software],
-            "specific_api_data": self.specific_api_data
+            "specific_api_data": self.specific_api_data,
+            "upload_method": self.upload_method.value
         }
 
     @property

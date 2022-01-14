@@ -60,5 +60,13 @@ def get_formats(type_):
     return _formats[type_]
 
 
+def get_type_from_extension(ext) -> FileFormat | None:
+    for index in _formats.keys():
+        if ext in _formats[index]:
+            return _formats[index][ext]
+
+    return None
+
+
 # preload the file formats on import
 _init_file_formats()

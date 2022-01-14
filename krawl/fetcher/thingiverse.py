@@ -1,6 +1,7 @@
 import logging
 import math
 from datetime import datetime, timezone, timedelta
+from time import sleep
 from typing import Generator
 
 import requests
@@ -101,7 +102,11 @@ class ThingiverseFetcher(Fetcher):
     def fetch(self, id: ProjectID) -> Project:
         pass
 
-    def _do_request(self, url, params = {}):
+    def _do_request(self, url, params=None):
+
+        if params is None:
+            params = dict()
+
         response = self._session.get(
             url=url,
             params=params
@@ -113,12 +118,15 @@ class ThingiverseFetcher(Fetcher):
         if response.status_code > 205:
             raise FetchingException(f"failed to fetch projects from Thingiverse: {response.text}")
 
+        sleep(1)  # one request per second rate limit
+
         return response.json()
 
     def fetch_all(self, start_over=False) -> Generator[Project, None, None]:
 
         id_cursor = 0
         projects_counter = 0
+        fetch_things_ids = []
 
         if start_over:
             self._state_repository.delete(self.NAME)
@@ -126,21 +134,17 @@ class ThingiverseFetcher(Fetcher):
             state = self._state_repository.load(self.NAME)
             if state:
                 id_cursor = state.get("id_cursor", 1)
-
-        # the approach
-        #
-        # * at the moment the search of thingiverse does not work for any license bug?
-        # * limit of 10000 hits
-        # * the search results dont have all need information
-        # * we need to query every project to obtain the description,
+                fetch_things_ids = state.get("fetch_things_ids", [])
 
         data = self._do_request("https://api.thingiverse.com/search",
                                 {'sort': 'newest', "type": "things", "per_page": 1})
 
-        last_thing_id = data['hits'].pop(0)['id']
+        last_thing_id = data["hits"].pop(0)["id"]
         last_visited = datetime.now(timezone.utc)
 
         while id_cursor < last_thing_id:
+
+            fetch_things_ids.append(id_cursor)
             id_cursor += 1
             thingiverse_logger.info("Try to fetch thing with id %d", id_cursor)
             try:
@@ -148,8 +152,11 @@ class ThingiverseFetcher(Fetcher):
 
                 thingiverse_logger.info(f"Convert thing {thing.get('name')}..")
 
+                thing_files = self._do_request(f"https://api.thingiverse.com/things/{last_thing_id}/files")
+
                 thing['lastVisited'] = last_visited
                 thing["fetcher"] = self.NAME
+                thing["files"] = thing_files
 
                 project = self._normalizer.normalize(thing)
                 if not project:
@@ -167,10 +174,10 @@ class ThingiverseFetcher(Fetcher):
                 # save current progress
                 self._state_repository.store(self.NAME, {
                     "id_cursor": id_cursor,
+                    "fetch_things_ids": fetch_things_ids
                 })
 
             except FetchingException as e:
-                thingiverse_logger.info(e)
+                thingiverse_logger.warning(e)
                 continue
 
-        # self._state_repository.delete(self.NAME)

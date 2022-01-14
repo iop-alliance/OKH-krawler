@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import logging
 import urllib.parse
+from datetime import datetime
 
 from langdetect import LangDetectException
 from langdetect import detect as detect_language
 
 import krawl.licenses as licenses
 from krawl.normalizer import Normalizer, strip_html
-from krawl.project import Project
+from krawl.project import Project, UploadMethods
 
 log = logging.getLogger("oshwa-normalizer")
+log.setLevel(logging.DEBUG)
 
 LICENSE_MAPPING = {
     "CC-BY-4.0": "CC-BY-4.0",
@@ -54,32 +56,44 @@ LICENSE_MAPPING = {
 
 class OshwaNormalizer(Normalizer):
 
-    def normalize(self, raw: dict) -> Project:
+    def normalize(self, raw: dict) -> Project | None:
 
-        project = Project()
-        project.meta.source = raw["fetcher"]
-        project.meta.host = raw["fetcher"]
-        project.meta.owner = raw["responsibleParty"]
-        project.meta.repo = self._normalize_repo(raw)
-        project.meta.last_visited = raw["lastVisited"]
+        try:
+            project = Project()
+            project.meta.source = self._get_key(raw, "fetcher")
+            project.meta.host = self._get_key(raw, "fetcher")
+            project.meta.owner = self._get_key(raw, "responsibleParty")
+            project.meta.repo = self._normalize_repo(raw)
+            project.meta.last_visited = self._get_key(raw, "lastVisited")
 
-        log.debug("normalizing '%s'", project.id)
-        project.name = raw["projectName"]
-        project.repo = self._normalize_repo(raw)
-        project.version = urllib.parse.quote(self._get_key(raw, 'projectVersion', default="1.0.0"))
-        project.release = ""
-        project.license = self._normalize_license(raw)
-        project.licensor = raw['responsibleParty']
+            log.debug("normalizing '%s'", project.id)
+            project.name = self._get_key(raw, "projectName")
+            project.repo = self._normalize_repo(raw)
+            project.version = urllib.parse.quote(self._get_key(raw, 'projectVersion', default="1.0.0"))
+            project.license = self._normalize_license(raw)
+            project.licensor = self._get_key(raw, 'responsibleParty')
 
-        project.function = self._normalize_function(raw)
-        project.documentation_language = self._normalize_language(project.function)
-        project.documentation_readiness_level = "Odrl3Star"
-        project.cpc_patent_class = self._normalize_classification(raw)
+            project.function = self._normalize_function(raw)
+            project.documentation_language = self._normalize_language(project.function)
+            project.documentation_readiness_level = "Odrl3Star"
+            project.cpc_patent_class = self._normalize_classification(raw)
+            project.upload_method = UploadMethods.AUTO
 
-        project.specific_api_data['test'] = 'SpeificData'
-        project.specific_api_data['test2'] = 'SpeificData2'
+            project.specific_api_data['primaryType'] = self._get_key(raw, 'primaryType')
+            project.specific_api_data['additionalType'] = self._get_key(raw, 'additionalType')
+            project.specific_api_data['hardwareLicense'] = self._get_key(raw, 'hardwareLicense')
+            project.specific_api_data['softwareLicense'] = self._get_key(raw, 'softwareLicense')
+            project.specific_api_data['documentationLicense'] = self._get_key(raw, 'documentationLicense')
+            project.specific_api_data['country'] = self._get_key(raw, 'country')
 
-        return project
+            certification_date = self._get_key(raw, "certificationDate")
+            if certification_date:
+                project.specific_api_data['certificationDate'] = datetime.strptime(certification_date,
+                                                                 "%Y-%m-%dT%H:%M%z")
+            return project
+        except Exception as e:
+            log.warning("Raw Oshwa data could not be normalized: %s", e)
+            return None
 
     @staticmethod
     def _get_key(obj, *key, default=None):

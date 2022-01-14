@@ -220,7 +220,8 @@ class RDFProjectSerializer(ProjectSerializer):
                     project.specific_api_data[index])
 
         for index in project.specific_api_data:
-            cls.add(graph, module_subject, URIRef(f"https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl#{index}"),
+            cls.add(graph, module_subject,
+                    URIRef(f"https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl#{index}"),
                     project.specific_api_data[index])
 
         return module_subject
