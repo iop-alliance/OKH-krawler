@@ -222,8 +222,7 @@ class WikifactoryFetcher(Fetcher):
         # client for GRAPHQL requests
         self._transport = RequestsHTTPTransport(
             url="https://wikifactory.com/api/graphql",
-            headers={"User-Agent": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH"
-                    },  #FIXME: use user agent defined in config
+            headers={"User-Agent": config.user_agent},
             verify=True,
             retries=retries,
             timeout=timeout or 10,

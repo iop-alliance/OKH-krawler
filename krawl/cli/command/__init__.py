@@ -6,9 +6,8 @@ from collections.abc import Mapping
 from cleo import Command
 from clikit.api.args.format import Option
 
-from krawl.config import (CliConfigLoader, Config, MergedConfigLoader, YamlFileConfigLoader, get_assembled_schema,
+from krawl.config import (CliConfigLoader, Config, KrawlerConfigLoader, YamlFileConfigLoader, get_assembled_schema,
                           iterate_schema)
-from krawl.exceptions import ConfigException
 from krawl.fetcher.factory import FetcherFactory
 from krawl.repository.factory import ProjectRepositoryFactory
 
@@ -46,7 +45,7 @@ class KrawlCommand(Command):
         cli_config_loader = CliConfigLoader(config_schema, cli_options)
         yaml_config_loader = YamlFileConfigLoader(config_schema, self.option("config"))
         # the order specifies the priority of the options (CLI before file)
-        config = MergedConfigLoader(config_schema, cli_config_loader, yaml_config_loader).load()
+        config = KrawlerConfigLoader(config_schema, cli_config_loader, yaml_config_loader).load()
 
         return config
 

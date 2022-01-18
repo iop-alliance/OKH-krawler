@@ -82,7 +82,35 @@ BASE_SCHEMA = {
         "type": "dict",
         "default": {},
         # defined by the individual fetchers
-        "schema": {},
+        "schema": {
+            "defaults": {
+                "type": "dict",
+                "default": {},
+                "meta": {
+                    "long_name": "fetchers",
+                },
+                "schema": {
+                    "timeout": {
+                        "type": "integer",
+                        "nullable": True,
+                        "min": 1,
+                        "meta": {
+                            "long_name": "timeout",
+                            "description": "Max seconds to wait for a not responding service"
+                        }
+                    },
+                    "retries": {
+                        "type": "integer",
+                        "nullable": True,
+                        "min": 0,
+                        "meta": {
+                            "long_name": "retries",
+                            "description": "Number of retries of requests in cases of network errors"
+                        }
+                    },
+                },
+            }
+        },
     },
 }
 
@@ -183,20 +211,21 @@ def iterate_schema(schema: Mapping,
             yield (key_path + [key], rules)
 
 
-def validate(config: Mapping, schema: Mapping, ignore_required=False) -> tuple[Mapping, list[str]]:
+def validate(config: Mapping, schema: Mapping, middle_stage=False) -> tuple[Mapping, list[str]]:
     """Normalize and validate a config against a given schema.
 
     Args:
         config (Mapping): Config to normalize and validate.
         schema (Mapping): Schema used for validation.
+        middle_stage (bool): If True, default values and 'required' checks are ignored.
 
     Returns:
         tuple(Mapping, list[str]): Tuple of normalized/validated config and
             reasons why the validation failed.
     """
-    validator = ConfigValidator(schema)
+    validator = ConfigValidator(schema, ignore_defaults=middle_stage)
     reasons = []
-    if not validator.validate(config, update=ignore_required):
+    if not validator.validate(config, update=middle_stage):
         errors = validator.errors
         for error in errors:
             path = ".".join(error["path"])
@@ -338,6 +367,7 @@ class ConfigValidator(Validator):
         self.types_mapping['path'] = TypeDefinition('path', (Path,), ())
 
         super().__init__(*args, **kwargs)
+        self.ignore_defaults = kwargs.get("ignore_defaults", False)
         self.purge_unknown = kwargs.get("purge_unknown", True)
         self.auto_coerce = kwargs.get("auto_coerce", True)
         self.error_handler = self.FlatErrorHandler()
@@ -410,8 +440,9 @@ class ConfigValidator(Validator):
 
     def _normalize_default(self, mapping: Mapping, schema: Mapping, field: str) -> None:
         """ {'nullable': True} """
-        value = schema[field]['default']
-        if value is missing:
+        if self.ignore_defaults:
+            return
+        elif schema[field]['default'] is missing:
             self._error(field, REQUIRED_FIELD)
         else:
             mapping[field] = schema[field]['default']
@@ -511,9 +542,9 @@ class CliConfigLoader(ConfigLoader):
         self._config = {} if config is None else config
 
     def load(self) -> Config:
-        validated, reasons = validate(self._config, self._schema, ignore_required=True)
+        validated, reasons = validate(self._config, self._schema, middle_stage=True)
         if reasons:
-            raise ConfigException(f"Invalid option '{reasons[0]}'")
+            raise ConfigException(f"Invalid option '{reasons[0]}'", reasons)
         return Config(validated)
 
 
@@ -537,18 +568,22 @@ class YamlFileConfigLoader(ConfigLoader):
             with self._path.open("r") as f:
                 raw = yaml.safe_load(f) or {}
         except OSError as e:
-            raise ConfigException(f"Failed to load YAML config: {e}") from e
+            raise ConfigException(f"Failed to load YAML config: {e}", reasons=str(e)) from e
 
         # normalize and validate the yaml content
-        validated, reasons = validate(raw, self._schema, ignore_required=True)
+        validated, reasons = validate(raw, self._schema, middle_stage=True)
         if reasons:
-            raise ConfigException("There is one or more errors in the configuration file '{}':\n    {}".format(
-                self._path, "\n    ".join(reasons)))
+            raise ConfigException(
+                "There is one or more errors in the configuration file '{}':\n    {}".format(
+                    self._path, "\n    ".join(reasons)),
+                reasons,
+            )
         return Config(validated)
 
 
-class MergedConfigLoader(ConfigLoader):
-    """Merge multiple ConfigLoaders.
+class KrawlerConfigLoader(ConfigLoader):
+    """Merge multiple ConfigLoaders and apply app specific transformation to the
+    config.
 
     Args:
         *loaders (ConfigLoader): Loaders to be merged into one.
@@ -570,9 +605,27 @@ class MergedConfigLoader(ConfigLoader):
                 if value != missing:
                     merged[key_path] = value
 
+        # add defaults to fetchers (before validation)
+        fetchers_config = merged.fetchers
+        fetchers_defaults = merged.fetchers.get("defaults", {})
+        for name in fetchers_config:
+            if name != "defaults":
+                for option, default_value in fetchers_defaults.items():
+                    if fetchers_config[name].get(option, missing) == missing:
+                        fetchers_config[name][option] = default_value
+
         # normalize and validate the merged configs
-        validated, reasons = validate(merged, self._schema, ignore_required=False)
+        validated, reasons = validate(merged, self._schema)
         if reasons:
-            raise ConfigException("There is one or more errors in the configuration:\n    {}".format(
-                "\n    ".join(reasons)))
+            raise ConfigException(
+                "There is one or more errors in the configuration:\n    {}".format("\n    ".join(reasons)),
+                reasons,
+            )
+
+        # add user_agent to each fetchers config (after validation)
+        fetchers_config = validated.fetchers
+        for name in fetchers_config:
+            if name != "defaults":
+                fetchers_config[name]["user_agent"] = validated.user_agent
+
         return Config(validated)

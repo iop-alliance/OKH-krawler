@@ -3,7 +3,10 @@ class KrawlerException(Exception):
 
 
 class ConfigException(KrawlerException):
-    pass
+
+    def __init__(self, msg: str, reasons: list[str]) -> None:
+        super().__init__(msg)
+        self.reasons = reasons
 
 
 class NormalizationException(KrawlerException):

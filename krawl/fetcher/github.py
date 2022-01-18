@@ -184,7 +184,7 @@ class GitHubFetcher(Fetcher):
         self._transport = RequestsHTTPTransportRetries(
             url="https://api.github.com/graphql",
             headers={
-                "User-Agent": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH",  #FIXME: use user agent defined in config
+                "User-Agent": config.user_agent,
                 "Authorization": f"bearer {config.access_token}",
             },
             verify=True,
@@ -203,7 +203,7 @@ class GitHubFetcher(Fetcher):
             HTTPAdapter(max_retries=retry),
         )
         self._session.headers.update({
-            "User-Agent": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH",  #FIXME: use user agent defined in config
+            "User-Agent": config.user_agent,
             "Authorization": f"token {config.access_token}",
         })
 
