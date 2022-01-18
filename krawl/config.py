@@ -120,29 +120,8 @@ missing = type("MissingType", (), {"__repr__": lambda x: "missing"})()
 
 def get_assembled_schema(fetchers_schema, repositories_schema):
     full_schema = deepcopy(BASE_SCHEMA)
-    # fetchers_schema_wrap = {}
-    # for name, schema in fetchers_schema.items():
-    #     fetchers_schema_wrap[name] = {
-    #         "type": "dict",
-    #         "default": {},
-    #         "meta": {
-    #             "long_name": name,
-    #         },
-    #         "schema": schema,
-    #     }
-    # full_schema["fetchers"]["schema"] = fetchers_schema_wrap
-    full_schema["fetchers"]["schema"] = fetchers_schema
-
-    # repositories_schema_wrap = {}
-    # for name, schema in repositories_schema.items():
-    #     repositories_schema_wrap[name] = {
-    #         "type": "dict",
-    #         "default": {},
-    #         "schema": schema,
-    #     }
-    # full_schema["repositories"]["schema"] = repositories_schema_wrap
-    full_schema["repositories"]["schema"] = repositories_schema
-
+    full_schema["fetchers"]["schema"].update(fetchers_schema)
+    full_schema["repositories"]["schema"].update(repositories_schema)
     return full_schema
 
 
@@ -415,26 +394,6 @@ class ConfigValidator(Validator):
                         schema[field]["coerce"] = "datetime"
                     elif type_ == "path":
                         schema[field]["coerce"] = "path"
-
-                    # try:
-                    #     if type_ == "boolean":
-                    #         mapping[field] = bool(strtobool(value))
-                    #         schema[field]["coerce"] = "boolean"
-                    #     elif type_ == "datetime":
-                    #         mapping[field] = datetime.fromisoformat(value)
-                    #     elif type_ == "float":
-                    #         mapping[field] = float(value)
-                    #     elif type_ == "integer":
-                    #         mapping[field] = int(value)
-                    #     elif type_ == "list":
-                    #         mapping[field] = list(map(lambda vi: vi.strip(), value.split(';')))
-                    #     elif type_ == "set":
-                    #         mapping[field] = set(map(lambda vi: vi.strip(), value.split(';')))
-                    #     else:
-                    #         raise _SchemaRuleTypeError(f"unknown type '{type_}'")
-                    # except ValueError as e:
-                    #     return self._error(field, COERCION_FAILED, str(e))
-                    #     return
 
         super()._normalize_coerce(mapping, schema)
 

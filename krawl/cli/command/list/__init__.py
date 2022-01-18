@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from krawl.cli.command import KrawlCommand
 from krawl.cli.command.list.fetchers import ListFetchersCommand
 

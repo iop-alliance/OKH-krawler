@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from krawl.cli.command import KrawlCommand
 from krawl.cli.command.validate.config import ValidateConfigCommand
 from krawl.cli.command.validate.manifest import ValidateManifestCommand
