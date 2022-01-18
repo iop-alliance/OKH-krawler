@@ -17,6 +17,7 @@ from clikit.io.output_stream import ErrorOutputStream, StandardOutputStream
 from clikit.resolver.help_resolver import HelpResolver
 
 from krawl import __version__
+from krawl.cli.command.convert import ConvertManifestCommand
 from krawl.cli.command.fetch import FetchCommand
 from krawl.cli.command.list import ListCommand
 from krawl.log import configure_logger
@@ -31,6 +32,7 @@ class Application(BaseApplication):
         super().__init__(config=config)
 
         # add commands
+        self.add(ConvertManifestCommand())
         self.add(FetchCommand())
         self.add(ListCommand())
 
