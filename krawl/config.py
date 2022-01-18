@@ -64,7 +64,8 @@ BASE_SCHEMA = {
         "type": "string",
         "coerce": "strip_str",
         "default": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH",
-        "min": 1,
+        "nullable": False,
+        "empty": False,
         "meta": {
             # used in CLI
             "long_name": "user-agent",
