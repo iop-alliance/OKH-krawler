@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 
 import validators
+from langcodes import tag_is_valid
 
 from krawl.project import Project
 
@@ -12,11 +13,6 @@ _semver_pattern = re.compile(
 )
 _sha1_pattern = re.compile(r"^[A-Fa-f0-9]{40}$")
 _sha256_pattern = re.compile(r"^[A-Fa-f0-9]{64}$")
-_known_languages = [
-    "af", "ar", "bg", "bn", "ca", "cs", "cy", "da", "de", "el", "en", "es", "et", "fa", "fi", "fr", "gu", "he", "hi",
-    "hr", "hu", "id", "it", "ja", "kn", "ko", "lt", "lv", "mk", "ml", "mr", "ne", "nl", "no", "pa", "pl", "pt", "ro",
-    "ru", "sk", "sl", "so", "sq", "sv", "sw", "ta", "te", "th", "tl", "tr", "uk", "ur", "vi", "zh-cn", "zh-tw"
-]
 
 
 @validators.utils.validator
@@ -39,6 +35,19 @@ def version(value):
 
     # doesn't match any accepted patterns
     return False
+
+
+@validators.utils.validator
+def okh_version(value):
+    """Return whether or not given value is a valid BCP 47 language tag."""
+    known_versions = ["okhv1.0", "okh-loshv1.0"]
+    return value.lower() in known_versions
+
+
+@validators.utils.validator
+def bcp_47_language_tag(value):
+    """Return whether or not given value is a valid BCP 47 language tag."""
+    return tag_is_valid(value)
 
 
 @validators.utils.validator

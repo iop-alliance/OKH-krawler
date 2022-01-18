@@ -6,8 +6,8 @@ from typing import Any
 import validators
 
 from krawl.fetcher.factory import FetcherFactory
-from krawl.project import Project
-from krawl.validator import Validator, _known_languages, non_zero_length_string, version
+from krawl.project import File, Project
+from krawl.validator import Validator, bcp_47_language_tag, non_zero_length_string, okh_version, version
 
 
 class StrictValidator(Validator):
@@ -15,22 +15,33 @@ class StrictValidator(Validator):
     def validate(self, project: Project) -> tuple[bool, list[str]]:
         reasons = []
         # meta data
-        reasons.extend(self._validate_string("meta.source", project.meta.source))
+        reasons.extend(_validate_string("meta.source", project.meta.source))
         if project.meta.source and not FetcherFactory.is_fetcher_available(project.meta.source):
             reasons.append(f"no fetcher for '{project.meta.source}' available")
-        reasons.extend(self._validate_string("meta.host", project.meta.host))
-        reasons.extend(self._validate_string("meta.owner", project.meta.owner, min=3, max=256))
-        reasons.extend(self._validate_string("meta.repo", project.meta.repo, min=3, max=256))
+        reasons.extend(_validate_string("meta.owner", project.meta.owner, min=1, max=256))
+        reasons.extend(_validate_string("meta.repo", project.meta.repo, min=1, max=256))
 
         # spec conformance
-        reasons.extend(self._validate_string("name", project.name, min=3, max=256))
-        reasons.extend(self._validate_url("repo", project.repo))
-        # reasons.extend(self._validate_url("image", project.image, missing_ok=True))
-        reasons.extend(self._validate_string("functional description", project.function, min=1, max=100000))
-        reasons.extend(self._validate_string("licensor", project.licensor, min=3, max=256))
-        reasons.extend(self._validate_string("organization", project.organization, min=3, max=256, missing_ok=True))
-        # reasons.extend(self._validate_url("readme", project.readme))
-        # reasons.extend(self._validate_in_list("language code", project.documentation_language, _known_languages)) #TODO: need to add more codes
+        if not non_zero_length_string(project.okhv):
+            reasons.append("missing okhv")
+        elif not okh_version(project.okhv):
+            reasons.append(f"invalid okhv '{project.okhv}'")
+        reasons.extend(_validate_string("name", project.name, min=1, max=256))
+        reasons.extend(_validate_url("repo", project.repo))
+        reasons.extend(_validate_file("image", project.image, missing_ok=True))
+        reasons.extend(_validate_string("functional description", project.function, min=1, max=100000))
+        reasons.extend(_validate_string("licensor", project.licensor, min=1, max=256))
+        reasons.extend(_validate_string("organization", project.organization, min=1, max=256, missing_ok=True))
+        reasons.extend(_validate_file("readme", project.readme, missing_ok=True))
+        reasons.extend(_validate_file("bom", project.bom, missing_ok=True))
+        reasons.extend(_validate_file("manufacturing_instructions", project.manufacturing_instructions,
+                                      missing_ok=True))
+        reasons.extend(_validate_file("user_manual", project.user_manual, missing_ok=True))
+
+        if not non_zero_length_string(project.documentation_language):
+            reasons.append("missing documentation language")
+        elif not bcp_47_language_tag(project.documentation_language):
+            reasons.append(f"invalid language tag '{project.documentation_language}'")
 
         if not non_zero_length_string(project.version):
             reasons.append("missing version")
@@ -52,38 +63,55 @@ class StrictValidator(Validator):
             return False, reasons
         return True, None
 
-    @staticmethod
-    def _validate_in_list(title: str, value: Any, in_: Iterable, missing_ok=False) -> list[str]:
-        if value is None:
-            if missing_ok:
-                return []
-            return [f"missing {title}"]
-        if not value in in_:
-            return [f"{title} '{value}' is unknown"]
-        return []
 
-    @staticmethod
-    def _validate_string(title: str, string: str, min=None, max=None, missing_ok=False) -> list[str]:
-        if string is None:
-            if missing_ok:
-                return []
-            return [f"missing {title}"]
-        if not isinstance(string, str):
-            return [f"{title} must be of type string"]
-        if min is not None and len(string) < min:
-            return [f"{title} is to short (<{min})"]
-        if max is not None and len(string) > max:
-            return [f"{title} is to long (>{max})"]
-        return []
+def _validate_in_list(title: str, value: Any, in_: Iterable, missing_ok=False) -> list[str]:
+    if value is None:
+        if missing_ok:
+            return []
+        return [f"missing {title}"]
+    if not value in in_:
+        return [f"{title} '{value}' is unknown"]
+    return []
 
-    @staticmethod
-    def _validate_url(title: str, url: str, missing_ok=False) -> list[str]:
-        if url is None:
-            if missing_ok:
-                return []
-            return [f"missing {title}"]
-        if not isinstance(url, str):
-            return [f"{title} must be of type string"]
-        if not validators.url(url):
-            return [f"{title} must be a valid URL"]
-        return []
+
+def _validate_string(title: str, string: str, min=None, max=None, missing_ok=False) -> list[str]:
+    if string is None:
+        if missing_ok:
+            return []
+        return [f"missing {title}"]
+    if not isinstance(string, str):
+        return [f"{title} must be of type string"]
+    if min is not None and len(string) < min:
+        return [f"{title} is to short (<{min})"]
+    if max is not None and len(string) > max:
+        return [f"{title} is to long (>{max})"]
+    return []
+
+
+def _validate_url(title: str, url: str, missing_ok=False) -> list[str]:
+    if url is None:
+        if missing_ok:
+            return []
+        return [f"missing {title}"]
+    if not isinstance(url, str):
+        return [f"{title} must be of type string"]
+    if not validators.url(url):
+        return [f"{title} must be a valid URL"]
+    return []
+
+
+def _validate_file(title: str, file: File, missing_ok=False) -> list[str]:
+    if file is None:
+        if missing_ok:
+            return []
+        return [f"missing {title}"]
+    if not isinstance(file, File):
+        return [f"{title} must be of type file"]
+
+    reasons = []
+    reasons.extend(_validate_string(title + ".name", file.name, min=1, max=256))
+    reasons.extend(_validate_url(title + ".url", file.url))
+    reasons.extend(_validate_url(title + ".perma_url", file.perma_url))
+    #TODO: validate other fields of files
+
+    return reasons
