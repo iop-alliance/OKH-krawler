@@ -71,15 +71,6 @@ BASE_SCHEMA = {
             "description": "Agent name used for requesting remote resources"
         },
     },
-    "start_over": {
-        "type": "boolean",
-        "default": True,
-        "meta": {
-            # used in CLI
-            "long_name": "start-over",
-            "description": "Don't start at last saved state"
-        },
-    },
     "repositories": {
         "type": "dict",
         "default": {},

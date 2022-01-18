@@ -30,6 +30,11 @@ class FetcherXCommand(KrawlCommand):
             f"Repository to save the projects to (available: {', '.join(FetcherFactory.list_available_fetchers())})",
         )
         self._config.add_option(
+            long_name="start-over",
+            flags=Option.NO_VALUE,
+            description="Don't start at last saved state",
+        )
+        self._config.add_option(
             long_name="report",
             flags=Option.REQUIRED_VALUE,
             description="Path of reporting file",
