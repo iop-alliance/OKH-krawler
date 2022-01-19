@@ -1,0 +1,28 @@
+user_agent: "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH"  # (opt)
+
+# for crawler state
+database:
+  type: file       # (opt) nothing else implemented
+  path: ./workdir  # (opt)
+
+repositories:
+  file:
+    workdir: ./workdir  # (opt)
+  wikibase:
+    url: "https://losh.ose-germany.de"  # (req)
+    client_id: xxxxxxxxxx               # (req) in Mediawiki displayed as "Client application key"
+    client_secret: xxxxxxxxxx           # (req) in Mediawiki displayed as "Client application secret"
+    token_url: "https://losh.ose-germany.de/rest.php/oauth2/access_token" # (req)
+    reconcile_property: P68             # (req)
+
+fetchers:
+  defaults:      # (opt) default values for fetchers
+    retries: 3   # (opt) default number of retries
+    timeout: 10  # (opt) default request timeout
+  wikifactory.com:
+    retries: 3   # (opt) fetcher specific number of retries
+    timeout: 15  # (opt) fetcher specific request timeout
+  github.com:
+    retries: 3   # (opt) fetcher specific number of retries
+    timeout: 15  # (opt) fetcher specific request timeout
+    access_token: xxxxxxxxxx  # (req) personal access token to use the GitHub API
