@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 
+import toml
+import yaml
+
 from krawl.cli.command import KrawlCommand
+from krawl.exceptions import NotAManifest
+from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.serializer.rdf import RDFProjectSerializer
 from krawl.serializer.toml import TOMLProjectSerializer
 from krawl.serializer.yaml import YAMLProjectSerializer
@@ -36,17 +42,24 @@ class ConvertManifestCommand(KrawlCommand):
         # parse manifest file
         suffix = convert_from.suffix.lower()
         if suffix in [".yml", ".yaml"]:
-            serializer = YAMLProjectSerializer()
+            loader = yaml.safe_load
         elif suffix == ".toml":
-            serializer = TOMLProjectSerializer()
+            loader = toml.loads
         elif suffix == ".ttl":
             raise Exception("Turtle RDF can currently not be converted into a different format")
-            serializer = RDFProjectSerializer()
         else:
             raise Exception(f"Unknown file type '{suffix}'")
         with convert_from.open("r") as f:
             content = f.read()
-        project = serializer.deserialize(content)
+
+        manifest = loader(content)
+        if not manifest:
+            raise NotAManifest("manifest file is empty")
+        if not isinstance(manifest, Mapping):
+            raise NotAManifest("manifest has invalid content")
+
+        normalizer = ManifestNormalizer()
+        project = normalizer.normalize(manifest)
 
         # serialize project in different format
         suffix = convert_to.suffix.lower()

@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import urlparse
-
-import validators
 
 from krawl.licenses import License, get_by_id_or_name
+from krawl.platform_url import PlatformURL
 
 
 class ProjectID:
@@ -35,37 +33,17 @@ class ProjectID:
 
     @classmethod
     def from_url(cls, url: str) -> ProjectID:
-        if not validators.url(url):
-            raise ValueError(f"invalid URL '{url}'")
-        parsed_url = urlparse(url)
-        platform = parsed_url.hostname
-        full_path = Path(parsed_url.path).relative_to("/")
+        pu = PlatformURL.from_url(url)
 
-        # platform specific parsing
-        if platform == "github.com" or platform == "raw.githubusercontent.com":
-            path_parts = full_path.parts
-            if len(path_parts) < 3:
-                raise ValueError(f"invalid manifest URL '{url}'")
-            owner = path_parts[0]
-            repo = path_parts[1]
-            if platform == "github.com" and path_parts[2] == "blob":
-                if len(path_parts) < 5:
-                    raise ValueError(f"invalid manifest URL '{url}'")
-                path = Path(*path_parts[4:])
-            elif platform == "raw.githubusercontent.com":
-                if len(path_parts) < 4:
-                    raise ValueError(f"invalid manifest URL '{url}'")
-                path = Path(*path_parts[3:])
-            else:
-                #TODO: are there any other GitHub URLs to consider?
-                raise ValueError(f"invalid manifest URL '{url}'")
-            return cls(platform, str(owner), str(repo), str(path))
+        if not pu.owner:
+            raise ValueError(f"could not extract owner from URL '{url}'")
+        if not pu.repo:
+            raise ValueError(f"could not extract repo from URL '{url}'")
 
-        # all other platforms
-        if not len(full_path.parts) == 2:
-            raise ValueError(f"invalid URL '{url}'")
-        owner, repo = full_path.parts
-        return cls(platform, str(owner), str(repo))
+        if pu.path:
+            return cls(pu.platform, pu.owner, pu.repo, str(pu.path))
+
+        return cls(pu.platform, pu.owner, pu.repo)
 
 
 class Project:
@@ -77,8 +55,7 @@ class Project:
         "meta", "okhv", "name", "repo", "version", "release", "license", "licensor", "organization", "readme",
         "contribution_guide", "image", "documentation_language", "technology_readiness_level",
         "documentation_readiness_level", "attestation", "publication", "function", "standard_compliance",
-        "cpc_patent_class", "tsdc", "bom", "manufacturing_instructions", "user_manual", "outer_dimensions_mm", "part",
-        "software"
+        "cpc_patent_class", "tsdc", "bom", "manufacturing_instructions", "user_manual", "part", "software"
     ]
 
     def __init__(self) -> None:
@@ -109,7 +86,6 @@ class Project:
         self.bom: File = None
         self.manufacturing_instructions: File = None
         self.user_manual: File = None
-        self.outer_dimensions_mm: str = None
         self.part: list[Part] = []
         self.software: list[Software] = []
 
@@ -142,7 +118,6 @@ class Project:
         project.bom = File.from_dict(data.get("bom"))
         project.manufacturing_instructions = File.from_dict(data.get("manufacturing-instructions"))
         project.user_manual = File.from_dict(data.get("user-manual"))
-        project.outer_dimensions_mm = data.get("outer-dimensions-mm", None)
         project.part = [Part.from_dict(p) for p in data.get("part", [])]
         project.software = [Software.from_dict(s) for s in data.get("software", [])]
         return project
@@ -174,7 +149,6 @@ class Project:
             "manufacturing-instructions": self.manufacturing_instructions.as_dict()
                                           if self.manufacturing_instructions is not None else None,
             "user-manual": self.user_manual.as_dict() if self.user_manual is not None else None,
-            "outer-dimensions-mm": self.outer_dimensions_mm,
             "part": [p.as_dict() for p in self.part],
             "software": [s.as_dict() for s in self.software],
         }
@@ -189,15 +163,15 @@ class Meta:
     """Metadata for internal use."""
 
     __slots__ = [
-        "source", "host", "owner", "repo", "path", "created_at", "last_visited", "last_changed", "history", "score"
+        "source", "owner", "repo", "path", "branch", "created_at", "last_visited", "last_changed", "history", "score"
     ]
 
     def __init__(self) -> None:
-        self.source: str = None  # where the manifest was found
-        self.host: str = None  # where the project is hosted
-        self.owner: str = None
-        self.repo: str = None
-        self.path: str = None
+        self.source: str = None  # where the project/manifest was found
+        self.owner: str = None  # owner of the repository
+        self.repo: str = None  # domain name of the repository
+        self.path: str = None  # path of project/manifest inside the repository
+        self.branch: str = None  # branch, in which the project/manifest was found
         self.created_at: datetime = None
         self.last_visited: datetime = None
         self.last_changed: datetime = None
@@ -211,10 +185,10 @@ class Meta:
             return None
         meta = cls()
         meta.source = data.get("source", None)
-        meta.host = data.get("host", None)
         meta.owner = data.get("owner", None)
         meta.repo = data.get("repo", None)
         meta.path = data.get("path", None)
+        meta.branch = data.get("branch", None)
         meta.created_at = _parse_date(data.get("created-at"))
         meta.last_visited = _parse_date(data.get("last-visited"))
         meta.last_changed = _parse_date(data.get("last-changed"))
@@ -225,10 +199,10 @@ class Meta:
     def as_dict(self) -> dict:
         return {
             "source": self.source,
-            "host": self.source,
             "owner": self.owner,
             "repo": self.repo,
             "path": self.path,
+            "branch": self.branch,
             "created-at": self.created_at.isoformat() if self.created_at is not None else None,
             "last-visited": self.last_visited.isoformat() if self.last_visited is not None else None,
             "last-changed": self.last_changed.isoformat() if self.last_changed is not None else None,
@@ -241,8 +215,8 @@ class Part:
     """Part data model."""
 
     __slots__ = [
-        "name", "image", "source", "export", "documentation_language", "material", "manufacturing_process",
-        "outer_dimensions_mm", "tsdc", "license", "licensor"
+        "name", "image", "source", "export", "auxiliary", "documentation_language", "material", "manufacturing_process",
+        "mass", "outer_dimensions", "tsdc", "license", "licensor"
     ]
 
     def __init__(self) -> None:
@@ -250,12 +224,14 @@ class Part:
         self.image: File = None
         self.source: File = None
         self.export: list[File] = []
+        self.auxiliary: list[File] = []
         self.license: License = None
         self.licensor: str = None
         self.documentation_language: str = None
         self.material: str = None
         self.manufacturing_process: str = None
-        self.outer_dimensions_mm: str = None
+        self.mass: Mass = None
+        self.outer_dimensions: OuterDimensions = None
         self.tsdc: str = None
 
     @classmethod
@@ -267,10 +243,12 @@ class Part:
         part.image = File.from_dict(data.get("image"))
         part.source = File.from_dict(data.get("source"))
         part.export = [File.from_dict(e) for e in data.get("export")]
+        part.auxiliary = [File.from_dict(e) for e in data.get("auxiliary")]
         part.documentation_language = data.get("documentation-language", None)
         part.material = data.get("material", None)
         part.manufacturing_process = data.get("manufacturing-process", None)
-        part.outer_dimensions_mm = data.get("outer-dimensions-mm", None)
+        part.mass = Mass.from_dict(data.get("mass"))
+        part.outer_dimensions = OuterDimensions.from_dict(data.get("outer-dimensions"))
         part.tsdc = data.get("tsdc", None)
         part.license = get_by_id_or_name(data.get("license", None))
         part.licensor = data.get("licensor", None)
@@ -282,24 +260,79 @@ class Part:
             "image": self.image.as_dict() if self.image is not None else None,
             "source": self.source.as_dict() if self.source is not None else None,
             "export": [e.as_dict() for e in self.export if e is not None],
+            "auxiliary": [e.as_dict() for e in self.auxiliary if e is not None],
             "documentation-language": self.documentation_language,
             "material": self.material,
             "manufacturing-process": self.manufacturing_process,
-            "outer-dimensions-mm": self.outer_dimensions_mm,
+            "mass": self.mass.as_dict() if self.mass is not None else None,
+            "outer-dimensions": self.outer_dimensions.as_dict() if self.outer_dimensions is not None else None,
             "tsdc": self.tsdc,
             "license": str(self.license),
             "licensor": self.licensor,
         }
 
 
+class Mass:
+    """Mass data model."""
+
+    __slots__ = ["value", "unit"]
+
+    def __init__(self) -> None:
+        self.value: float = None
+        self.unit: str = None
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Mass:
+        if data is None:
+            return None
+        mass = cls()
+        mass.value = data.get("value", None)
+        mass.unit = data.get("unit", None)
+        return mass
+
+    def as_dict(self) -> dict:
+        return {
+            "value": self.value,
+            "unit": self.unit,
+        }
+
+
+class OuterDimensions:
+    """OuterDimensions data model."""
+
+    __slots__ = ["openscad", "unit"]
+
+    def __init__(self) -> None:
+        self.openscad: str = None
+        self.unit: str = None
+
+    @classmethod
+    def from_dict(cls, data: dict) -> OuterDimensions:
+        if data is None:
+            return None
+        outer_dimensions = cls()
+        outer_dimensions.openscad = data.get("openscad", None)
+        outer_dimensions.unit = data.get("unit", None)
+        return outer_dimensions
+
+    def as_dict(self) -> dict:
+        return {
+            "openscad": self.openscad,
+            "unit": self.unit,
+        }
+
+
 class Software:
     """Software data model."""
 
-    __slots__ = ["release", "installation_guide"]
+    __slots__ = ["release", "installation_guide", "documentation_language", "license", "licensor"]
 
     def __init__(self) -> None:
         self.release: str = None
         self.installation_guide: File = None
+        self.documentation_language: str = None
+        self.license: License = None
+        self.licensor: str = None
 
     @classmethod
     def from_dict(cls, data: dict) -> Software:
@@ -308,12 +341,18 @@ class Software:
         software = cls()
         software.release = data.get("realease", None)
         software.installation_guide = File.from_dict(data.get("installation-guide"))
+        software.documentation_language = data.get("documentation-language", None)
+        software.license = get_by_id_or_name(data.get("license", None))
+        software.licensor = data.get("licensor", None)
         return software
 
     def as_dict(self) -> dict:
         return {
             "release": self.release,
             "installation-guide": self.installation_guide.as_dict() if self.installation_guide is not None else None,
+            "documentation-language": self.documentation_language,
+            "license": str(self.license),
+            "licensor": self.licensor,
         }
 
 

@@ -64,14 +64,14 @@ class WikifactoryNormalizer(Normalizer):
         project.repo = f"https://wikifactory.com/{raw['parentSlug']}/{raw['slug']}"
         project.version = self._get_key(raw, "contribution", "version")
         project.release = f"https://wikifactory.com/{raw['parentSlug']}/{raw['slug']}/v/{project.version[:7] if project.version else ''}"
-        project.license = self._normalize_license(raw)
+        project.license = self._license(raw)
         project.licensor = self._get_key(raw, "creator", "profile", "fullName")
-        project.organization = self._normalize_organization(raw)
+        project.organization = self._organization(raw)
         project.readme = self._get_info_file(["README"], files)
         project.contribution_guide = self._get_info_file(["CONTRIBUTING"], files)
-        project.image = self._normalize_image(raw)
-        project.function = self._normalize_function(raw)
-        project.documentation_language = self._normalize_language(project.function)
+        project.image = self._image(raw)
+        project.function = self._function(raw)
+        project.documentation_language = self._language(project.function)
         project.technology_readiness_level = None
         project.documentation_readiness_level = None
         project.attestation = None
@@ -83,7 +83,7 @@ class WikifactoryNormalizer(Normalizer):
         project.manufacturing_instructions = None
         project.user_manual = self._get_info_file(["USERGUIDE", "USERMANUAL"], files)
         project.outer_dimensions_mm = None
-        project.part = self._normalize_parts(files)
+        project.part = self._parts(files)
         project.software = []
 
         return project
@@ -100,14 +100,14 @@ class WikifactoryNormalizer(Normalizer):
         return last
 
     @classmethod
-    def _normalize_organization(cls, raw: dict):
+    def _organization(cls, raw: dict):
         parent_type = raw["parentContent"]["type"]
         if parent_type == "initiative":
             return raw["parentContent"]["title"]
         return None
 
     @classmethod
-    def _normalize_license(cls, raw: dict):
+    def _license(cls, raw: dict):
         raw_license = cls._get_key(raw, "license", "abreviation")  # must be spelled wrong, because it is in the schema
         if not raw_license:
             return None
@@ -115,7 +115,7 @@ class WikifactoryNormalizer(Normalizer):
         return license
 
     @classmethod
-    def _normalize_function(cls, raw: dict):
+    def _function(cls, raw: dict):
         raw_description = raw.get("description")
         if not raw_description:
             return ""
@@ -123,7 +123,7 @@ class WikifactoryNormalizer(Normalizer):
         return description
 
     @classmethod
-    def _normalize_language(cls, description: str):
+    def _language(cls, description: str):
         if not description:
             return "en"
         try:
@@ -135,10 +135,10 @@ class WikifactoryNormalizer(Normalizer):
         return lang
 
     @classmethod
-    def _parse_file(cls, file_raw: dict) -> File:
+    def _file(cls, file_raw: dict) -> File:
         file = File()
         file.path = Path(file_raw["filename"]) if "filename" in file_raw else None
-        file.name = file.path.stem if file.path else None
+        file.name = file.path.with_suffix("") if file.path else None
         file.mime_type = file_raw.get("mimeType", None)
         file.url = file_raw.get("url", None)
         file.perma_url = file_raw.get("permalink", None)
@@ -153,7 +153,7 @@ class WikifactoryNormalizer(Normalizer):
     def _get_files(cls, raw: dict) -> list[File]:
         raw_files = cls._get_key(raw, "contribution", "files", default=[])
         files = []
-        license = cls._normalize_license(raw)
+        license = cls._license(raw)
         for meta in raw_files:
             file_raw = meta.get("file")
             if not file_raw:
@@ -162,14 +162,14 @@ class WikifactoryNormalizer(Normalizer):
             if dir_name:
                 file_raw["path"] = f"{dir_name}/{file_raw['filename']}"
             file_raw["license"] = license
-            file = cls._parse_file(file_raw)
+            file = cls._file(file_raw)
             if file:
                 files.append(file)
 
         return files
 
     @classmethod
-    def _normalize_parts(cls, files: list[File]) -> list[Part]:
+    def _parts(cls, files: list[File]) -> list[Part]:
         # filter out readme and other files
         filtered = []
         for file in files:
@@ -237,11 +237,11 @@ class WikifactoryNormalizer(Normalizer):
         return parts
 
     @classmethod
-    def _normalize_image(cls, raw: dict) -> File:
+    def _image(cls, raw: dict) -> File:
         image_raw = raw.get("image", {})
         if not image_raw:
             return None
-        return cls._parse_file(image_raw)
+        return cls._file(image_raw)
 
     @classmethod
     def _get_info_file(cls, names, files) -> File:

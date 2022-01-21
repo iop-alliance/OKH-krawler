@@ -7,7 +7,7 @@ import validators
 
 from krawl.fetcher.factory import FetcherFactory
 from krawl.project import File, Project
-from krawl.validator import Validator, bcp_47_language_tag, non_zero_length_string, okh_version, version
+from krawl.validator import Validator, is_bcp_47_language_tag, is_non_zero_length_string, is_okh_version, is_version
 
 
 class StrictValidator(Validator):
@@ -22,9 +22,9 @@ class StrictValidator(Validator):
         reasons.extend(_validate_string("meta.repo", project.meta.repo, min=1, max=256))
 
         # spec conformance
-        if not non_zero_length_string(project.okhv):
+        if not is_non_zero_length_string(project.okhv):
             reasons.append("missing okhv")
-        elif not okh_version(project.okhv):
+        elif not is_okh_version(project.okhv):
             reasons.append(f"invalid okhv '{project.okhv}'")
         reasons.extend(_validate_string("name", project.name, min=1, max=256))
         reasons.extend(_validate_url("repo", project.repo))
@@ -38,12 +38,12 @@ class StrictValidator(Validator):
                                       missing_ok=True))
         reasons.extend(_validate_file("user_manual", project.user_manual, missing_ok=True))
 
-        if not non_zero_length_string(project.documentation_language):
+        if not is_non_zero_length_string(project.documentation_language):
             reasons.append("missing documentation language")
-        elif not bcp_47_language_tag(project.documentation_language):
+        elif not is_bcp_47_language_tag(project.documentation_language):
             reasons.append(f"invalid language tag '{project.documentation_language}'")
 
-        if not non_zero_length_string(project.version):
+        if not is_non_zero_length_string(project.version):
             reasons.append("missing version")
         # FIXME: version validation is deactivated for now
         # elif not version(project.version):
@@ -110,8 +110,8 @@ def _validate_file(title: str, file: File, missing_ok=False) -> list[str]:
 
     reasons = []
     reasons.extend(_validate_string(title + ".name", file.name, min=1, max=256))
-    reasons.extend(_validate_url(title + ".url", file.url))
-    reasons.extend(_validate_url(title + ".perma_url", file.perma_url))
+    reasons.extend(_validate_url(title + ".url", file.url, missing_ok=True))
+    reasons.extend(_validate_url(title + ".perma_url", file.perma_url, missing_ok=True))
     #TODO: validate other fields of files
 
     return reasons

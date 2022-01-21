@@ -7,6 +7,9 @@ from clikit.api.args.format import Option
 
 from krawl.cli.command import KrawlCommand
 from krawl.fetcher.factory import FetcherFactory
+from krawl.reporter import Status
+from krawl.reporter.dummy import DummyReporter
+from krawl.reporter.file import FileReporter
 from krawl.repository.factory import ProjectRepositoryFactory
 from krawl.repository.fetcher_state import FetcherStateRepositoryFile
 from krawl.validator.strict import StrictValidator
@@ -27,7 +30,7 @@ class FetcherXCommand(KrawlCommand):
             default=["file"],
             flags=Option.MULTI_VALUED,
             description=
-            f"Repository to save the projects to (available: {', '.join(FetcherFactory.list_available_fetchers())})",
+            f"Repository to save the projects to (available: {', '.join(ProjectRepositoryFactory.list_available_repositories())})",
         )
         self._config.add_option(
             long_name="start-over",
@@ -59,18 +62,23 @@ class FetcherXCommand(KrawlCommand):
         fetcher = fetcher_factory.get(self.name)
         validator = StrictValidator()
 
+        # create a reporter
+        if report_path:
+            reporter = FileReporter(report_path)
+        else:
+            reporter = DummyReporter()
+
         # perform the deed
-        report = []
         log.info("fetching all projects from %s", self.name)
         for project in fetcher.fetch_all(start_over=start_over):
             ok, reason = validator.validate(project)
-            if not ok:
+            if ok:
+                reporter.add(project.id, Status.OK)
+            else:
+                reporter.add(project.id, Status.FAILED, reason)
                 log.info("Skipping project '%s' because: %s", project.id, reason[0])
-                report.append(f"Skipped '{project.id}': {', '.join(reason)}")
                 continue
             repository_factory.store(project)
-            report.append(f"Added '{project.id}'")
+            log.info("Saved project '%s'", project.id)
 
-        if report_path:
-            with report_path.open("w") as f:
-                f.writelines(report)
+        reporter.close()

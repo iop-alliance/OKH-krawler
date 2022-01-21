@@ -174,6 +174,7 @@ class WikifactoryFetcher(Fetcher):
     """
 
     NAME = "wikifactory.com"
+    BATCH_SIZE = 30
     CONFIG_SCHEMA = {
         "type": "dict",
         "default": {},
@@ -181,19 +182,9 @@ class WikifactoryFetcher(Fetcher):
             "long_name": "wikifactory",
         },
         "schema": {
-            "batch_size": {
-                "type": "integer",
-                "default": 25,
-                "min": 1,
-                "meta": {
-                    # used in CLI
-                    "long_name": "batch-size",
-                    "description": "Number of requests to perform at a time"
-                }
-            },
             "timeout": {
                 "type": "integer",
-                "default": 10,
+                "default": 15,
                 "min": 1,
                 "meta": {
                     "long_name": "timeout",
@@ -214,9 +205,6 @@ class WikifactoryFetcher(Fetcher):
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         self._state_repository = state_repository
-        self._batch_size = config.batch_size
-        timeout = config.timeout
-        retries = config.retries
         self._normalizer = WikifactoryNormalizer()
 
         # client for GRAPHQL requests
@@ -224,8 +212,8 @@ class WikifactoryFetcher(Fetcher):
             url="https://wikifactory.com/api/graphql",
             headers={"User-Agent": config.user_agent},
             verify=True,
-            retries=retries,
-            timeout=timeout or 10,
+            retries=config.retries,
+            timeout=config.timeout,
         )
         self._client = GQLClient(
             transport=self._transport,
@@ -260,9 +248,9 @@ class WikifactoryFetcher(Fetcher):
                 num_fetched_projects = state.get("num_fetched_projects", 0)
 
         while has_next_page:
-            log.debug("fetching projects %d to %d", num_fetched_projects, num_fetched_projects + self._batch_size)
+            log.debug("fetching projects %d to %d", num_fetched_projects, num_fetched_projects + self.BATCH_SIZE)
 
-            params = {"cursor": cursor, "batchSize": self._batch_size}
+            params = {"cursor": cursor, "batchSize": self.BATCH_SIZE}
             try:
                 result = self._client.execute(QUERY_PROJECTS, variable_values=params)
             except Exception as e:

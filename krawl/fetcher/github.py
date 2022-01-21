@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Generator
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from time import sleep
 from urllib.parse import urlparse, urlunparse
@@ -13,7 +13,6 @@ from gql import gql
 from gql.transport.exceptions import TransportAlreadyConnected
 from gql.transport.requests import RequestsHTTPTransport
 from requests.adapters import HTTPAdapter, Retry
-from requests.auth import HTTPBasicAuth
 
 from krawl.config import Config
 from krawl.exceptions import FetchingException, NotAManifest, NotFound
@@ -22,6 +21,7 @@ from krawl.fetcher.util import parse_manifest
 from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.project import Project, ProjectID
 from krawl.repository import FetcherStateRepository
+from krawl.request.rate_limit import RateLimitFixedTimedelta, RateLimitNumRequests
 
 log = logging.getLogger("github-fetcher")
 
@@ -98,6 +98,87 @@ query ($owner: String!, $name: String!) {
 class GitHubFetcher(Fetcher):
     """Fetcher for projects on GitHub.com.
 
+    ### Finding results
+
+    GitHub hosts more than 100 million repositories (Nov 2018) with a large
+    variety of content, such as software source code, websites, hardware
+    documentation, research results and more. It is not feasible to check each
+    and every repository for hardware projects that feature a OKH-LOSH manifest.
+    Therefore, to accelerate the search, the code search feature of GitHub is
+    used
+    (https://docs.github.com/en/search-github/searching-on-github/searching-code).
+    It offers the possibility to find files with certain critera. Once potential
+    manifest files are identified, the fetcher will download these and processes
+    them.
+
+    ### Challenges
+
+    Searching for manifest files and downloading them from GitHub poses a couple
+    of challenges that need to be addressed. Most of them stem from the rate
+    limits that GitHub imposes.
+
+    - The code search feature only returns only results for repositories, that
+      had any activity or popped up in search results within the last year. Long
+      existing projects with no activity whatsoever will there not be found. By
+      continuously searching for new results, the crawler will hopefully picked
+      up recent projects and keep an index. This way the projects will be
+      included in the database, even if these won't get any future updates.
+
+    - Using the API the code search will only return a maximum of 1000 results,
+      even if more were found. To get more than 1000 results the crawler needs
+      to split up the search query into timeframes. Using this method it should
+      be possible to get all the results (https://stackoverflow.com/a/37639739).
+
+    - GitHub uses rate limits for all requests made to their API. These need to
+      be respected, otherwise the application might get blocked completely. The
+      different sets of rate limits can be found here:
+        - REST: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
+        - GRAPHQL: https://docs.github.com/en/graphql/overview/resource-limitations#rate-limit
+        - Secondary: https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits
+
+    - One of the most annoying limits is the imposed timeout for code search
+      queries. When a query exceeds a certain short timeout, only the results
+      until this point will be returned. GitHub states, that the response would
+      contain the field `incomplete_results` set to `true`, but it seems not to
+      work
+      (https://docs.github.com/en/rest/reference/search#timeouts-and-incomplete-results).
+      The latter doesn't really matter, because it wouldn't help to get the
+      desired results anyway. The concrete problem is the following: Results
+      from the code search can only accessed in a paginated form, meaning only
+      up to 100 results can be retrieved in one batch. The next 100 results
+      could then be retrieved by querying the next page. Now comes the timeout
+      into play. If 100 results from page X are requested, but for example only
+      15 are returned, then there is no way to access the other 75 results of
+      that page. Going to the next page would return the results 100-200. To
+      conquer this, one could do the following:
+        - simple search query: The more complex the search query is, the more
+          processing is required and the query will take longer. Therefore, the
+          query needs to be kept simple, even if this means, that the search is
+          less specific and returns overall more results. Here is an example,
+          that I first used for querying:
+
+            `okhv filename:okh extension:toml extension:yaml extension:yml size:<=384000`
+
+          This query searches for the string `okhv` inside files, which have one
+          of the extensions `toml`, `yaml` or `yml` and also a maximum size of
+          384000 bytes. The size of searchable files is limited by GitHub to 384
+          KB anyway, so that part can be removed. The search for file content is
+          especially computational expensive, which is why it should be removed
+          from the query. The simplified query would then be:
+
+            `filename:okh extension:toml extension:yaml extension:yml`
+
+        - small batch size: The more results are requested per page, the
+          likelier it is, that the timeout will cut off the returned results.
+          Therefore, the batch size needs to be kept small. The a batch size of
+          10 might be reasonable.
+
+        - retry: Because the missing results cannot be requested properly, one
+          have to run the query again and hope, that the next time all the
+          expected results show up.
+
+    ### Development Information
+
     GitHub offers a GraphQL API, that is used by the fetcher to get all projects
     and their metadata. For developing the query one can use the in-browser tool
     available at https://docs.github.com/en/graphql/overview/explorer. To debug
@@ -110,12 +191,14 @@ class GitHubFetcher(Fetcher):
 
     The full public schema is available at:
     https://docs.github.com/public/schema.docs.graphql
+
     More information can be found in the official API documentation:
     https://docs.github.com/en/graphql
     """
 
     NAME = "github.com"
     RETRY_CODES = [429, 500, 502, 503, 504]
+    BATCH_SIZE = 10
     CONFIG_SCHEMA = {
         "type": "dict",
         "default": {},
@@ -123,22 +206,9 @@ class GitHubFetcher(Fetcher):
             "long_name": "github",
         },
         "schema": {
-            "batch_size": {
-                "type": "integer",
-                "default": 50,
-                "min": 1,
-                # the documentation says the max value is 100, but beyond 50 I seem to get random number of results
-                # https://docs.github.com/en/rest/reference/search#search-code
-                "max": 50,
-                "meta": {
-                    # used in CLI
-                    "long_name": "batch-size",
-                    "description": "Number of requests to perform at a time"
-                }
-            },
             "timeout": {
                 "type": "integer",
-                "default": 10,
+                "default": 15,
                 "min": 1,
                 "meta": {
                     "long_name": "timeout",
@@ -169,14 +239,18 @@ class GitHubFetcher(Fetcher):
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         self._state_repository = state_repository
-        self._batch_size = config.batch_size
         self._normalizer = ManifestNormalizer()
         self._repo_cache = {}
-        self._rate_limit = {}
+        # https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
+        self._primary_search_rate_limit = RateLimitNumRequests(num_requests=30)
+        # https://docs.github.com/en/graphql/overview/resource-limitations#rate-limit
+        self._primary_repo_rate_limit = RateLimitNumRequests(num_requests=5000)
+        # https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits
+        self._secondary_rate_limit = RateLimitFixedTimedelta(seconds=1.1)
 
         retry = Retry(
             total=config.retries,
-            backoff_factor=15,
+            backoff_factor=30,
             status_forcelist=self.RETRY_CODES,
         )
 
@@ -211,19 +285,22 @@ class GitHubFetcher(Fetcher):
         log.debug("fetching project %s", id)
 
         # download manifest file
-        manifest_contents = self._download_manifest(id)
-        manifest = parse_manifest(manifest_contents, Path(id.path).suffix)
+        file_base_url = self._get_file_base_url(id)
+        manifest_contents = self._download_manifest(f"{file_base_url}/{id.path}")
+        manifest = parse_manifest(manifest_contents, Path(id.path))
 
         # enrich result
-        raw = {
-            "manifest": manifest,
-            "owner": id.owner,
-            "repo": id.repo,
-            "path": id.path,
-            "fetcher": self.NAME,
-            "last_visited": datetime.now(timezone.utc),
-        }
-        return self._normalizer.normalize(raw)
+        manifest.update({
+            "meta": {
+                "owner": id.owner,
+                "repo": id.repo,
+                "path": id.path,
+                "file_base_url": file_base_url,
+                "fetcher": self.NAME,
+                "last_visited": datetime.now(timezone.utc),
+            }
+        })
+        return self._normalizer.normalize(manifest)
 
     def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
         num_fetched_projects = 0
@@ -234,52 +311,34 @@ class GitHubFetcher(Fetcher):
             if state:
                 num_fetched_projects = state.get("num_fetched_projects", 0)
 
-        page = (num_fetched_projects // self._batch_size) + 1
-        last_api_request = datetime(1, 1, 1, 0, 0, tzinfo=timezone.utc)
-        rate_limit_remaining = 1
-        rate_limit_reset = datetime(1, 1, 1, 0, 0, tzinfo=timezone.utc)
+        num_retries_after_incomplete_results = 0
+        page = (num_fetched_projects // self.BATCH_SIZE) + 1
         while True:
-            log.debug("fetching projects %d to %d", num_fetched_projects, num_fetched_projects + self._batch_size)
+            log.debug("fetching projects %d to %d", num_fetched_projects, num_fetched_projects + self.BATCH_SIZE)
 
-            # primary rate limits
-            # https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
-            if rate_limit_remaining == 0:
-                seconds = (rate_limit_reset - datetime.now(timezone.utc)).seconds
-                log.info("hit primary rate limit, now waiting %d seconds...", seconds)
-                sleep(seconds)
-
-            # secondary rate limits
-            # https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits
-            if (datetime.now(timezone.utc) - last_api_request) < timedelta(seconds=1):
-                log.debug("trying to avoid secondary rate limit by waiting one second...")
-                sleep(1)
+            # apply rate limits
+            self._primary_search_rate_limit.apply()
+            self._secondary_rate_limit.apply()
 
             # use code search to find files that might be OKH-LOSH manifests
             headers = {
                 "Accept": "application/vnd.github.v3+json",
             }
             query = {
-                "q": "okhv filename:okh extension:toml extension:yaml extension:yml size:<=384000",
-                # in theory it is possible to request up to 100 results per
-                # page, but the due to exceeding a query timeout the result set
-                # will likely be smaller than what was requested
-                # (https://docs.github.com/en/rest/reference/search#timeouts-and-incomplete-results).
-                # GitHub says it will inform if a timeout occurs by setting
-                # `incomplete_results` to `true`, but it doesn't. Anyway, there
-                # is no good solution for getting the missing results. One could
-                # change the results per page and figure out a page number, that
-                # would include the missing results, but this is cumbersome.
-                "per_page": self._batch_size,
+                "q": "filename:okh extension:toml extension:yaml extension:yml",
+                "per_page": self.BATCH_SIZE,
                 "page": page,
             }
             # code search is not available in the GitHub API v4 (graphql)
             # information on code search: https://docs.github.com/en/rest/reference/search
             # TODO: code search only returns a maximum of 1000 files -> need another method of finding manifest files
+            # https://github.com/PyGithub/PyGithub/issues/824#issuecomment-398942171
             response = self._session.get(
                 url="https://api.github.com/search/code",
                 headers=headers,
                 params=query,
             )
+            self._secondary_rate_limit.update()
 
             if response.status_code == 403:
                 message = response.json().get("message", "")
@@ -288,20 +347,34 @@ class GitHubFetcher(Fetcher):
                     log.debug("hit secondary rate limit, now waiting %d seconds...", seconds)
                     sleep(seconds)
                     continue
+                else:
+                    raise FetchingException(f"failed to fetch projects from GitHub: {response.text}")
             elif response.status_code != 200:
                 raise FetchingException(f"failed to fetch projects from GitHub: {response.text}")
+
+            # parse response data
             response_data = response.json()
+            self._primary_search_rate_limit.update(
+                num_requests=int(response.headers["X-RateLimit-Remaining"]),
+                reset_time=datetime.fromtimestamp(int(response.headers["X-RateLimit-Reset"]), tz=timezone.utc),
+            )
+
+            # Retrieve the files from the list of results and check if the
+            # results are actually complete. See description at the top of the
+            # class for an explanation why.
+            total_count = response_data.get("total_count", 0)
             raw_found_files = response_data.get("items", [])
-            # is_last_page = response_data.get("total_count")
-            if not raw_found_files:
-                break
-
-            page = page + 1
-            num_fetched_projects = num_fetched_projects + len(raw_found_files)
-
-            # primary rate limit
-            rate_limit_remaining = int(response.headers["X-RateLimit-Remaining"])
-            rate_limit_reset = datetime.fromtimestamp(int(response.headers["X-RateLimit-Reset"]), tz=timezone.utc)
+            is_last_page = page * self.BATCH_SIZE >= total_count
+            expected_num_results = self.BATCH_SIZE if not is_last_page else total_count % self.BATCH_SIZE
+            if len(raw_found_files) < expected_num_results:
+                if num_retries_after_incomplete_results >= 10:
+                    raise FetchingException(
+                        "failed to fetch complete set of results, "
+                        f"got only {len(num_fetched_projects)}/{expected_num_results} from page {page}")
+                log.debug("got incomplete set of results, retrying...")
+                num_retries_after_incomplete_results = num_retries_after_incomplete_results + 1
+                continue
+            num_retries_after_incomplete_results = 0
 
             # figure out what the links are in the default repo -> accessable later on
             last_visited = datetime.now(timezone.utc)
@@ -312,57 +385,68 @@ class GitHubFetcher(Fetcher):
                 id = ProjectID(self.NAME, path_parts[1], path_parts[2], str(Path(*path_parts[5:])))
 
                 # download manifest file
-                manifest_contents = self._download_manifest(id)
+                file_base_url = self._get_file_base_url(id)
+                manifest_contents = self._download_manifest(f"{file_base_url}/{id.path}")
                 try:
-                    manifest = parse_manifest(manifest_contents, Path(id.path).suffix)
+                    manifest = parse_manifest(manifest_contents, Path(id.path))
                 except NotAManifest:
                     # not a valid manifest -> skip
-                    log.debug("skipping project, because it is not a manifest (%s)", id)
+                    log.debug("skipping file, because it is not a manifest (%s)", id)
                     continue
 
                 # enrich result
-                raw = {
-                    "manifest": manifest,
-                    "owner": id.owner,
-                    "repo": id.repo,
-                    "path": id.path,
-                    "fetcher": self.NAME,
-                    "last_visited": last_visited,
-                }
-                project = self._normalizer.normalize(raw)
+                manifest.update({
+                    "meta": {
+                        "owner": id.owner,
+                        "repo": id.repo,
+                        "path": id.path,
+                        "file_base_url": file_base_url,
+                        "fetcher": self.NAME,
+                        "last_visited": last_visited,
+                    }
+                })
+                project = self._normalizer.normalize(manifest)
                 log.debug("yield project %s", project.id)
                 yield project
 
             # save current progress
+            page = page + 1
+            num_fetched_projects = num_fetched_projects + len(raw_found_files)
             self._state_repository.store(self.NAME, {
                 "num_fetched_projects": num_fetched_projects,
             })
 
+            if is_last_page:
+                break
+
         self._state_repository.delete(self.NAME)
         log.debug("fetched %d projects from GitHub", num_fetched_projects)
 
-    def _download_manifest(self, id: ProjectID) -> bytes:
+    def _get_file_base_url(self, id: ProjectID) -> str:
         # get repository information
         raw_repo = self._get_repo_info(id)
         default_branch = raw_repo["defaultBranchRef"]["name"]
 
-        # create a download URL in form of: https://raw.githubusercontent.com/owner/name/default_branch/path
+        # create a download URL in form of: https://raw.githubusercontent.com/owner/name/default_branch
         # we only consider the default branch, when downloading files
-        download_url = urlunparse((
+        return urlunparse((
             "https",
             "raw.githubusercontent.com",
-            f"/{id.owner}/{id.repo}/{default_branch}/{id.path}",
+            f"/{id.owner}/{id.repo}/{default_branch}",
             None,
             None,
             None,
         ))
 
-        log.debug("downloading manifest file %s", download_url)
-        response = self._session.get(download_url)
+    def _download_manifest(self, url) -> bytes:
+        self._secondary_rate_limit.apply()
+        log.debug("downloading manifest file %s", url)
+        response = self._session.get(url)
+        self._secondary_rate_limit.update()
         if response.status_code == 404:
-            raise NotFound("Manifest doesn't exist on default branch ({download_url})")
+            raise NotFound(f"Manifest doesn't exist on default branch ({url})")
         elif response.status_code != 200:
-            raise FetchingException(f"Failed to download manifest file ({download_url}): {response.text}")
+            raise FetchingException(f"Failed to download manifest file ({url}): {response.text}")
 
         return response.content
 
@@ -372,6 +456,10 @@ class GitHubFetcher(Fetcher):
         if key in self._repo_cache:
             return self._repo_cache[key]
 
+        # apply rate limits
+        self._primary_repo_rate_limit.apply()
+        self._secondary_rate_limit.apply()
+
         # get information from GitHub
         log.debug("requesting repository information for '%s/%s/%s'", id.platform, id.owner, id.repo)
         params = {"owner": id.owner, "name": id.repo}
@@ -379,10 +467,16 @@ class GitHubFetcher(Fetcher):
             result = self._graphql_client.execute(QUERY_PROJECT, variable_values=params)
         except Exception as e:
             raise FetchingException(f"failed to fetch GitHub repository information '{id}': {e}") from e
-        if not result:
-            raise FetchingException(f"project '{id}' not found")
+        finally:
+            self._secondary_rate_limit.update()
+
+        # parse response data
+        self._primary_repo_rate_limit.update(
+            num_requests=result["rateLimit"]["remaining"],
+            reset_time=datetime.strptime(result["rateLimit"]["resetAt"], "%Y-%m-%dT%H:%M:%S%z"),
+        )
         self._repo_cache[key] = result["repository"]
-        self._rate_limit = result["rateLimit"]
+
         return result["repository"]
 
 

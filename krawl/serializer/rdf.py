@@ -81,11 +81,23 @@ class RDFProjectSerializer(ProjectSerializer):
         # cls.add(graph, subject, OKH.dateLastVisited, file.last_visited) # FIXME: only add if contained in ontology
 
     @classmethod
+    def add_mass(cls, graph, subject, mass):
+        cls.add(graph, subject, OKH.value, mass.value)
+        cls.add(graph, subject, OKH.unit, mass.unit)
+
+    @classmethod
+    def add_outer_dimensions(cls, graph, subject, outer_dimensions):
+        cls.add(graph, subject, OKH.openSCAD, outer_dimensions.openscad)
+        cls.add(graph, subject, OKH.unit, outer_dimensions.unit)
+
+    @classmethod
     def _add_part(cls, graph, namespace, project) -> rdflib.URIRef:
 
         def get_fallback(part, key):
             if hasattr(part, key):
-                return getattr(part, key)
+                value = getattr(part, key)
+                if value is not None:
+                    return value
             return getattr(project, key)
 
         part_subjects = []
@@ -99,13 +111,29 @@ class RDFProjectSerializer(ProjectSerializer):
             cls.add(graph, part_subject, OKH.documentationLanguage, get_fallback(part, "documentation_language"))
             license = get_fallback(part, "license")
             if license and license.is_spdx:
-                cls.add(graph, part_subject, OKH.spdxLicense, license.reference[:-5])
+                cls.add(graph, part_subject, OKH.spdxLicense, license.reference[:-5]
+                       )  #FIXME: should be the license ID not the reference url, but it breaks the frontend
             else:
-                cls.add(graph, part_subject, OKH.alternativeLicense, license.reference[:-5])
+                cls.add(graph, part_subject, OKH.alternativeLicense, license.reference[:-5]
+                       )  #FIXME: should be the license ID not the reference url, but it breaks the frontend
             cls.add(graph, part_subject, OKH.licensor, get_fallback(part, "licensor"))
             cls.add(graph, part_subject, OKH.material, part.material)
             cls.add(graph, part_subject, OKH.manufacturingProcess, part.manufacturing_process)
-            cls.add(graph, part_subject, OKH.outerDimensionsMM, part.outer_dimensions_mm)
+
+            if part.mass is not None:
+                mass_subject = namespace[f"{partname}_Mass"]
+                cls.add(graph, part_subject, OKH.hasMass, mass_subject)
+                cls.add(graph, mass_subject, rdflib.RDF.type, OKH.Mass)
+                cls.add(graph, mass_subject, rdflib.RDFS.label, f"Mass of {part.name}")
+                cls.add_mass(graph, mass_subject, part.mass)
+
+            if part.outer_dimensions is not None:
+                outer_dimensions = namespace[f"{partname}_OuterDimensions"]
+                cls.add(graph, part_subject, OKH.hasOuterDimensions, outer_dimensions)
+                cls.add(graph, outer_dimensions, rdflib.RDF.type, OKH.OuterDimensions)
+                cls.add(graph, outer_dimensions, rdflib.RDFS.label, f"Outer Dimensions of {part.name}")
+                cls.add_outer_dimensions(graph, outer_dimensions, part.outer_dimensions)
+
             cls.add(graph, part_subject, OKH.tsdc, part.tsdc)
 
             # source
@@ -125,6 +153,15 @@ class RDFProjectSerializer(ProjectSerializer):
                 cls.add(graph, export_subject, rdflib.RDFS.label,
                         f"Export File of {part.name} of {project.name} {project.version}")
                 cls.add_file(graph, export_subject, file)
+
+            # auxiliary
+            for i, file in enumerate(part.auxiliary):
+                auxiliary_subject = namespace[f"{partname}_auxiliary{i+1}"]
+                cls.add(graph, part_subject, OKH.auxiliary, auxiliary_subject)
+                cls.add(graph, auxiliary_subject, rdflib.RDF.type, OKH.AuxiliaryFile)
+                cls.add(graph, auxiliary_subject, rdflib.RDFS.label,
+                        f"Auxiliary File of {part.name} of {project.name} {project.version}")
+                cls.add_file(graph, auxiliary_subject, file)
 
             # image
             if part.image is not None:
@@ -148,15 +185,17 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.versionOf, project.repo)
         cls.add(graph, module_subject, OKH.repo, project.repo)
         cls.add(graph, module_subject, OKH.dataSource, project.meta.source)
-        cls.add(graph, module_subject, OKH.repoHost, project.meta.host)
+        cls.add(graph, module_subject, OKH.repoHost, urlparse(project.repo).hostname)
         cls.add(graph, module_subject, OKH.version, project.version)
         cls.add(graph, module_subject, OKH.release, project.release)
         if project.license.is_spdx:
-            cls.add(graph, module_subject, OKH.spdxLicense, project.license.reference[:-5])
+            cls.add(graph, module_subject, OKH.spdxLicense, project.license.reference[:-5]
+                   )  #FIXME: should be the license ID not the reference url, but it breaks the frontend
         else:
-            cls.add(graph, module_subject, OKH.alternativeLicense, project.license.reference[:-5])
+            cls.add(graph, module_subject, OKH.alternativeLicense, project.license.reference[:-5]
+                   )  #FIXME: should be the license ID not the reference url, but it breaks the frontend
         cls.add(graph, module_subject, OKH.licensor, project.licensor)
-        # TODO: rename organisation to organization
+        #FIXME: rename organisation to organization, once the frontend is adjusted
         cls.add(graph, module_subject, OKH.organisation, project.organization)
         # cls.add(graph, module_subject, OKH.contributorCount, None)  ## TODO see if github api can do this
 
@@ -166,8 +205,6 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.function, project.function)
         cls.add(graph, module_subject, OKH.cpcPatentClass, project.cpc_patent_class)
         cls.add(graph, module_subject, OKH.tsdc, project.tsdc)
-
-        cls.add(graph, module_subject, OKH.outerDimensionMM, project.outer_dimensions_mm)
 
         return module_subject
 
@@ -245,7 +282,7 @@ class RDFProjectSerializer(ProjectSerializer):
         )
         if manifest_file_subject is not None:
             cls.add(graph, manifest_file_subject, OKH.okhv, project.okhv)
-            cls.add(graph, module_subject, OKH.hasBoM, manifest_file_subject)
+            cls.add(graph, module_subject, OKH.hasManifestFile, manifest_file_subject)
 
         image_subject = cls._add_info_file(
             graph=graph,
@@ -278,7 +315,7 @@ class RDFProjectSerializer(ProjectSerializer):
             rdftype=OKH.ManufacturingInstructions,
         )
         if manufacturing_instructions_subject is not None:
-            cls.add(graph, module_subject, OKH.hasBoM, manufacturing_instructions_subject)
+            cls.add(graph, module_subject, OKH.hasManufacturingInstructions, manufacturing_instructions_subject)
 
         user_manual_subject = cls._add_info_file(
             graph=graph,
@@ -289,7 +326,7 @@ class RDFProjectSerializer(ProjectSerializer):
             rdftype=OKH.UserManual,
         )
         if user_manual_subject is not None:
-            cls.add(graph, module_subject, OKH.hasBoM, user_manual_subject)
+            cls.add(graph, module_subject, OKH.hasUserManual, user_manual_subject)
 
         part_subjects = cls._add_part(graph, namespace, project)
         for part_subject in part_subjects:
