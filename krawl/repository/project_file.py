@@ -8,9 +8,9 @@ from pathvalidate import sanitize_filename
 from krawl.config import Config
 from krawl.project import Project, ProjectID
 from krawl.repository import ProjectRepository
-from krawl.serializer.rdf import RDFProjectSerializer
-from krawl.serializer.toml import TOMLProjectSerializer
-from krawl.serializer.yaml import YAMLProjectSerializer
+from krawl.serializer.rdf_serializer import RDFProjectSerializer
+from krawl.serializer.toml_serializer import TOMLProjectSerializer
+from krawl.serializer.yaml_serializer import YAMLProjectSerializer
 
 log = logging.getLogger("project-repository-file")
 

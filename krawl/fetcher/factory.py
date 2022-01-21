@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Generator
 
 from krawl.config import Config
-from krawl.exceptions import FetchingException
+from krawl.errors import FetcherError
 from krawl.fetcher import Fetcher
 from krawl.fetcher.github import GitHubFetcher
 from krawl.fetcher.wikifactory import WikifactoryFetcher
@@ -41,7 +41,7 @@ class FetcherFactory:
         schema = {}
         for name in names:
             if name not in _fetcher_classes:
-                raise FetchingException(
+                raise FetcherError(
                     f"no fetcher available for '{name}', available are: {', '.join(_fetcher_classes.keys())}")
             schema[name] = _fetcher_classes[name].CONFIG_SCHEMA
         return schema
@@ -51,7 +51,7 @@ class FetcherFactory:
 
     @classmethod
     def list_available_fetchers(cls) -> list[str]:
-        return [fetcher for fetcher in _fetcher_classes]
+        return list(_fetcher_classes)
 
     @classmethod
     def is_fetcher_available(cls, name: str) -> bool:
@@ -59,10 +59,10 @@ class FetcherFactory:
 
     def get(self, name: str) -> Fetcher:
         if name not in _fetcher_classes:
-            raise FetchingException(
+            raise FetcherError(
                 f"no fetcher available for '{name}', available are: {', '.join(_fetcher_classes.keys())}")
         if name not in self._fetchers:
-            raise FetchingException(f"fetcher '{name}' is not enabled")
+            raise FetcherError(f"fetcher '{name}' is not enabled")
         return self._fetchers[name]
 
     def get_all(self) -> Generator[Fetcher, None, None]:
@@ -72,9 +72,9 @@ class FetcherFactory:
     def fetch(self, id: ProjectID) -> Project:
         """Call `fetch` function on fitting fetcher."""
         if id.platform not in self._fetchers:
-            raise FetchingException(f"no fetcher available for '{id.platform}'")
+            raise FetcherError(f"no fetcher available for '{id.platform}'")
         if id.platform not in self._fetchers:
-            raise FetchingException(f"fetcher '{id.platform}' is not enabled")
+            raise FetcherError(f"fetcher '{id.platform}' is not enabled")
         return self._fetchers[id.platform].fetch(id)
 
     def fetch_all(self, start_over=True) -> Generator[Project, None, None]:

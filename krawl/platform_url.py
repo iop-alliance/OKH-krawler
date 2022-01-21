@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
 import validators
-import re
 
 _sha1_pattern = re.compile(r"^[A-Fa-f0-9]{40}$")
+
 
 class PlatformURL:
 

@@ -14,7 +14,3 @@ class JSONProjectSerializer(ProjectSerializer):
 
     def serialize(self, project: Project) -> str:
         return json.dumps(project.as_dict(), indent=self._indent, sort_keys=self._sort_keys)
-
-    def deserialize(self, serialized: str) -> Project:
-        deserialized = json.loads(serialized)
-        return Project.from_dict(deserialized)

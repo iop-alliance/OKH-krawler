@@ -9,7 +9,7 @@ from gql import gql
 from gql.transport.requests import RequestsHTTPTransport
 
 from krawl.config import Config
-from krawl.exceptions import FetchingException
+from krawl.errors import FetcherError
 from krawl.fetcher import Fetcher
 from krawl.normalizer.wikifactory import WikifactoryNormalizer
 from krawl.project import Project, ProjectID
@@ -226,9 +226,9 @@ class WikifactoryFetcher(Fetcher):
         try:
             result = self._client.execute(QUERY_PROJECT_BY_SLUG, variable_values=params)
         except Exception as e:
-            raise FetchingException(f"failed to fetch project '{id}'") from e
+            raise FetcherError(f"failed to fetch project '{id}'") from e
         if not result:
-            raise FetchingException(f"project '{id}' not found")
+            raise FetcherError(f"project '{id}' not found")
         # enrich result
         result = result["project"]["result"]
         result["fetcher"] = self.NAME
@@ -254,7 +254,7 @@ class WikifactoryFetcher(Fetcher):
             try:
                 result = self._client.execute(QUERY_PROJECTS, variable_values=params)
             except Exception as e:
-                raise FetchingException(f"failed to fetch projects from WikiFactory: {e}") from e
+                raise FetcherError(f"failed to fetch projects from WikiFactory: {e}") from e
 
             raw = result["projects"]["result"]
             pageinfo = raw["pageInfo"]

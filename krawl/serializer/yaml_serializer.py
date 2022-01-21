@@ -14,7 +14,3 @@ class YAMLProjectSerializer(ProjectSerializer):
 
     def serialize(self, project: Project) -> str:
         return yaml.safe_dump(project.as_dict(), indent=self._indent, sort_keys=self._sort_keys)
-
-    def deserialize(self, serialized: str) -> Project:
-        deserialized = yaml.safe_load(serialized)
-        return Project.from_dict(deserialized)

@@ -23,9 +23,6 @@ class RDFProjectSerializer(ProjectSerializer):
         graph = self._make_graph(project)
         return graph.serialize(format="turtle").decode("utf-8")
 
-    def deserialize(self, serialized: str) -> Project:
-        raise NotImplementedError()
-
     @staticmethod
     def _make_project_namespace(project) -> rdflib.Namespace:
         parts = urlparse(project.repo)

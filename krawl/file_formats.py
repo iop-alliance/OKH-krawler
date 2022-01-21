@@ -27,7 +27,6 @@ def _init_file_formats():
         - https://gitlab.com/OSEGermany/osh-tool/-/tree/master/data
         - https://github.com/hoijui/file-extension-list
     """
-    global _formats
 
     assets_path = Path(__file__).parent / "assets" / "file_extensions"
     # load file formats from txt

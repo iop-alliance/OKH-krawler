@@ -24,7 +24,7 @@ import yaml
 from cerberus import TypeDefinition, Validator
 from cerberus.errors import REQUIRED_FIELD, BasicErrorHandler, ValidationError
 
-from krawl.exceptions import ConfigException
+from krawl.errors import ConfigError
 
 log = logging.getLogger("config")
 
@@ -401,7 +401,7 @@ class ConfigValidator(Validator):
         """ {'nullable': True} """
         if self.ignore_defaults:
             return
-        elif schema[field]['default'] is missing:
+        if schema[field]['default'] is missing:
             self._error(field, REQUIRED_FIELD)
         else:
             mapping[field] = schema[field]['default']
@@ -503,7 +503,7 @@ class CliConfigLoader(ConfigLoader):
     def load(self) -> Config:
         validated, reasons = validate(self._config, self._schema, middle_stage=True)
         if reasons:
-            raise ConfigException(f"Invalid option '{reasons[0]}'", reasons)
+            raise ConfigError(f"Invalid option '{reasons[0]}'", reasons)
         return Config(validated)
 
 
@@ -527,12 +527,12 @@ class YamlFileConfigLoader(ConfigLoader):
             with self._path.open("r") as f:
                 raw = yaml.safe_load(f) or {}
         except OSError as e:
-            raise ConfigException(f"Failed to load YAML config: {e}", reasons=str(e)) from e
+            raise ConfigError(f"Failed to load YAML config: {e}", reasons=str(e)) from e
 
         # normalize and validate the yaml content
         validated, reasons = validate(raw, self._schema, middle_stage=True)
         if reasons:
-            raise ConfigException(
+            raise ConfigError(
                 "There is one or more errors in the configuration file '{}':\n    {}".format(
                     self._path, "\n    ".join(reasons)),
                 reasons,
@@ -576,7 +576,7 @@ class KrawlerConfigLoader(ConfigLoader):
         # normalize and validate the merged configs
         validated, reasons = validate(merged, self._schema)
         if reasons:
-            raise ConfigException(
+            raise ConfigError(
                 "There is one or more errors in the configuration:\n    {}".format("\n    ".join(reasons)),
                 reasons,
             )

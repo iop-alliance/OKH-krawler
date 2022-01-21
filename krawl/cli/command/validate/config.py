@@ -4,11 +4,11 @@ from pathlib import Path
 
 from krawl.cli.command import KrawlCommand
 from krawl.config import KrawlerConfigLoader, YamlFileConfigLoader
-from krawl.exceptions import ConfigException
+from krawl.errors import ConfigError
 
 
 class ValidateConfigCommand(KrawlCommand):
-    """Validate a given configuration.
+    """Validate a given configuration. Non-zero return codes indicate an error.
 
     config
         {file : Config file to validate}
@@ -28,7 +28,7 @@ class ValidateConfigCommand(KrawlCommand):
             config_schema = self._load_config_schema()
             yaml_config_loader = YamlFileConfigLoader(config_schema, path)
             _ = KrawlerConfigLoader(config_schema, yaml_config_loader).load()
-        except ConfigException as e:
+        except ConfigError as e:
             if not quiet:
                 for r in e.reasons:
                     self.line(r)

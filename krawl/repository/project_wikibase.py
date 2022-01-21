@@ -9,7 +9,7 @@ import krawl.wikibase.core
 from krawl.config import Config
 from krawl.project import Project
 from krawl.repository import ProjectRepository
-from krawl.serializer.rdf import RDFProjectSerializer
+from krawl.serializer.rdf_serializer import RDFProjectSerializer
 from krawl.wikibase.api import API
 
 log = logging.getLogger("project-repository-wikibase")

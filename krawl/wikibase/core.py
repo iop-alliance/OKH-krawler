@@ -4,7 +4,7 @@
 import rdflib as r
 from rdflib import RDF, RDFS, Graph
 
-from krawl.serializer.rdf import OKH
+from krawl.serializer.rdf_serializer import OKH
 
 # DATATYPES = {"timestamp": "time", "lastSeen": "time", "lastRequested": "time"}
 # TODO make sure the datetimes are corect in the ttl

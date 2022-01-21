@@ -1,9 +1,10 @@
 from __future__ import annotations
+
 from pathlib import Path
+
 from krawl.project import Project, ProjectID
-
-
 from krawl.reporter import Reporter, Status
+
 
 class FileReporter(Reporter):
     """Reporter on fetching results, that writes to a given file."""
@@ -13,9 +14,9 @@ class FileReporter(Reporter):
         self._file = None
         self._open(path)
 
-    def add(self, project_id: ProjectID, status: Status, reasons: list[str]=None, project: Project=None) -> None:
+    def add(self, project_id: ProjectID, status: Status, reasons: list[str] = None, project: Project = None) -> None:
         """Add an entry to the report."""
-        if status == Status.OK or status == Status.UNKNOWN:
+        if status in (Status.OK, Status.UNKNOWN):
             line = f"{str(status):<8}: {str(project_id)}\n"
         elif status == Status.FAILED:
             line = f"{str(status):<8}: {str(project_id)} : {', '.join(reasons)}\n"

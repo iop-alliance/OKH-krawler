@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Generator
 
 from krawl.config import Config
-from krawl.exceptions import RepositoryException
+from krawl.errors import RepositoryError
 from krawl.project import Project
 from krawl.repository import ProjectRepository
 from krawl.repository.project_file import ProjectRepositoryFile
@@ -37,7 +37,7 @@ class ProjectRepositoryFactory:
         schema = {}
         for name in names:
             if name not in _repositories_schemas:
-                raise RepositoryException(
+                raise RepositoryError(
                     f"no such repository '{name}', available are: {', '.join(_repositories_schemas.keys())}")
             schema[name] = _repositories_schemas[name]
         return schema
@@ -52,10 +52,10 @@ class ProjectRepositoryFactory:
 
     def get(self, name: str) -> ProjectRepository:
         if name not in _repositories_schemas:
-            raise RepositoryException(
+            raise RepositoryError(
                 f"no such repository '{name}', available are: {', '.join(_repositories_schemas.keys())}")
         if name not in self._repositories:
-            raise RepositoryException(f"repository '{name}' is not enabled")
+            raise RepositoryError(f"repository '{name}' is not enabled")
         return self._repositories[id.platform]
 
     def get_all(self) -> Generator[ProjectRepository, None, None]:

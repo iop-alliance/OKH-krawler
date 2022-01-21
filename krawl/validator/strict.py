@@ -14,14 +14,7 @@ class StrictValidator(Validator):
 
     def validate(self, project: Project) -> tuple[bool, list[str]]:
         reasons = []
-        # meta data
-        reasons.extend(_validate_string("meta.source", project.meta.source))
-        if project.meta.source and not FetcherFactory.is_fetcher_available(project.meta.source):
-            reasons.append(f"no fetcher for '{project.meta.source}' available")
-        reasons.extend(_validate_string("meta.owner", project.meta.owner, min=1, max=256))
-        reasons.extend(_validate_string("meta.repo", project.meta.repo, min=1, max=256))
 
-        # spec conformance
         if not is_non_zero_length_string(project.okhv):
             reasons.append("missing okhv")
         elif not is_okh_version(project.okhv):

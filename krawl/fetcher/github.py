@@ -15,13 +15,14 @@ from gql.transport.requests import RequestsHTTPTransport
 from requests.adapters import HTTPAdapter, Retry
 
 from krawl.config import Config
-from krawl.exceptions import FetchingException, NotAManifest, NotFound
+from krawl.errors import DeserializerError, FetcherError, NormalizerError, NotFound
 from krawl.fetcher import Fetcher
-from krawl.fetcher.util import parse_manifest
+from krawl.fetcher.util import is_accepted_manifest_file_name, is_binary, is_empty
 from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.project import Project, ProjectID
 from krawl.repository import FetcherStateRepository
 from krawl.request.rate_limit import RateLimitFixedTimedelta, RateLimitNumRequests
+from krawl.serializer.factory import DeserializerFactory
 
 log = logging.getLogger("github-fetcher")
 
@@ -240,6 +241,7 @@ class GitHubFetcher(Fetcher):
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         self._state_repository = state_repository
         self._normalizer = ManifestNormalizer()
+        self._deserializer_factory = DeserializerFactory()
         self._repo_cache = {}
         # https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
         self._primary_search_rate_limit = RateLimitNumRequests(num_requests=30)
@@ -284,23 +286,35 @@ class GitHubFetcher(Fetcher):
     def fetch(self, id: ProjectID) -> Project:
         log.debug("fetching project %s", id)
 
-        # download manifest file
-        file_base_url = self._get_file_base_url(id)
-        manifest_contents = self._download_manifest(f"{file_base_url}/{id.path}")
-        manifest = parse_manifest(manifest_contents, Path(id.path))
+        # download the file
+        path = Path(id.path)
+        base_download_url = self._get_file_base_url(id)
+        manifest_contents = self._download_manifest(f"{base_download_url}/{id.path}")
 
-        # enrich result
-        manifest.update({
+        # check file contents
+        if is_empty(manifest_contents) or is_binary(manifest_contents):
+            log.debug("skipping file, because it has invalid content (%s)", id)
+
+        # create fetcher meta data
+        meta = {
             "meta": {
                 "owner": id.owner,
                 "repo": id.repo,
                 "path": id.path,
-                "file_base_url": file_base_url,
                 "fetcher": self.NAME,
                 "last_visited": datetime.now(timezone.utc),
             }
-        })
-        return self._normalizer.normalize(manifest)
+        }
+
+        # try deserialize
+        try:
+            project = self._deserializer_factory.deserialize(path.suffix, manifest_contents, self._normalizer, meta)
+        except DeserializerError as err:
+            raise FetcherError(f"deserialization failed: {err}") from err
+        except NormalizerError as err:
+            raise FetcherError(f"normalization failed, that should not happen: {err}") from err
+
+        return project
 
     def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
         num_fetched_projects = 0
@@ -346,11 +360,10 @@ class GitHubFetcher(Fetcher):
                     seconds = 60
                     log.debug("hit secondary rate limit, now waiting %d seconds...", seconds)
                     sleep(seconds)
-                    continue
-                else:
-                    raise FetchingException(f"failed to fetch projects from GitHub: {response.text}")
+                    continue  # restart loop
+                raise FetcherError(f"failed to fetch projects from GitHub: {response.text}")
             elif response.status_code != 200:
-                raise FetchingException(f"failed to fetch projects from GitHub: {response.text}")
+                raise FetcherError(f"failed to fetch projects from GitHub: {response.text}")
 
             # parse response data
             response_data = response.json()
@@ -368,9 +381,8 @@ class GitHubFetcher(Fetcher):
             expected_num_results = self.BATCH_SIZE if not is_last_page else total_count % self.BATCH_SIZE
             if len(raw_found_files) < expected_num_results:
                 if num_retries_after_incomplete_results >= 10:
-                    raise FetchingException(
-                        "failed to fetch complete set of results, "
-                        f"got only {len(num_fetched_projects)}/{expected_num_results} from page {page}")
+                    raise FetcherError("failed to fetch complete set of results, "
+                                       f"got only {len(num_fetched_projects)}/{expected_num_results} from page {page}")
                 log.debug("got incomplete set of results, retrying...")
                 num_retries_after_incomplete_results = num_retries_after_incomplete_results + 1
                 continue
@@ -380,32 +392,44 @@ class GitHubFetcher(Fetcher):
             last_visited = datetime.now(timezone.utc)
             for raw_found_file in raw_found_files:
                 raw_url = urlparse(raw_found_file["html_url"])
-                path_parts = Path(raw_url.path).parts
-                # create ID and use that for downloading the file
-                id = ProjectID(self.NAME, path_parts[1], path_parts[2], str(Path(*path_parts[5:])))
 
-                # download manifest file
-                file_base_url = self._get_file_base_url(id)
-                manifest_contents = self._download_manifest(f"{file_base_url}/{id.path}")
-                try:
-                    manifest = parse_manifest(manifest_contents, Path(id.path))
-                except NotAManifest:
-                    # not a valid manifest -> skip
-                    log.debug("skipping file, because it is not a manifest (%s)", id)
+                # check file name
+                path = Path(raw_url.path)
+                if not is_accepted_manifest_file_name(path):
+                    log.debug("skipping file, because it is not an accepted manifest file name (%s)", id)
                     continue
 
-                # enrich result
-                manifest.update({
+                # download the file
+                path_parts = path.parts
+                id = ProjectID(self.NAME, path_parts[1], path_parts[2], str(Path(*path_parts[5:])))
+                base_download_url = self._get_file_base_url(id)
+                manifest_contents = self._download_manifest(f"{base_download_url}/{id.path}")
+
+                # check file contents
+                if is_empty(manifest_contents) or is_binary(manifest_contents):
+                    log.debug("skipping file, because it has invalid content (%s)", id)
+
+                # create fetcher meta data
+                meta = {
                     "meta": {
                         "owner": id.owner,
                         "repo": id.repo,
                         "path": id.path,
-                        "file_base_url": file_base_url,
                         "fetcher": self.NAME,
                         "last_visited": last_visited,
                     }
-                })
-                project = self._normalizer.normalize(manifest)
+                }
+
+                # try deserialize
+                try:
+                    project = self._deserializer_factory.deserialize(path.suffix, manifest_contents, self._normalizer,
+                                                                     meta)
+                except DeserializerError:
+                    log.debug("skipping file, because it has invalid content (%s)", id)
+                    continue
+                except NormalizerError as err:
+                    raise FetcherError(f"normalization failed, that should not happen: {err}") from err
+
                 log.debug("yield project %s", project.id)
                 yield project
 
@@ -446,7 +470,7 @@ class GitHubFetcher(Fetcher):
         if response.status_code == 404:
             raise NotFound(f"Manifest doesn't exist on default branch ({url})")
         elif response.status_code != 200:
-            raise FetchingException(f"Failed to download manifest file ({url}): {response.text}")
+            raise FetcherError(f"Failed to download manifest file ({url}): {response.text}")
 
         return response.content
 
@@ -466,7 +490,7 @@ class GitHubFetcher(Fetcher):
         try:
             result = self._graphql_client.execute(QUERY_PROJECT, variable_values=params)
         except Exception as e:
-            raise FetchingException(f"failed to fetch GitHub repository information '{id}': {e}") from e
+            raise FetcherError(f"failed to fetch GitHub repository information '{id}': {e}") from e
         finally:
             self._secondary_rate_limit.update()
 
