@@ -581,10 +581,14 @@ class KrawlerConfigLoader(ConfigLoader):
                 reasons,
             )
 
-        # add user_agent to each fetchers config (after validation)
+        # add user_agent to each fetcher and repository config (after validation)
         fetchers_config = validated.fetchers
         for name in fetchers_config:
             if name != "defaults":
                 fetchers_config[name]["user_agent"] = validated.user_agent
+        repository_config = validated.repositories
+        for name in repository_config:
+            if name != "defaults":
+                repository_config[name]["user_agent"] = validated.user_agent
 
         return Config(validated)
