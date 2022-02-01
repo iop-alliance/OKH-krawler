@@ -7,6 +7,7 @@ from urllib.parse import urlparse, urlunparse
 import rdflib
 import validators
 
+from krawl.errors import SerializerError
 from krawl.project import Project
 from krawl.serializer import ProjectSerializer
 
@@ -20,8 +21,13 @@ OTLR = rdflib.Namespace("http://purl.org/oseg/ontologies/OTLR#")
 class RDFProjectSerializer(ProjectSerializer):
 
     def serialize(self, project: Project) -> str:
-        graph = self._make_graph(project)
-        return graph.serialize(format="turtle").decode("utf-8")
+        try:
+            graph = self._make_graph(project)
+
+            serialized = graph.serialize(format="turtle").decode("utf-8")
+        except Exception as err:
+            raise SerializerError("failed to serialize JSON: {err}") from err
+        return serialized
 
     @staticmethod
     def _make_project_namespace(project) -> rdflib.Namespace:
@@ -108,10 +114,10 @@ class RDFProjectSerializer(ProjectSerializer):
             cls.add(graph, part_subject, OKH.documentationLanguage, get_fallback(part, "documentation_language"))
             license = get_fallback(part, "license")
             if license and license.is_spdx:
-                cls.add(graph, part_subject, OKH.spdxLicense, license.reference[:-5]
+                cls.add(graph, part_subject, OKH.spdxLicense, license.reference_url[:-5]
                        )  #FIXME: should be the license ID not the reference url, but it breaks the frontend
             else:
-                cls.add(graph, part_subject, OKH.alternativeLicense, license.reference[:-5]
+                cls.add(graph, part_subject, OKH.alternativeLicense, license.reference_url[:-5]
                        )  #FIXME: should be the license ID not the reference url, but it breaks the frontend
             cls.add(graph, part_subject, OKH.licensor, get_fallback(part, "licensor"))
             cls.add(graph, part_subject, OKH.material, part.material)
@@ -186,10 +192,10 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.version, project.version)
         cls.add(graph, module_subject, OKH.release, project.release)
         if project.license.is_spdx:
-            cls.add(graph, module_subject, OKH.spdxLicense, project.license.reference[:-5]
+            cls.add(graph, module_subject, OKH.spdxLicense, project.license.reference_url[:-5]
                    )  #FIXME: should be the license ID not the reference url, but it breaks the frontend
         else:
-            cls.add(graph, module_subject, OKH.alternativeLicense, project.license.reference[:-5]
+            cls.add(graph, module_subject, OKH.alternativeLicense, project.license.reference_url[:-5]
                    )  #FIXME: should be the license ID not the reference url, but it breaks the frontend
         cls.add(graph, module_subject, OKH.licensor, project.licensor)
         #FIXME: rename organisation to organization, once the frontend is adjusted

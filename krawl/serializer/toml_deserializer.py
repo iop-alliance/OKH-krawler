@@ -13,9 +13,13 @@ from krawl.serializer import ProjectDeserializer
 class TOMLProjectDeserializer(ProjectDeserializer):
 
     def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict = None) -> Project:
-        if isinstance(serialized, bytes):
-            serialized = serialized.decode(encoding="UTF-8", errors="ignore")
-        deserialized = toml.loads(serialized)
+        try:
+            if isinstance(serialized, bytes):
+                serialized = serialized.decode(encoding="UTF-8", errors="ignore")
+            deserialized = toml.loads(serialized)
+        except Exception as err:
+            raise DeserializerError("failed to deserialize TOML: {err}") from err
+
         if not isinstance(deserialized, Mapping):
             raise DeserializerError("invalid format")
         if enrich:

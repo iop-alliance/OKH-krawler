@@ -12,9 +12,13 @@ from krawl.serializer import ProjectDeserializer
 class JSONProjectDeserializer(ProjectDeserializer):
 
     def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict = None) -> Project:
-        deserialized = json.loads(serialized)
+        try:
+            deserialized = json.loads(serialized)
+        except Exception as err:
+            raise DeserializerError("failed to deserialize JSON: {err}") from err
         if not isinstance(deserialized, Mapping):
             raise DeserializerError("invalid format")
         if enrich:
             deserialized.update(enrich)
+
         return normalizer.normalize(deserialized)

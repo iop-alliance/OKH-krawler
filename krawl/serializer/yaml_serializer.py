@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import yaml
 
+from krawl.errors import SerializerError
 from krawl.project import Project
 from krawl.serializer import ProjectSerializer
 
@@ -13,4 +14,8 @@ class YAMLProjectSerializer(ProjectSerializer):
         self._sort_keys = sort_keys
 
     def serialize(self, project: Project) -> str:
-        return yaml.safe_dump(project.as_dict(), indent=self._indent, sort_keys=self._sort_keys)
+        try:
+            serialized = yaml.safe_dump(project.as_dict(), indent=self._indent, sort_keys=self._sort_keys)
+        except Exception as err:
+            raise SerializerError("failed to serialize TOML: {err}") from err
+        return serialized

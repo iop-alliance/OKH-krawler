@@ -13,7 +13,10 @@ from krawl.serializer import ProjectDeserializer
 class YAMLProjectDeserializer(ProjectDeserializer):
 
     def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict = None) -> Project:
-        deserialized = yaml.safe_load(serialized)
+        try:
+            deserialized = yaml.safe_load(serialized)
+        except Exception as err:
+            raise DeserializerError("failed to deserialize YAML: {err}") from err
         if not isinstance(deserialized, Mapping):
             raise DeserializerError("invalid format")
         if enrich:
