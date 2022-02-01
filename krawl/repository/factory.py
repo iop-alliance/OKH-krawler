@@ -56,7 +56,7 @@ class ProjectRepositoryFactory:
                 f"no such repository '{name}', available are: {', '.join(_repositories_schemas.keys())}")
         if name not in self._repositories:
             raise RepositoryError(f"repository '{name}' is not enabled")
-        return self._repositories[id.platform]
+        return self._repositories[name]
 
     def get_all(self) -> Generator[ProjectRepository, None, None]:
         for repository in self._repositories.values():

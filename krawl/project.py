@@ -82,7 +82,7 @@ class Project:
         self.function: str = None
         self.standard_compliance: str = None
         self.cpc_patent_class: str = None
-        self.tsdc = None
+        self.tsdc: str = None
         self.bom: File = None
         self.manufacturing_instructions: File = None
         self.user_manual: File = None
