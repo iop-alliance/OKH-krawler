@@ -1,0 +1,292 @@
+{
+    "licenses": [
+        {
+            "licenseId": "CERN-OHL-W-2.0",
+            "type": "weak"
+        },
+        {
+            "licenseId": "CC-BY-SA-1.0",
+            "type": "strong"
+        },
+        {
+            "licenseId": "CC-BY-SA-2.0",
+            "type": "strong"
+        },
+        {
+            "licenseId": "CC-BY-SA-2.0-UK",
+            "type": "strong"
+        },
+        {
+            "licenseId": "CC-BY-SA-2.1-JP",
+            "type": "strong"
+        },
+        {
+            "licenseId": "CC-BY-SA-2.5",
+            "type": "strong"
+        },
+        {
+            "licenseId": "CC-BY-SA-3.0",
+            "type": "strong"
+        },
+        {
+            "licenseId": "CC-BY-SA-3.0-AT",
+            "type": "strong"
+        },
+        {
+            "licenseId": "CC-BY-SA-3.0-DE",
+            "type": "strong"
+        },
+        {
+            "licenseId": "CC-BY-SA-4.0",
+            "type": "strong"
+        },
+        {
+            "licenseId": "CERN-OHL-1.1",
+            "type": "strong"
+        },
+        {
+            "licenseId": "CERN-OHL-1.2",
+            "type": "strong"
+        },
+        {
+            "licenseId": "CERN-OHL-S-2.0",
+            "type": "strong"
+        },
+        {
+            "licenseId": "GPL-1.0-only",
+            "type": "strong"
+        },
+        {
+            "licenseId": "GPL-1.0-or-later",
+            "type": "strong"
+        },
+        {
+            "licenseId": "GPL-2.0-only",
+            "type": "strong"
+        },
+        {
+            "licenseId": "GPL-2.0-or-later",
+            "type": "strong"
+        },
+        {
+            "licenseId": "GPL-3.0-only",
+            "type": "strong"
+        },
+        {
+            "licenseId": "GPL-3.0-or-later",
+            "type": "strong"
+        },
+        {
+            "licenseId": "TAPR-OHL-1.0",
+            "type": "strong"
+        },
+        {
+            "licenseId": "Apache-1.0",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "Apache-1.1",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "Apache-2.0",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "BSD-1-Clause",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "BSD-2-Clause",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "BSD-2-Clause-Paten",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "BSD-3-Clause",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "BSD-3-Clause-Clear ",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "BSD-3-Clause-LBNL ",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "BSD-4-Clause ",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "MIT",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "MIT-0",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CC-BY-1.0",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CC-BY-2.0",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CC-BY-2.5",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CC-BY-2.5-AU ",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CC-BY-3.0-AT",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CC-BY-3.0-DE",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CC-BY-3.0-NL",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CC-BY-3.0-US ",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CC-BY-3.0",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CC-BY-4.0",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CC0-1.0",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CERN-OHL-P-2.0",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "SHL-0.5",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "SHL-0.51",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "SHL-2.0",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "SHL-2.1",
+            "type": "permissive"
+        },
+        {
+            "licenseId": "CC-BY-NC-1.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-2.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-2.5",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-3.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-4.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-ND-1.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-ND-2.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-ND-2.5",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-ND-3.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-ND-3.0-IGO",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-ND-4.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-SA-1.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-SA-2.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-SA-2.5",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-SA-3.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-NC-SA-4.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-ND-1.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-ND-2.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-ND-2.5",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-ND-3.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "CC-BY-ND-4.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "NCGL-UK-2.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "NPOSL-3.0",
+            "isBlocked": true
+        },
+        {
+            "licenseId": "PolyForm-Noncommercial-1.0.0",
+            "isBlocked": true
+        }
+    ]
+}
