@@ -565,8 +565,8 @@ class KrawlerConfigLoader(ConfigLoader):
                     merged[key_path] = value
 
         # add defaults to fetchers (before validation)
-        fetchers_config = merged.fetchers
-        fetchers_defaults = merged.fetchers.get("defaults", {})
+        fetchers_config = merged.get("fetchers", {})
+        fetchers_defaults = fetchers_config.get("defaults", {})
         for name in fetchers_config:
             if name != "defaults":
                 for option, default_value in fetchers_defaults.items():
