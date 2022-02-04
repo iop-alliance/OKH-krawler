@@ -16,12 +16,13 @@ load-plugins=pylint.extensions.docparams,
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable=invalid-name,
+disable=abstract-method,
+        invalid-name,
         missing-docstring,
         missing-return-doc,
         redefined-builtin,
         too-few-public-methods,
-        abstract-method
+        unspecified-encoding
 
 
 [FORMAT]
