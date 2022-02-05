@@ -31,7 +31,14 @@ docker build -t open-next/losh-krawler .
 Then you can execute:
 
 ```sh
+# display help
 docker run --rm -u $UID open-next/losh-krawler --help
+
+# mount config and run some command
+docker run --rm -u $UID \
+  -v "$PWD/config.yml:/opt/krawler/config.yml" \
+  -v "$PWD/workdir:/opt/krawler/workdir" \
+   krawler fetch url -c config.yml -vv "https://github.com/OPEN-NEXT/OKH-LOSH/blob/master/sample_data/okh-OHLOOM.toml"
 ```
 
 ## Usage
