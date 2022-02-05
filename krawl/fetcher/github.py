@@ -409,7 +409,7 @@ class GitHubFetcher(Fetcher):
                 if is_empty(manifest_contents) or is_binary(manifest_contents):
                     log.debug("skipping file, because it has invalid content (%s)", id)
 
-                # create fetcher meta data
+                # create fetcher metadata
                 meta = {
                     "meta": {
                         "owner": id.owner,

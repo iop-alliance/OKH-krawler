@@ -50,17 +50,19 @@ class WikifactoryNormalizer(Normalizer):
 
     def normalize(self, raw: dict) -> Project:
         project = Project()
-        project.meta.source = raw["fetcher"]
-        project.meta.host = raw["fetcher"]
-        project.meta.owner = raw["parentSlug"]
-        project.meta.repo = raw["slug"]
+        meta = raw.get("meta")
+        project.meta.source = self._string(meta.get("fetcher"))
+        project.meta.owner = self._string(meta.get("owner"))
+        project.meta.repo = self._string(meta.get("repo"))
+        project.meta.path = self._string(meta.get("path"))
+        project.meta.branch = self._string(meta.get("branch"))
         project.meta.created_at = datetime.fromisoformat(raw["dateCreated"])
-        project.meta.last_visited = raw["lastVisited"]
+        project.meta.last_visited = meta.get("last_visited")
         project.meta.last_changed = datetime.fromisoformat(raw["lastUpdated"])
 
-        log.debug("normalizing '%s'", project.id)
+        log.debug("normalizing project metadata '%s'", project.id)
         files = self._get_files(raw)
-        project.name = raw["name"]
+        project.name = self._string(raw.get("name"))
         project.repo = f"https://wikifactory.com/{raw['parentSlug']}/{raw['slug']}"
         project.version = self._get_key(raw, "contribution", "version")
         project.release = f"https://wikifactory.com/{raw['parentSlug']}/{raw['slug']}/v/{project.version[:7] if project.version else ''}"
@@ -82,7 +84,6 @@ class WikifactoryNormalizer(Normalizer):
         project.bom = None
         project.manufacturing_instructions = None
         project.user_manual = self._get_info_file(["USERGUIDE", "USERMANUAL"], files)
-        project.outer_dimensions_mm = None
         project.part = self._parts(files)
         project.software = []
 
@@ -137,8 +138,9 @@ class WikifactoryNormalizer(Normalizer):
     @classmethod
     def _file(cls, file_raw: dict) -> File:
         file = File()
-        file.path = Path(file_raw["filename"]) if "filename" in file_raw else None
-        file.name = file.path.with_suffix("") if file.path else None
+        file.path = Path(file_raw["path"]) if "path" in file_raw else \
+            Path(file_raw["filename"]) if "filename" in file_raw else None
+        file.name = str(file.path.with_suffix("")) if file.path else None
         file.mime_type = file_raw.get("mimeType", None)
         file.url = file_raw.get("url", None)
         file.perma_url = file_raw.get("permalink", None)

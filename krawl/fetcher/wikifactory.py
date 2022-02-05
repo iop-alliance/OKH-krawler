@@ -9,7 +9,7 @@ from gql import gql
 from gql.transport.requests import RequestsHTTPTransport
 
 from krawl.config import Config
-from krawl.errors import FetcherError
+from krawl.errors import FetcherError, NormalizerError
 from krawl.fetcher import Fetcher
 from krawl.normalizer.wikifactory import WikifactoryNormalizer
 from krawl.project import Project, ProjectID
@@ -222,6 +222,8 @@ class WikifactoryFetcher(Fetcher):
 
     def fetch(self, id: ProjectID) -> Project:
         log.debug("fetching project %s", id)
+
+        # download metadata
         params = {"space": id.owner, "slug": id.repo}
         try:
             result = self._client.execute(QUERY_PROJECT_BY_SLUG, variable_values=params)
@@ -229,11 +231,28 @@ class WikifactoryFetcher(Fetcher):
             raise FetcherError(f"failed to fetch project '{id}'") from e
         if not result:
             raise FetcherError(f"project '{id}' not found")
-        # enrich result
-        result = result["project"]["result"]
-        result["fetcher"] = self.NAME
-        result["lastVisited"] = datetime.now(timezone.utc)
-        return self._normalizer.normalize(result)
+
+        # create fetcher metadata
+        raw_project = result["project"]["result"]
+        id = ProjectID(self.NAME, raw_project["parentSlug"], raw_project["slug"])
+        meta = {
+            "meta": {
+                "owner": id.owner,
+                "repo": id.repo,
+                "path": id.path,
+                "fetcher": self.NAME,
+                "last_visited": datetime.now(timezone.utc),
+            }
+        }
+
+        # try normalizing it
+        try:
+            raw_project.update(meta)
+            project = self._normalizer.normalize(raw_project)
+        except NormalizerError as err:
+            raise FetcherError(f"normalization failed, that should not happen: {err}") from err
+
+        return project
 
     def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
         has_next_page = True
@@ -250,12 +269,14 @@ class WikifactoryFetcher(Fetcher):
         while has_next_page:
             log.debug("fetching projects %d to %d", num_fetched_projects, num_fetched_projects + self.BATCH_SIZE)
 
+            # download metadata
             params = {"cursor": cursor, "batchSize": self.BATCH_SIZE}
             try:
                 result = self._client.execute(QUERY_PROJECTS, variable_values=params)
             except Exception as e:
                 raise FetcherError(f"failed to fetch projects from WikiFactory: {e}") from e
 
+            # process results
             raw = result["projects"]["result"]
             pageinfo = raw["pageInfo"]
             cursor = pageinfo["endCursor"]
@@ -264,9 +285,26 @@ class WikifactoryFetcher(Fetcher):
             last_visited = datetime.now(timezone.utc)
             for edge in raw["edges"]:
                 raw_project = edge["node"]
-                raw_project["fetcher"] = self.NAME
-                raw_project["lastVisited"] = last_visited
-                project = self._normalizer.normalize(raw_project)
+
+                # create fetcher metadata
+                id = ProjectID(self.NAME, raw_project["parentSlug"], raw_project["slug"])
+                meta = {
+                    "meta": {
+                        "owner": id.owner,
+                        "repo": id.repo,
+                        "path": id.path,
+                        "fetcher": self.NAME,
+                        "last_visited": last_visited,
+                    }
+                }
+
+                # try normalizing it
+                try:
+                    raw_project.update(meta)
+                    project = self._normalizer.normalize(raw_project)
+                except NormalizerError as err:
+                    raise FetcherError(f"normalization failed, that should not happen: {err}") from err
+
                 log.debug("yield project %s", project.id)
                 yield project
 

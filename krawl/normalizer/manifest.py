@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse
 
 import validators
 
@@ -99,53 +99,6 @@ class ManifestNormalizer(Normalizer):
         except ValueError:
             pass
 
-        return None
-
-    @classmethod
-    def _string(cls, value: Any) -> str | None:
-        if value is None:
-            return None
-        if isinstance(value, str):
-            return value
-        if isinstance(value, (int, float)):
-            return str(value)
-        return None
-
-    @classmethod
-    def _float(cls, value: Any) -> float | None:
-        if value is None:
-            return None
-        if isinstance(value, float):
-            return value
-        if isinstance(value, (str, int)):
-            try:
-                return float(value)
-            except ValueError:
-                return None
-        return None
-
-    @classmethod
-    def _int(cls, value: Any) -> int | None:
-        if value is None:
-            return None
-        if isinstance(value, int):
-            return value
-        if isinstance(value, (str, float)):
-            try:
-                return int(value)
-            except ValueError:
-                return None
-        return None
-
-    @classmethod
-    def _path(cls, value: Any) -> Path | None:
-        if value is None:
-            return None
-        if isinstance(value, Path):
-            return value
-        value = cls._string(value)
-        if value:
-            return Path(value)
         return None
 
     @classmethod
