@@ -6,14 +6,32 @@ The implementation is still pretty much work in progress. It misses parts of the
 
 ## Install
 
+### Local
+
+The project requires the following:
+
 - Python >= 3.7
 - [Poetry](https://python-poetry.org)
 
-Once you have `poetry` in your PATH, locally install the project by entering the repository dir (where the `pyproject.toml` file is located) and type:
+Once you have `poetry` installed, you can install the project locally by running the following commands in the repository dir (where the `pyproject.toml` file is located):
 
 ```sh
 poetry install
 poetry shell
+```
+
+### Using Docker
+
+The application can be used with Docker. You first need to build the Docker Image by running:
+
+```sh
+docker build -t open-next/losh-krawler .
+```
+
+Then you can execute:
+
+```sh
+docker run --rm -u $UID open-next/losh-krawler --help
 ```
 
 ## Usage
