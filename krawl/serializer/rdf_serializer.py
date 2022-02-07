@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
+import tldextract
 
 import rdflib
 import validators
@@ -116,10 +117,10 @@ class RDFProjectSerializer(ProjectSerializer):
             license = get_fallback(part, "license")
             if license and license.is_spdx:
                 cls.add(graph, part_subject, OKH.spdxLicense, license.reference_url[:-5]
-                       )  #FIXME: should be the license ID not the reference url, but it breaks the frontend
+                        )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
             else:
                 cls.add(graph, part_subject, OKH.alternativeLicense, license.reference_url[:-5]
-                       )  #FIXME: should be the license ID not the reference url, but it breaks the frontend
+                        )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
             cls.add(graph, part_subject, OKH.licensor, get_fallback(part, "licensor"))
             cls.add(graph, part_subject, OKH.material, part.material)
             cls.add(graph, part_subject, OKH.manufacturingProcess, part.manufacturing_process)
@@ -160,7 +161,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
             # auxiliary
             for i, file in enumerate(part.auxiliary):
-                auxiliary_subject = namespace[f"{partname}_auxiliary{i+1}"]
+                auxiliary_subject = namespace[f"{partname}_auxiliary{i + 1}"]
                 cls.add(graph, part_subject, OKH.auxiliary, auxiliary_subject)
                 cls.add(graph, auxiliary_subject, rdflib.RDF.type, OKH.AuxiliaryFile)
                 cls.add(graph, auxiliary_subject, rdflib.RDFS.label,
@@ -189,17 +190,20 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.versionOf, project.repo)
         cls.add(graph, module_subject, OKH.repo, project.repo)
         cls.add(graph, module_subject, OKH.dataSource, project.meta.source)
-        cls.add(graph, module_subject, OKH.repoHost, urlparse(project.repo).hostname)
+
+        extracted_url__parts = tldextract.extract(project.repo)
+
+        cls.add(graph, module_subject, OKH.repoHost, f"{extracted_url__parts.domain}.{extracted_url__parts.suffix}")
         cls.add(graph, module_subject, OKH.version, project.version)
         cls.add(graph, module_subject, OKH.release, project.release)
         if project.license.is_spdx:
             cls.add(graph, module_subject, OKH.spdxLicense, project.license.reference_url[:-5]
-                   )  #FIXME: should be the license ID not the reference url, but it breaks the frontend
+                    )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
         else:
             cls.add(graph, module_subject, OKH.alternativeLicense, project.license.reference_url[:-5]
-                   )  #FIXME: should be the license ID not the reference url, but it breaks the frontend
+                    )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
         cls.add(graph, module_subject, OKH.licensor, project.licensor)
-        #FIXME: rename organisation to organization, once the frontend is adjusted
+        # FIXME: rename organisation to organization, once the frontend is adjusted
         cls.add(graph, module_subject, OKH.organisation, project.organization)
         # cls.add(graph, module_subject, OKH.contributorCount, None)  ## TODO see if github api can do this
 
@@ -211,7 +215,7 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.tsdc, project.tsdc)
 
         cls.add(graph, module_subject, OKH.export, [file.path for file in project.export])
-        cls.add(graph, module_subject, OKH.source, [file.path for file in project.export])
+        cls.add(graph, module_subject, OKH.source, [file.path for file in project.source])
         cls.add(graph, module_subject, OKH.uploadMethod, project.upload_method)
 
         for index in project.specific_api_data:

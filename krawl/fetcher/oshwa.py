@@ -1,16 +1,14 @@
 import logging
 import math
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Generator
-from urllib.parse import urlparse
 
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
 from krawl.config import Config
-from krawl.exceptions import FetchingException
+from krawl.errors import FetcherError
 from krawl.fetcher import Fetcher
 from krawl.normalizer.oshwa import OshwaNormalizer
 from krawl.project import Project, ProjectID
@@ -102,7 +100,7 @@ class OshwaFetcher(Fetcher):
             )
 
             if response.status_code > 205:
-                raise FetchingException(f"failed to fetch projects from GitHub: {response.text}")
+                raise FetcherError(f"failed to fetch projects from GitHub: {response.text}")
 
             data = response.json()
 

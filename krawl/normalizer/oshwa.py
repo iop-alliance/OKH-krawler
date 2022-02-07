@@ -61,7 +61,6 @@ class OshwaNormalizer(Normalizer):
         try:
             project = Project()
             project.meta.source = self._get_key(raw, "fetcher")
-            project.meta.host = self._get_key(raw, "fetcher")
             project.meta.owner = self._get_key(raw, "responsibleParty")
             project.meta.repo = self._normalize_repo(raw)
             project.meta.last_visited = self._get_key(raw, "lastVisited")
@@ -89,7 +88,7 @@ class OshwaNormalizer(Normalizer):
             certification_date = self._get_key(raw, "certificationDate")
             if certification_date:
                 project.specific_api_data['certificationDate'] = datetime.strptime(certification_date,
-                                                                 "%Y-%m-%dT%H:%M%z")
+                                                                                   "%Y-%m-%dT%H:%M%z")
             return project
         except Exception as e:
             log.warning("Raw Oshwa data could not be normalized: %s", e)
@@ -193,7 +192,4 @@ class OshwaNormalizer(Normalizer):
 
     @classmethod
     def _normalize_repo(cls, raw: dict):
-        doc_url = raw.get('documentationUrl')
-        if not doc_url:
-            return f"https://certification.oshwa.org/{raw['oshwaUid']}.html"
-        return doc_url
+        return f"https://certification.oshwa.org/{raw['oshwaUid']}.html"

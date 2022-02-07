@@ -58,7 +58,6 @@ class ThingiverseNormalizer(Normalizer):
         try:
             project = Project()
             project.meta.source = raw["fetcher"]
-            project.meta.host = raw["fetcher"]
             project.meta.owner = self._normalize_creator(raw)
             project.meta.repo = raw['public_url']
             project.meta.created_at = datetime.fromisoformat(raw['added'])
@@ -82,6 +81,7 @@ class ThingiverseNormalizer(Normalizer):
             return project
         except Exception as e:
             log.warning(e)
+
             return None
 
     @classmethod

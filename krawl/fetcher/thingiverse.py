@@ -9,7 +9,7 @@ from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
 from krawl.config import Config
-from krawl.exceptions import FetchingException
+from krawl.errors import FetcherError
 from krawl.fetcher import Fetcher
 from krawl.normalizer.thingiverse import ThingiverseNormalizer
 from krawl.project import Project, ProjectID
@@ -116,7 +116,8 @@ class ThingiverseFetcher(Fetcher):
         self._request_counter += 1
 
         if response.status_code > 205:
-            raise FetchingException(f"failed to fetch projects from Thingiverse: {response.text}")
+            raise FetcherError(f"failed to fetch projects from Thingiverse: {response.text}")
+
 
         sleep(1)  # one request per second rate limit
 
@@ -177,7 +178,7 @@ class ThingiverseFetcher(Fetcher):
                     "fetch_things_ids": fetch_things_ids
                 })
 
-            except FetchingException as e:
+            except FetcherError as e:
                 thingiverse_logger.warning(e)
                 continue
 
