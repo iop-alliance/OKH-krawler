@@ -1,6 +1,5 @@
 import logging
-import math
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from time import sleep
 from typing import Generator
 
@@ -19,7 +18,7 @@ thingiverse_logger = logging.getLogger("Thingiverse-Logger")
 
 thingiverse_logger.setLevel(logging.DEBUG)
 
-caught_licenses = dict()
+caught_licenses = {}
 
 
 def catch_license(project_license):
@@ -105,7 +104,7 @@ class ThingiverseFetcher(Fetcher):
     def _do_request(self, url, params=None):
 
         if params is None:
-            params = dict()
+            params = {}
 
         response = self._session.get(
             url=url,
@@ -117,7 +116,6 @@ class ThingiverseFetcher(Fetcher):
 
         if response.status_code > 205:
             raise FetcherError(f"failed to fetch projects from Thingiverse: {response.text}")
-
 
         sleep(1)  # one request per second rate limit
 
@@ -181,4 +179,3 @@ class ThingiverseFetcher(Fetcher):
             except FetcherError as e:
                 thingiverse_logger.warning(e)
                 continue
-

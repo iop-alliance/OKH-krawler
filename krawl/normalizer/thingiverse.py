@@ -9,7 +9,7 @@ from pathlib import Path
 from langdetect import LangDetectException
 from langdetect import detect as detect_language
 
-import krawl.licenses as licenses
+from krawl import licenses
 from krawl.file_formats import get_type_from_extension
 from krawl.normalizer import Normalizer, strip_html
 from krawl.project import File, Project, UploadMethods

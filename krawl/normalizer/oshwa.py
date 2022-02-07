@@ -7,7 +7,7 @@ from datetime import datetime
 from langdetect import LangDetectException
 from langdetect import detect as detect_language
 
-import krawl.licenses as licenses
+from krawl import licenses
 from krawl.normalizer import Normalizer, strip_html
 from krawl.project import Project, UploadMethods
 
@@ -27,32 +27,6 @@ LICENSE_MAPPING = {
     "CERN": "CERN-OHL-1.2",
 }
 
-
-# {
-#     "oshwaUid": "SE000004",
-#     "responsibleParty": "arturo182",
-#     "country": "Sweden",
-#     "publicContact": "oledpmod@solder.party",
-#     "projectName": "0.95\" OLED PMOD",
-#     "projectWebsite": "https://github.com/arturo182/pmod_rgb_oled_0.95in/",
-#     "projectVersion": "1.0",
-#     "projectDescription": "A tiny color OLED!\r\n\r\nPerfect solution if you need a small display with vivid, high-contrast 16-bit color. PMOD connector can be used with FPGA and MCU dev boards\r\n\r\nThe display itself is a 0.95&quot; color OLED, the resolution is 96x64 RGB pixels.\r\n\r\nThe display is driven by the SSD1331 IC, you can control it with a 4-wire write-only SPI. The board only supports 3.3V logic.",
-#     "primaryType": "Other",
-#     "additionalType": [
-#         "Electronics"
-#     ],
-#     "projectKeywords": [
-#         "oled",
-#         "display",
-#         "pmod"
-#     ],
-#     "citations": [],
-#     "documentationUrl": "https://github.com/arturo182/pmod_rgb_oled_0.95in/",
-#     "hardwareLicense": "CERN",
-#     "softwareLicense": "No software",
-#     "documentationLicense": "CC BY-SA",
-#     "certificationDate": "2020-05-04T00:00-04:00"
-# },
 
 class OshwaNormalizer(Normalizer):
 
@@ -125,8 +99,8 @@ class OshwaNormalizer(Normalizer):
                 return ""
             if len(additional_type) == 0:
                 return ""
-            else:
-                return additional_type
+
+            return additional_type
 
         mapping_primary_to_cpc = {
             "3D Printing": "B33Y",
