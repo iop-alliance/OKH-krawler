@@ -11,8 +11,8 @@ class FileReporter(Reporter):
 
     def __init__(self, path: Path, fetcher_name: str) -> None:
         super().__init__()
-        self._file = self._open(path)
-        self._stat_file = self._open(Path(f"stats-{path.name}"))
+        self._file = None
+        self._open(path)
         self._fetcher_name = fetcher_name
 
         self.added_projects = 0
@@ -32,22 +32,19 @@ class FileReporter(Reporter):
     def close(self) -> None:
         """Closes the underlying resources."""
         if self._file:
-            self._file.close()
-
-        if self._stat_file:
             self._write_stats()
-            self._stat_file.close()
+            self._file.close()
 
     def _open(self, path: Path):
         if path.exists() and not path.is_file():
             raise OSError(f"'{path}' is not a file")
-        return path.open("w")
+        self._file = path.open("w")
 
     def _write_stats(self):
-        if self._stat_file:
-            self._stat_file.writelines([
+        if self._file:
+            self._file.writelines([
+                "\n\n",
                 f"-------- Stats for Fetcher {self._fetcher_name} -------\n\n",
                 f"Added projects: {self.added_projects}\n",
                 f"Skipped projects: {self.skipped_projects}\n\n"
             ])
-
