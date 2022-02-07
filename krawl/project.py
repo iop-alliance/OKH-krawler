@@ -18,16 +18,6 @@ class UploadMethods(Enum):
         return self.value
 
 
-class UploadMethods(Enum):
-    AUTO = "auto"  # via api direct
-    MANIFEST = "manifest"  # via api and manifest
-    MANIFEST_SCRIPT = "manifest-script"  # via script
-    MANUAL = "manual"
-
-    def __str__(self):
-        return self.value
-
-
 class ProjectID:
     """ProjectID serves as an identifier for projects, that can be used by the
     appropriate fetcher to fetch the projects metadata.

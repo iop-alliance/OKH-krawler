@@ -71,7 +71,6 @@ class FetcherXCommand(KrawlCommand):
         # perform the deed
         log.info("fetching all projects from %s", self.name)
         for project in fetcher.fetch_all(start_over=start_over):
-            reporter.write_report(report_path)
             ok, reason = validator.validate(project)
             if ok:
                 reporter.add(project.id, Status.OK)
