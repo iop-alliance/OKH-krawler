@@ -11,7 +11,7 @@ import validators
 from krawl.licenses import get_by_id_or_name as get_license
 from krawl.normalizer import Normalizer
 from krawl.platform_url import PlatformURL
-from krawl.project import File, Mass, Meta, OuterDimensions, Part, Project, Software
+from krawl.project import File, Mass, Meta, OuterDimensions, Part, Project, Software, UploadMethods
 
 log = logging.getLogger("manifest-normalizer")
 
@@ -61,6 +61,7 @@ class ManifestNormalizer(Normalizer):
         project.user_manual = self._file(raw.get("user-manual"), project.meta.path, download_url)
         project.part = self._parts(raw.get("part"), project.meta.path, download_url)
         project.software = self._software(raw.get("software"), project.meta.path, download_url)
+        project.upload_method = UploadMethods.MANIFEST
 
         return project
 

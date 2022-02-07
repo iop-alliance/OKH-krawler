@@ -7,6 +7,16 @@ from krawl.licenses import License, get_by_id_or_name
 from krawl.platform_url import PlatformURL
 
 
+class UploadMethods(Enum):
+    AUTO = "auto"  # via api direct
+    MANIFEST = "manifest"  # via api and manifest
+    MANIFEST_SCRIPT = "manifest-script"  # via script
+    MANUAL = "manual"
+
+    def __str__(self):
+        return self.value
+
+
 class ProjectID:
     """ProjectID serves as an identifier for projects, that can be used by the
     appropriate fetcher to fetch the projects metadata.
@@ -55,7 +65,8 @@ class Project:
         "meta", "okhv", "name", "repo", "version", "release", "license", "licensor", "organization", "readme",
         "contribution_guide", "image", "documentation_language", "technology_readiness_level",
         "documentation_readiness_level", "attestation", "publication", "function", "standard_compliance",
-        "cpc_patent_class", "tsdc", "bom", "manufacturing_instructions", "user_manual", "part", "software"
+        "cpc_patent_class", "tsdc", "bom", "manufacturing_instructions", "user_manual", "part", "software",
+        "specific_api_data", "source", "export", "upload_method"
     ]
 
     def __init__(self) -> None:

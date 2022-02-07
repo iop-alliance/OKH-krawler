@@ -209,6 +209,15 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.cpcPatentClass, project.cpc_patent_class)
         cls.add(graph, module_subject, OKH.tsdc, project.tsdc)
 
+        cls.add(graph, module_subject, OKH.export, [file.path for file in project.export])
+        cls.add(graph, module_subject, OKH.source, [file.path for file in project.export])
+        cls.add(graph, module_subject, OKH.uploadMethod, project.upload_method)
+
+        for index in project.specific_api_data:
+            cls.add(graph, module_subject,
+                    URIRef(f"https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl#{index}"),
+                    project.specific_api_data[index])
+
         return module_subject
 
     # def _make_functional_metadata_list(self, module, functional_metadata, BASE):
