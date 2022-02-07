@@ -15,9 +15,7 @@ from krawl.normalizer import Normalizer, strip_html
 from krawl.project import File, Project, UploadMethods
 
 log = logging.getLogger("thingiverse-normalizer")
-log.setLevel(logging.DEBUG)
 
-# see https://soulaimanghanem.medium.com/github-repository-structure-best-practices-248e6effc405
 EXCLUDE_FILES = [
     "ACKNOWLEDGMENTS",
     "AUTHORS",

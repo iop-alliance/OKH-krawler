@@ -15,7 +15,6 @@ from krawl.project import Project, ProjectID
 from krawl.repository import FetcherStateRepository
 
 oshwa_logger = logging.getLogger("OSHWA-Logger")
-oshwa_logger.setLevel(logging.DEBUG)
 
 
 class OshwaFetcher(Fetcher):

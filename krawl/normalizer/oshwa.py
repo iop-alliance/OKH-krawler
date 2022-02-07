@@ -12,7 +12,6 @@ from krawl.normalizer import Normalizer, strip_html
 from krawl.project import Project, UploadMethods
 
 log = logging.getLogger("oshwa-normalizer")
-log.setLevel(logging.DEBUG)
 
 LICENSE_MAPPING = {
     "CC-BY-4.0": "CC-BY-4.0",

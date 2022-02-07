@@ -28,11 +28,11 @@ class FileReporter(Reporter):
             self.skipped_projects += 1
 
         self._file.write(line)
+        self._write_stats()
 
     def close(self) -> None:
         """Closes the underlying resources."""
         if self._file:
-            self._write_stats()
             self._file.close()
 
     def _open(self, path: Path):

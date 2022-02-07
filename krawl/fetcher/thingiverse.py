@@ -16,16 +16,11 @@ from krawl.repository import FetcherStateRepository
 
 thingiverse_logger = logging.getLogger("Thingiverse-Logger")
 
-thingiverse_logger.setLevel(logging.DEBUG)
-
 caught_licenses = {}
 
-
 def catch_license(project_license):
+    thingiverse_logger.debug(f"Catch Licence: {project_license}")
     caught_licenses.update({project_license: project_license})
-
-
-def print_licenses():
     with open('thingiverse-licenses', 'w') as fout:
         fout.writelines(map(lambda l: f"{l}\n", caught_licenses))
 
@@ -164,10 +159,8 @@ class ThingiverseFetcher(Fetcher):
 
                 projects_counter += 1
 
-                catch_license(thing['license'])
                 thingiverse_logger.debug("%d yield project %s", projects_counter, project.id)
                 thingiverse_logger.info("%d requests triggered", self._request_counter)
-                print_licenses()
                 yield project
 
                 # save current progress
