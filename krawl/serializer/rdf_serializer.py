@@ -28,7 +28,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
             serialized = graph.serialize(format="turtle").decode("utf-8")
         except Exception as err:
-            raise SerializerError(f"failed to serialize JSON: {err}") from err
+            raise SerializerError(f"failed to serialize RDF: {err}") from err
         return serialized
 
     @staticmethod
