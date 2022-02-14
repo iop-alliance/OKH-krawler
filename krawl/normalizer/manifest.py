@@ -238,7 +238,7 @@ class ManifestNormalizer(Normalizer):
     def _outer_dimensions(cls, raw_outer_dimensions: Any) -> OuterDimensions | None:
         if not isinstance(raw_outer_dimensions, dict):
             return None
-        od = OuterDimensions
+        od = OuterDimensions()
         od.openscad = cls._string(raw_outer_dimensions.get("openSCAD"))
         od.unit = cls._string(raw_outer_dimensions.get("unit"))
         return od
