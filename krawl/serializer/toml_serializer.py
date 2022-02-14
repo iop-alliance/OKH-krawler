@@ -13,5 +13,5 @@ class TOMLProjectSerializer(ProjectSerializer):
         try:
             serialized = toml.dumps(project.as_dict())
         except Exception as err:
-            raise SerializerError("failed to serialize TOML: {err}") from err
+            raise SerializerError(f"failed to serialize TOML: {err}") from err
         return serialized

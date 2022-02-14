@@ -16,7 +16,7 @@ class YAMLProjectDeserializer(ProjectDeserializer):
         try:
             deserialized = yaml.safe_load(serialized)
         except Exception as err:
-            raise DeserializerError("failed to deserialize YAML: {err}") from err
+            raise DeserializerError(f"failed to deserialize YAML: {err}") from err
         if not isinstance(deserialized, Mapping):
             raise DeserializerError("invalid format")
         if enrich:

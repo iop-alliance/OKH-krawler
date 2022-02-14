@@ -18,7 +18,7 @@ class TOMLProjectDeserializer(ProjectDeserializer):
                 serialized = serialized.decode(encoding="UTF-8", errors="ignore")
             deserialized = toml.loads(serialized)
         except Exception as err:
-            raise DeserializerError("failed to deserialize TOML: {err}") from err
+            raise DeserializerError(f"failed to deserialize TOML: {err}") from err
 
         if not isinstance(deserialized, Mapping):
             raise DeserializerError("invalid format")

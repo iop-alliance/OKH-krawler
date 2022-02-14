@@ -15,7 +15,7 @@ class JSONProjectDeserializer(ProjectDeserializer):
         try:
             deserialized = json.loads(serialized)
         except Exception as err:
-            raise DeserializerError("failed to deserialize JSON: {err}") from err
+            raise DeserializerError(f"failed to deserialize JSON: {err}") from err
         if not isinstance(deserialized, Mapping):
             raise DeserializerError("invalid format")
         if enrich:

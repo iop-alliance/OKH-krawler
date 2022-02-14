@@ -17,5 +17,5 @@ class YAMLProjectSerializer(ProjectSerializer):
         try:
             serialized = yaml.safe_dump(project.as_dict(), indent=self._indent, sort_keys=self._sort_keys)
         except Exception as err:
-            raise SerializerError("failed to serialize TOML: {err}") from err
+            raise SerializerError(f"failed to serialize TOML: {err}") from err
         return serialized

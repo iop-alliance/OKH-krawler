@@ -17,5 +17,5 @@ class JSONProjectSerializer(ProjectSerializer):
         try:
             serialized = json.dumps(project.as_dict(), indent=self._indent, sort_keys=self._sort_keys)
         except Exception as err:
-            raise SerializerError("failed to serialize JSON: {err}") from err
+            raise SerializerError(f"failed to serialize JSON: {err}") from err
         return serialized
