@@ -248,7 +248,8 @@ class GitHubFetcher(Fetcher):
         # https://docs.github.com/en/graphql/overview/resource-limitations#rate-limit
         self._primary_repo_rate_limit = RateLimitNumRequests(num_requests=5000)
         # https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits
-        self._secondary_rate_limit = RateLimitFixedTimedelta(seconds=1.1)
+        self._secondary_rate_limit = RateLimitFixedTimedelta(seconds=5)
+        self._file_rate_limit = RateLimitFixedTimedelta(seconds=1)
 
         retry = Retry(
             total=config.retries,
@@ -463,10 +464,10 @@ class GitHubFetcher(Fetcher):
         ))
 
     def _download_manifest(self, url) -> bytes:
-        self._secondary_rate_limit.apply()
+        self._file_rate_limit.apply()
         log.debug("downloading manifest file %s", url)
         response = self._session.get(url)
-        self._secondary_rate_limit.update()
+        self._file_rate_limit.update()
         if response.status_code == 404:
             raise NotFound(f"Manifest doesn't exist on default branch ({url})")
         elif response.status_code != 200:
