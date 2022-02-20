@@ -20,19 +20,18 @@ log = get_child_logger("thingiverse")
 
 
 class ThingiverseFetcher(Fetcher):
-    NAME = 'thingiverse'
+    NAME = "thingiverse.com"
     RETRY_CODES = [429, 500, 502, 503, 504]
-
     CONFIG_SCHEMA = {
-
-        "type": 'dict',
+        "type": "dict",
+        "default": {},
         "meta": {
             "long_name": "thingiverse",
         },
         "schema": {
             "timeout": {
                 "type": "integer",
-                "default": 10,
+                "default": 15,
                 "min": 1,
                 "meta": {
                     "long_name": "timeout",
@@ -62,7 +61,6 @@ class ThingiverseFetcher(Fetcher):
     }
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
-
         self._state_repository = state_repository
         self._normalizer = ThingiverseNormalizer()
 
@@ -83,7 +81,7 @@ class ThingiverseFetcher(Fetcher):
             HTTPAdapter(max_retries=retry),
         )
         self._session.headers.update({
-            "User-Agent": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH",  # FIXME: use user agent defined in config
+            "User-Agent": config.user_agent,
             "Authorization": f"Bearer {config.access_token}",
         })
 
@@ -95,10 +93,7 @@ class ThingiverseFetcher(Fetcher):
         if params is None:
             params = {}
 
-        response = self._session.get(
-            url=url,
-            params=params
-        )
+        response = self._session.get(url=url, params=params)
 
         self._request_start_time = datetime.now(timezone.utc)
         self._request_counter += 1
@@ -111,7 +106,6 @@ class ThingiverseFetcher(Fetcher):
         return response.json()
 
     def fetch_all(self, start_over=False) -> Generator[Project, None, None]:
-
         id_cursor = 0
         projects_counter = 0
         fetch_things_ids = []
@@ -124,8 +118,11 @@ class ThingiverseFetcher(Fetcher):
                 id_cursor = state.get("id_cursor", 1)
                 fetch_things_ids = state.get("fetch_things_ids", [])
 
-        data = self._do_request("https://api.thingiverse.com/search",
-                                {'sort': 'newest', "type": "things", "per_page": 1})
+        data = self._do_request("https://api.thingiverse.com/search", {
+            'sort': 'newest',
+            "type": "things",
+            "per_page": 1
+        })
 
         last_thing_id = data["hits"].pop(0)["id"]
         last_visited = datetime.now(timezone.utc)
@@ -134,11 +131,11 @@ class ThingiverseFetcher(Fetcher):
 
             fetch_things_ids.append(id_cursor)
             id_cursor += 1
-            thingiverse_logger.info("Try to fetch thing with id %d", id_cursor)
+            log.info("Try to fetch thing with id %d", id_cursor)
             try:
                 thing = self._do_request(f"https://api.thingiverse.com/things/{id_cursor}")
 
-                thingiverse_logger.info(f"Convert thing {thing.get('name')}..")
+                log.info("Convert thing %s...", thing.get('name'))
 
                 thing_files = self._do_request(f"https://api.thingiverse.com/things/{last_thing_id}/files")
 
@@ -148,21 +145,18 @@ class ThingiverseFetcher(Fetcher):
 
                 project = self._normalizer.normalize(thing)
                 if not project:
-                    thingiverse_logger.warning("project with name %s could not be normalized", thing['name'])
+                    log.warning("project with name %s could not be normalized", thing['name'])
                     continue
 
                 projects_counter += 1
 
-                thingiverse_logger.debug("%d yield project %s", projects_counter, project.id)
-                thingiverse_logger.info("%d requests triggered", self._request_counter)
+                log.debug("%d yield project %s", projects_counter, project.id)
+                log.info("%d requests triggered", self._request_counter)
                 yield project
 
                 # save current progress
-                self._state_repository.store(self.NAME, {
-                    "id_cursor": id_cursor,
-                    "fetch_things_ids": fetch_things_ids
-                })
+                self._state_repository.store(self.NAME, {"id_cursor": id_cursor, "fetch_things_ids": fetch_things_ids})
 
             except FetcherError as e:
-                thingiverse_logger.warning(e)
+                log.warning(e)
                 continue

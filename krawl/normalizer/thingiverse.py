@@ -52,35 +52,32 @@ class ThingiverseNormalizer(Normalizer):
     def __init__(self):
         mimetypes.init()
 
-    def normalize(self, raw: dict) -> Project | None:
-        try:
-            project = Project()
-            project.meta.source = raw["fetcher"]
-            project.meta.owner = self._normalize_creator(raw)
-            project.meta.repo = raw['public_url']
-            project.meta.created_at = datetime.fromisoformat(raw['added'])
-            project.meta.last_visited = raw["lastVisited"]
-            project.name = raw['name']
-            project.repo = raw['public_url']
-            project.version = "1.0.0"
-            project.license = self._normalize_license(raw)
-            project.licensor = self._normalize_creator(raw)
-            project.function = self._normalize_function(raw)
-            project.documentation_language = self._normalize_language(project.function)
-            project.technology_readiness_level = "ortl4"
-            project.documentation_readiness_level = "odrl3"
-            project.upload_method = UploadMethods.AUTO
+    def normalize(self, raw: dict) -> Project:
+        project = Project()
+        project.meta.source = raw["fetcher"]
+        project.meta.owner = self._normalize_creator(raw)
+        project.meta.repo = raw['public_url']
+        project.meta.created_at = datetime.fromisoformat(raw['added'])
+        project.meta.last_visited = raw["lastVisited"]
+        project.name = raw['name']
+        project.repo = raw['public_url']
+        project.version = "1.0.0"
+        project.license = self._normalize_license(raw)
+        project.licensor = self._normalize_creator(raw)
+        project.function = self._normalize_function(raw)
+        project.documentation_language = self._normalize_language(project.function)
+        project.technology_readiness_level = "ortl4"
+        project.documentation_readiness_level = "odrl3"
+        project.upload_method = UploadMethods.AUTO
 
-            project.image = self._normalize_image(project, raw)
-            project.export = [self._normalize_file(project, file) for file in
-                              self._filter_files_by_category(raw["files"], "export")]
-            project.source = [self._normalize_file(project, file) for file in
-                              self._filter_files_by_category(raw["files"], "source")]
-            return project
-        except Exception as e:
-            log.warning(e)
-
-            return None
+        project.image = self._normalize_image(project, raw)
+        project.export = [
+            self._normalize_file(project, file) for file in self._filter_files_by_category(raw["files"], "export")
+        ]
+        project.source = [
+            self._normalize_file(project, file) for file in self._filter_files_by_category(raw["files"], "source")
+        ]
+        return project
 
     @classmethod
     def _normalize_creator(cls, raw):
