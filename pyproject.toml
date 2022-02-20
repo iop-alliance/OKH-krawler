@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "krawl"
-version = "0.1.0"
+version = "0.9.0"
 description = ""
 authors = ["Andre Lehmann <aisberg@posteo.de>"]
 
@@ -23,7 +23,6 @@ gql = {version = "^3.0.0rc0", extras = ["requests"]}
 Cerberus = "^1.3.4"
 cleo = "^0.8.1"
 langcodes = "^3.3.0"
-tldextract = "^3.1.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

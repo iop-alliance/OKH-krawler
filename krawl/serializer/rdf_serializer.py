@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import urlparse, urlunparse
-import tldextract
+from urllib.parse import quote, urlparse, urlunparse
 
 import rdflib
 import validators
@@ -191,9 +190,7 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.repo, project.repo)
         cls.add(graph, module_subject, OKH.dataSource, project.meta.source)
 
-        extracted_url__parts = tldextract.extract(project.repo)
-
-        cls.add(graph, module_subject, OKH.repoHost, f"{extracted_url__parts.domain}.{extracted_url__parts.suffix}")
+        cls.add(graph, module_subject, OKH.repoHost, urlparse(project.repo).hostname)
         cls.add(graph, module_subject, OKH.version, project.version)
         cls.add(graph, module_subject, OKH.release, project.release)
         if project.license.is_spdx:
