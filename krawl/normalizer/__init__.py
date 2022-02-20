@@ -43,6 +43,17 @@ specification."""
         """
         raise NotImplementedError()
 
+    @staticmethod
+    def _get_key(obj, *key, default=None):
+        last = obj
+        for k in key:
+            if not last or k not in last:
+                return default
+            last = last[k]
+        if not last:
+            return default
+        return last
+
     @classmethod
     def _string(cls, value: Any) -> str | None:
         if value is None:

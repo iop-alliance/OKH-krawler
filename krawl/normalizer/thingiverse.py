@@ -89,17 +89,6 @@ class ThingiverseNormalizer(Normalizer):
 
         return None
 
-    @staticmethod
-    def _get_key(obj, *key, default=None):
-        last = obj
-        for k in key:
-            if not last or k not in last:
-                return default
-            last = last[k]
-        if not last:
-            return default
-        return last
-
     @classmethod
     def _filter_files_by_category(cls, files, category):
         found_files = []

@@ -67,16 +67,6 @@ class OshwaNormalizer(Normalizer):
             log.warning("Raw Oshwa data could not be normalized: %s", e)
             return None
 
-    @staticmethod
-    def _get_key(obj, *key, default=None):
-        last = obj
-        for k in key:
-            if not last or k not in last:
-                return default
-            last = last[k]
-        if not last:
-            return default
-        return last
 
     @classmethod
     def _normalize_classification(cls, raw: dict):
