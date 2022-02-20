@@ -34,7 +34,7 @@ class RateLimitFixedTimedelta():
 
     def __init__(self, milliseconds: int = 0, seconds: int = 0, minutes: int = 0, hours: int = 0) -> None:
         self._timedelta = timedelta(milliseconds=milliseconds, seconds=seconds, minutes=minutes, hours=hours)
-        self._last = datetime.now(timezone.utc)
+        self._last = datetime.now(timezone.utc) - timedelta(days=1)  # set to past date, to skip first rate limit
 
     def apply(self) -> None:
         wait = (self._timedelta - (datetime.now(timezone.utc) - self._last)) / timedelta(seconds=1)
