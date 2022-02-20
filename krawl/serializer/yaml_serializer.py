@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 import yaml
 
 from krawl.errors import SerializerError
@@ -15,7 +17,10 @@ class YAMLProjectSerializer(ProjectSerializer):
 
     def serialize(self, project: Project) -> str:
         try:
-            serialized = yaml.safe_dump(project.as_dict(), indent=self._indent, sort_keys=self._sort_keys)
+            serialized = yaml.safe_dump(project.as_dict(),
+                                        indent=self._indent,
+                                        sort_keys=self._sort_keys,
+                                        width=math.inf)
         except Exception as err:
             raise SerializerError(f"failed to serialize YAML: {err}") from err
         return serialized
