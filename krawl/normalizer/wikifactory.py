@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,10 +9,11 @@ from langdetect import detect as detect_language
 
 import krawl.licenses as licenses
 from krawl.file_formats import get_formats
+from krawl.log import get_child_logger
 from krawl.normalizer import Normalizer, strip_html
 from krawl.project import File, Part, Project
 
-log = logging.getLogger("wikifactory-normalizer")
+log = get_child_logger("wikifactory")
 
 # see https://soulaimanghanem.medium.com/github-repository-structure-best-practices-248e6effc405
 EXCLUDE_FILES = [

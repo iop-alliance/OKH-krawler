@@ -10,11 +10,12 @@ from urllib3 import Retry
 from krawl.config import Config
 from krawl.errors import FetcherError
 from krawl.fetcher import Fetcher
+from krawl.log import get_child_logger
 from krawl.normalizer.oshwa import OshwaNormalizer
 from krawl.project import Project, ProjectID
 from krawl.repository import FetcherStateRepository
 
-oshwa_logger = logging.getLogger("OSHWA-Logger")
+log = get_child_logger("oshwa")
 
 
 class OshwaFetcher(Fetcher):

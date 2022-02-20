@@ -12,7 +12,6 @@ It offer following features:
 
 from __future__ import annotations
 
-import logging
 from collections.abc import Mapping, MutableMapping
 from copy import deepcopy
 from datetime import datetime
@@ -25,8 +24,6 @@ from cerberus import TypeDefinition, Validator
 from cerberus.errors import REQUIRED_FIELD, BasicErrorHandler, ValidationError
 
 from krawl.errors import ConfigError
-
-log = logging.getLogger("config")
 
 # schema for normalization/validation
 # see: https://docs.python-cerberus.org/en/stable/index.html

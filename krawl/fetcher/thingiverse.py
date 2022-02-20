@@ -1,7 +1,8 @@
-import logging
+from __future__ import annotations
+
+from collections.abc import Generator
 from datetime import datetime, timezone
 from time import sleep
-from typing import Generator
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -10,19 +11,12 @@ from urllib3 import Retry
 from krawl.config import Config
 from krawl.errors import FetcherError
 from krawl.fetcher import Fetcher
+from krawl.log import get_child_logger
 from krawl.normalizer.thingiverse import ThingiverseNormalizer
 from krawl.project import Project, ProjectID
 from krawl.repository import FetcherStateRepository
 
-thingiverse_logger = logging.getLogger("Thingiverse-Logger")
-
-caught_licenses = {}
-
-def catch_license(project_license):
-    thingiverse_logger.debug(f"Catch Licence: {project_license}")
-    caught_licenses.update({project_license: project_license})
-    with open('thingiverse-licenses', 'w') as fout:
-        fout.writelines(map(lambda l: f"{l}\n", caught_licenses))
+log = get_child_logger("thingiverse")
 
 
 class ThingiverseFetcher(Fetcher):

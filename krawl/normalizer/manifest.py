@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -9,11 +8,12 @@ from urllib.parse import urlparse
 import validators
 
 from krawl.licenses import get_by_id_or_name as get_license
+from krawl.log import get_child_logger
 from krawl.normalizer import Normalizer
 from krawl.platform_url import PlatformURL
 from krawl.project import File, Mass, Meta, OuterDimensions, Part, Project, Software, UploadMethods
 
-log = logging.getLogger("manifest-normalizer")
+log = get_child_logger("mainfest")
 
 
 class ManifestNormalizer(Normalizer):

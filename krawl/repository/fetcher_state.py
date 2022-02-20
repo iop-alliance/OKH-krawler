@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import json
-import logging
 from pathlib import Path
 
+from krawl.log import get_child_logger
 from krawl.repository import FetcherStateRepository
 
-log = logging.getLogger("fetcher-state-repository")
+log = get_child_logger("fetcher_state")
 
 
 class FetcherStateRepositoryFile(FetcherStateRepository):

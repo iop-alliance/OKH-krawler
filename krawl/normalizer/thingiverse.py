@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import mimetypes
 import pathlib
 from datetime import datetime, timezone
@@ -11,10 +10,11 @@ from langdetect import detect as detect_language
 
 from krawl import licenses
 from krawl.file_formats import get_type_from_extension
+from krawl.log import get_child_logger
 from krawl.normalizer import Normalizer, strip_html
 from krawl.project import File, Project, UploadMethods
 
-log = logging.getLogger("thingiverse-normalizer")
+log = get_child_logger("thingiverse")
 
 EXCLUDE_FILES = [
     "ACKNOWLEDGMENTS",

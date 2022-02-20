@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import logging
 from datetime import datetime, timedelta, timezone
 from time import sleep
 
-log = logging.getLogger("rate-limit")
+from krawl.log import get_child_logger
+
+log = get_child_logger("rate_limit")
 
 
 class RateLimitNumRequests():

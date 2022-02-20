@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from collections.abc import Generator
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,13 +17,14 @@ from krawl.config import Config
 from krawl.errors import DeserializerError, FetcherError, NormalizerError, NotFound
 from krawl.fetcher import Fetcher
 from krawl.fetcher.util import is_accepted_manifest_file_name, is_binary, is_empty
+from krawl.log import get_child_logger
 from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.project import Project, ProjectID
 from krawl.repository import FetcherStateRepository
 from krawl.request.rate_limit import RateLimitFixedTimedelta, RateLimitNumRequests
 from krawl.serializer.factory import DeserializerFactory
 
-log = logging.getLogger("github-fetcher")
+log = get_child_logger("github")
 
 #pylint: disable=consider-using-f-string
 RATELIMIT_FIELDS = """

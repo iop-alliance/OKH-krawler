@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from collections.abc import Generator
 from datetime import datetime, timezone
 
@@ -11,11 +10,12 @@ from gql.transport.requests import RequestsHTTPTransport
 from krawl.config import Config
 from krawl.errors import FetcherError, NormalizerError
 from krawl.fetcher import Fetcher
+from krawl.log import get_child_logger
 from krawl.normalizer.wikifactory import WikifactoryNormalizer
 from krawl.project import Project, ProjectID
 from krawl.repository import FetcherStateRepository
 
-log = logging.getLogger("wikifactory-fetcher")
+log = get_child_logger("wikifactory")
 
 #pylint: disable=consider-using-f-string
 PROJECT_FIELDS = """

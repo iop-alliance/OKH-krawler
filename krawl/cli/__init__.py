@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import logging
-
 from cleo import Application as BaseApplication
 from clikit.api.args.format.argument import Argument
 from clikit.api.args.format.option import Option
@@ -23,8 +21,6 @@ from krawl.cli.command.fetch import FetchCommand
 from krawl.cli.command.list import ListCommand
 from krawl.cli.command.validate import ValidateCommand
 from krawl.log import configure_logger
-
-logging.basicConfig(level=logging.DEBUG)
 
 
 class Application(BaseApplication):

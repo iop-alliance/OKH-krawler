@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 
 from clikit.api.args.format import Option
 
 from krawl.cli.command import KrawlCommand
 from krawl.fetcher.factory import FetcherFactory
+from krawl.log import get_child_logger
 from krawl.reporter import Status
 from krawl.reporter.dummy import DummyReporter
 from krawl.reporter.file import FileReporter
@@ -14,7 +14,7 @@ from krawl.repository.factory import ProjectRepositoryFactory
 from krawl.repository.fetcher_state import FetcherStateRepositoryFile
 from krawl.validator.strict import StrictValidator
 
-log = logging.getLogger("fetch-command")
+log = get_child_logger("fetch")
 
 
 class FetcherXCommand(KrawlCommand):

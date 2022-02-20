@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 import logging.config
 
+app_logger = logging.getLogger("krawl")
+
 
 def configure_logger(level, format, output_stream, error_stream):
 
@@ -47,11 +49,18 @@ def configure_logger(level, format, output_stream, error_stream):
             },
         },
         "loggers": {
-            "": {
-                "handlers": ["stdout", "stderr"],
+            "krawl": {
                 "level": level.upper(),
-                "propagate": False
+                "propagate": True
             }
-        }
+        },
+        "root": {
+            "handlers": ["stdout", "stderr"],
+            "level": "ERROR",
+        },
     }
     logging.config.dictConfig(logging_config)
+
+
+def get_child_logger(suffix):
+    return app_logger.getChild(suffix)

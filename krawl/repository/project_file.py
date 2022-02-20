@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 
 from pathvalidate import sanitize_filename
 
 from krawl.config import Config
+from krawl.log import get_child_logger
 from krawl.project import Project, ProjectID
 from krawl.repository import ProjectRepository
 from krawl.serializer.rdf_serializer import RDFProjectSerializer
 from krawl.serializer.toml_serializer import TOMLProjectSerializer
 from krawl.serializer.yaml_serializer import YAMLProjectSerializer
 
-log = logging.getLogger("project-repository-file")
+log = get_child_logger("repo_file")
 
 
 class ProjectRepositoryFile(ProjectRepository):
