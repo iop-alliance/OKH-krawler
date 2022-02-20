@@ -117,10 +117,10 @@ class RDFProjectSerializer(ProjectSerializer):
             license = get_fallback(part, "license")
             if license and license.is_spdx:
                 cls.add(graph, part_subject, OKH.spdxLicense, license.reference_url[:-5]
-                        )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
+                       )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
             else:
                 cls.add(graph, part_subject, OKH.alternativeLicense, license.reference_url[:-5]
-                        )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
+                       )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
             cls.add(graph, part_subject, OKH.licensor, get_fallback(part, "licensor"))
             cls.add(graph, part_subject, OKH.material, part.material)
             cls.add(graph, part_subject, OKH.manufacturingProcess, part.manufacturing_process)
@@ -198,10 +198,10 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.release, project.release)
         if project.license.is_spdx:
             cls.add(graph, module_subject, OKH.spdxLicense, project.license.reference_url[:-5]
-                    )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
+                   )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
         else:
             cls.add(graph, module_subject, OKH.alternativeLicense, project.license.reference_url[:-5]
-                    )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
+                   )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
         cls.add(graph, module_subject, OKH.licensor, project.licensor)
         # FIXME: rename organisation to organization, once the frontend is adjusted
         cls.add(graph, module_subject, OKH.organisation, project.organization)

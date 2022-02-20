@@ -5,7 +5,6 @@ from typing import Any
 
 import validators
 
-from krawl.fetcher.factory import FetcherFactory
 from krawl.project import File, Project
 from krawl.validator import Validator, is_bcp_47_language_tag, is_non_zero_length_string, is_okh_version, is_version
 

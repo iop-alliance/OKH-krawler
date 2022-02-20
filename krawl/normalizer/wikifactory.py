@@ -11,7 +11,7 @@ import krawl.licenses as licenses
 from krawl.file_formats import get_formats
 from krawl.log import get_child_logger
 from krawl.normalizer import Normalizer, strip_html
-from krawl.project import File, Part, Project
+from krawl.project import File, Part, Project, UploadMethods
 
 log = get_child_logger("wikifactory")
 
@@ -59,6 +59,7 @@ class WikifactoryNormalizer(Normalizer):
         project.meta.created_at = datetime.fromisoformat(raw["dateCreated"])
         project.meta.last_visited = meta.get("last_visited")
         project.meta.last_changed = datetime.fromisoformat(raw["lastUpdated"])
+        project.upload_method = UploadMethods.AUTO
 
         log.debug("normalizing project metadata '%s'", project.id)
         files = self._get_files(raw)
@@ -88,17 +89,6 @@ class WikifactoryNormalizer(Normalizer):
         project.software = []
 
         return project
-
-    @staticmethod
-    def _get_key(obj, *key, default=None):
-        last = obj
-        for k in key:
-            if not last or k not in last:
-                return default
-            last = last[k]
-        if not last:
-            return default
-        return last
 
     @classmethod
     def _organization(cls, raw: dict):

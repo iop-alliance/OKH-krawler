@@ -42,9 +42,6 @@ class FileReporter(Reporter):
 
     def _write_stats(self):
         if self._file:
-            self._file.writelines([
-                "\n\n",
-                f"-------- Stats for Fetcher {self._fetcher_name} -------\n\n",
-                f"Added projects: {self.added_projects}\n",
-                f"Skipped projects: {self.skipped_projects}\n\n"
-            ])
+            self._file.write("\n\n")
+            self._file.write(f"-------- Stats for Fetcher {self._fetcher_name} -------\n\n")
+            self._file.write(f"Added projects: {self.added_projects}\n", f"Skipped projects: {self.skipped_projects}\n\n")

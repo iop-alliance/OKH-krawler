@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-import logging
 from collections.abc import Generator
 
 from rdflib.graph import Graph
 
 import krawl.wikibase.core
 from krawl.config import Config
+from krawl.log import get_child_logger
 from krawl.project import Project
 from krawl.repository import ProjectRepository
 from krawl.serializer.rdf_serializer import RDFProjectSerializer
 from krawl.wikibase.api import API
 
-log = logging.getLogger("project-repository-wikibase")
+log = get_child_logger("wikibase")
 
 
 class ProjectRepositoryWikibase(ProjectRepository):

@@ -257,17 +257,17 @@ class WikifactoryFetcher(Fetcher):
     def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
         has_next_page = True
         cursor = ""
-        num_fetched_projects = 0
+        num_fetched = 0
         if start_over:
             self._state_repository.delete(self.NAME)
         else:
             state = self._state_repository.load(self.NAME)
             if state:
                 cursor = state.get("cursor", "")
-                num_fetched_projects = state.get("num_fetched_projects", 0)
+                num_fetched = state.get("num_fetched", 0)
 
         while has_next_page:
-            log.debug("fetching projects %d to %d", num_fetched_projects, num_fetched_projects + self.BATCH_SIZE)
+            log.debug("fetching projects %d to %d", num_fetched, num_fetched + self.BATCH_SIZE)
 
             # download metadata
             params = {"cursor": cursor, "batchSize": self.BATCH_SIZE}
@@ -281,7 +281,7 @@ class WikifactoryFetcher(Fetcher):
             pageinfo = raw["pageInfo"]
             cursor = pageinfo["endCursor"]
             has_next_page = pageinfo["hasNextPage"]
-            num_fetched_projects = num_fetched_projects + len(raw["edges"])
+            num_fetched = num_fetched + len(raw["edges"])
             last_visited = datetime.now(timezone.utc)
             for edge in raw["edges"]:
                 raw_project = edge["node"]
@@ -311,8 +311,8 @@ class WikifactoryFetcher(Fetcher):
             # save current progress
             self._state_repository.store(self.NAME, {
                 "cursor": cursor,
-                "num_fetched_projects": num_fetched_projects,
+                "num_fetched": num_fetched,
             })
 
         self._state_repository.delete(self.NAME)
-        log.debug("fetched %d projects from Wikifactory", num_fetched_projects)
+        log.debug("fetched %d projects from Wikifactory", num_fetched)
