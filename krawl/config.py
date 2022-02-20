@@ -564,9 +564,11 @@ class KrawlerConfigLoader(ConfigLoader):
         # add defaults to fetchers (before validation)
         fetchers_config = merged.get("fetchers", {})
         fetchers_defaults = fetchers_config.get("defaults", {})
-        for name in fetchers_config:
+        for name in self._schema["fetchers"]["schema"]:
             if name != "defaults":
                 for option, default_value in fetchers_defaults.items():
+                    if name not in fetchers_config:
+                        fetchers_config[name] = {}
                     if fetchers_config[name].get(option, missing) == missing:
                         fetchers_config[name][option] = default_value
 
