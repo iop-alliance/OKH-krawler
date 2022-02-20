@@ -26,3 +26,11 @@ fetchers:
     retries: 3   # (opt) fetcher specific number of retries
     timeout: 15  # (opt) fetcher specific request timeout
     access_token: xxxxxxxxxx  # (req) personal access token to use the GitHub API
+  oshwa.org:
+    retries: 3   # (opt) fetcher specific number of retries
+    timeout: 15  # (opt) fetcher specific request timeout
+    access_token: xxxxxxxxxx  # (req) personal access token to use the OSHWA API
+  thingiverse.com:
+    retries: 3   # (opt) fetcher specific number of retries
+    timeout: 15  # (opt) fetcher specific request timeout
+    access_token: xxxxxxxxxx  # (req) app access token to use the Thingiverse API
