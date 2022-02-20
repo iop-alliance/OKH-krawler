@@ -211,8 +211,9 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.cpcPatentClass, project.cpc_patent_class)
         cls.add(graph, module_subject, OKH.tsdc, project.tsdc)
 
-        cls.add(graph, module_subject, OKH.export, [file.path for file in project.export])
-        cls.add(graph, module_subject, OKH.source, [file.path for file in project.source])
+        # FIXME: yeah, this is not how this works
+        # cls.add(graph, module_subject, OKH.export, [file.path for file in project.export])
+        # cls.add(graph, module_subject, OKH.source, [file.path for file in project.source])
         cls.add(graph, module_subject, OKH.uploadMethod, project.upload_method)
 
         for index in project.specific_api_data:
