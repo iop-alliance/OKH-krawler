@@ -37,7 +37,7 @@ class RDFProjectSerializer(ProjectSerializer):
         base = urlunparse(components=(
             parts.scheme,
             parts.netloc,
-            str(Path(parts.path, project.version)) + "/",
+            quote(str(Path(parts.path, project.version))) + "/",
             "",
             "",
             "",
