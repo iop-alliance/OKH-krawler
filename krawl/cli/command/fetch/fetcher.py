@@ -64,7 +64,7 @@ class FetcherXCommand(KrawlCommand):
 
         # create a reporter
         if report_path:
-            reporter = FileReporter(report_path, self.name)
+            reporter = FileReporter(report_path)
         else:
             reporter = DummyReporter()
 
