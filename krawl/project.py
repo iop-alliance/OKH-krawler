@@ -7,12 +7,11 @@ from pathlib import Path
 from krawl.licenses import License, get_by_id_or_name
 from krawl.platform_url import PlatformURL
 
-
 class UploadMethods(Enum):
-    AUTO = "auto"  # via api direct
-    MANIFEST = "manifest"  # via api and manifest
-    MANIFEST_SCRIPT = "manifest-script"  # via script
-    MANUAL = "manual"
+    AUTO = "auto" # crawled through the project hosting platforms API
+    MANIFEST = "manifest" # via okh.(toml|yaml|...) manifest file (and API?)
+    MANIFEST_SCRIPT = "manifest-script" # via a script that creates manifest files
+    MANUAL = "manual" # TODO Document
 
     def __str__(self):
         return self.value
