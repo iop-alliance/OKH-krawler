@@ -67,7 +67,7 @@ class ThingiverseNormalizer(Normalizer):
         project.function = self._normalize_function(raw)
         project.documentation_language = self._normalize_language(project.function)
         project.technology_readiness_level = "OTRL-4"
-        project.documentation_readiness_level = "odrl3"
+        project.documentation_readiness_level = "ODRL-3"
         project.upload_method = UploadMethods.AUTO
 
         project.image = self._normalize_image(project, raw)

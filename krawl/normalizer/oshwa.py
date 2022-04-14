@@ -45,7 +45,7 @@ class OshwaNormalizer(Normalizer):
 
         project.function = self._normalize_function(raw)
         project.documentation_language = self._normalize_language(project.function)
-        project.documentation_readiness_level = "Odrl3Star"
+        project.documentation_readiness_level = "ODRL-3*"
         project.cpc_patent_class = self._normalize_classification(raw)
         project.upload_method = UploadMethods.AUTO
 
