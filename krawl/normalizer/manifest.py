@@ -207,7 +207,7 @@ class ManifestNormalizer(Normalizer):
 
         file = File()
         file.path = cls._path(raw_file.get("path"))
-        file.name = str(file.path.with_suffix("")) if file.path else None
+        file.name = str(file.path.with_suffix("")) if file.path and file.path.name else None
         file.mime_type = cls._string(raw_file.get("mime-type"))
 
         url = cls._string(raw_file.get("url"))
