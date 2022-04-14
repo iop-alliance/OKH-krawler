@@ -24,7 +24,19 @@ LICENSE_MAPPING = {
     "CERN OHL": "CERN-OHL-1.2",
     "CERN": "CERN-OHL-1.2",
 }
-
+CATEGORIES_UNMAPPABLE = ["Arts", "Education", "Environmental", "Manufacturing", "Other", "Science", "Tool"]
+CATEGORIES_PRIMARY_TO_CPC = {
+    "3D Printing": "B33Y",
+    "Agriculture": "A01",
+    "Electronics": "H",
+    "Enclosure": "F16M",
+    "Home Connection": "H04W",
+    "IOT": "H04",
+    "Robotics": "B25J9/00",
+    "Sound": "H04R",
+    "Space": "B64G",
+    "Wearables": "H"
+}
 
 class OshwaNormalizer(Normalizer):
 
@@ -64,11 +76,9 @@ class OshwaNormalizer(Normalizer):
     @classmethod
     def _normalize_classification(cls, raw: dict):
         primary_type = raw.get("primaryType")
-        additional_type = raw.get("additionalType")
 
-        unmappable_categories = ["Arts", "Education", "Environmental", "Manufacturing", "Other", "Science", "Tool"]
-
-        if primary_type in unmappable_categories:
+        if primary_type in CATEGORIES_UNMAPPABLE:
+            additional_type = raw.get("additionalType")
             if additional_type is None:
                 return ""
             if len(additional_type) == 0:
@@ -76,20 +86,7 @@ class OshwaNormalizer(Normalizer):
 
             return additional_type[0]
 
-        mapping_primary_to_cpc = {
-            "3D Printing": "B33Y",
-            "Agriculture": "A01",
-            "Electronics": "H",
-            "Enclosure": "F16M",
-            "Home Connection": "H04W",
-            "IOT": "H04",
-            "Robotics": "B25J9 / 00",
-            "Sound": "H04R",
-            "Space": "B64G",
-            "Wearables": "H"
-        }
-
-        mapping_primary_to_cpc.get(primary_type, primary_type)
+        return CATEGORIES_PRIMARY_TO_CPC.get(primary_type, primary_type) # FIXME Default (2nd arg) has to be None!
 
     @classmethod
     def _normalize_organization(cls, raw: dict):
