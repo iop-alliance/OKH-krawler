@@ -207,7 +207,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
         # graph, add(OKH.timestamp, project.timestamp)
         cls.add(graph, module_subject, OKH.documentationLanguage, project.documentation_language)
-        # cls.add(graph, module_subject, OKH.technologyReadinessLevel, cls._make_OTRL(project))
+        cls.add(graph, module_subject, OKH.technologyReadinessLevel, cls._make_OTRL(project))
         cls.add(graph, module_subject, OKH.function, project.function)
         cls.add(graph, module_subject, OKH.cpcPatentClass, project.cpc_patent_class)
         cls.add(graph, module_subject, OKH.tsdc, project.tsdc)
