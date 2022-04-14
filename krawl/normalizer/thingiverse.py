@@ -66,7 +66,7 @@ class ThingiverseNormalizer(Normalizer):
         project.licensor = self._normalize_creator(raw)
         project.function = self._normalize_function(raw)
         project.documentation_language = self._normalize_language(project.function)
-        project.technology_readiness_level = "ortl4"
+        project.technology_readiness_level = "OTRL-4"
         project.documentation_readiness_level = "odrl3"
         project.upload_method = UploadMethods.AUTO
 

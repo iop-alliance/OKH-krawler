@@ -16,7 +16,7 @@ from krawl.serializer import ProjectSerializer
 # https://medium.com/wallscope/understanding-linked-data-formats-rdf-xml-vs-turtle-vs-n-triples-eb931dbe9827
 
 OKH = rdflib.Namespace("https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl#")
-OTLR = rdflib.Namespace("http://purl.org/oseg/ontologies/OTLR#")
+OTRL = rdflib.Namespace("http://purl.org/oseg/ontologies/OTRL#")
 
 
 class RDFProjectSerializer(ProjectSerializer):
@@ -48,7 +48,8 @@ class RDFProjectSerializer(ProjectSerializer):
         v = project.technology_readiness_level
         if v is None:
             return None
-        return getattr(OTLR, v)
+        otrl_manifest = getattr(OTRL, v)
+        return otrl_manifest.replace('OTRL-', 'Otrl')
 
     @staticmethod
     def _titlecase(s):
@@ -269,7 +270,7 @@ class RDFProjectSerializer(ProjectSerializer):
         graph.bind("okh", OKH)
         graph.bind("rdfs", rdflib.RDFS)
         graph.bind("owl", rdflib.OWL)
-        graph.bind("otlr", OTLR)
+        graph.bind("otrl", OTRL)
 
         namespace = cls._make_project_namespace(project)
         graph.bind("", namespace)
