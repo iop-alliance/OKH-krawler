@@ -127,7 +127,11 @@ class RDFProjectSerializer(ProjectSerializer):
                 cls.add(graph, part_subject, OKH.spdxLicense, license.reference_url[:-5]
                        )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
             else:
-                cls.add(graph, part_subject, OKH.alternativeLicense, license.reference_url[:-5]
+                if license.reference_url is None:
+                    alt_license = license.id[:-5]
+                else:
+                    alt_license = license.reference_url[:-5]
+                cls.add(graph, part_subject, OKH.alternativeLicense, alt_license
                        )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
             cls.add(graph, part_subject, OKH.licensor, get_fallback(part, "licensor"))
             cls.add(graph, part_subject, OKH.material, part.material)
@@ -206,7 +210,11 @@ class RDFProjectSerializer(ProjectSerializer):
             cls.add(graph, module_subject, OKH.spdxLicense, project.license.reference_url[:-5]
                    )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
         else:
-            cls.add(graph, module_subject, OKH.alternativeLicense, project.license.reference_url[:-5]
+            if project.license.reference_url is None:
+                alt_license = project.license.id[:-5]
+            else:
+                alt_license = project.license.reference_url[:-5]
+            cls.add(graph, module_subject, OKH.alternativeLicense, alt_license
                    )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
         cls.add(graph, module_subject, OKH.licensor, project.licensor)
         # FIXME: rename organisation to organization, once the frontend is adjusted

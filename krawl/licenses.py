@@ -196,7 +196,19 @@ def get_by_id_or_name(id_or_name: str) -> License:
         return _licenses[normalized]
     if normalized in _name_to_id:
         return _licenses[_name_to_id[normalized]]
-    return None
+    print('WARN: Non-SPDX license detected: "%s"' % id_or_name)
+
+    return License(
+        f'LicenseRef-%s' % id_or_name,
+        id_or_name,
+        LicenseType.UNKNOWN,
+        None,
+        None,
+        False,
+        False,
+        False,
+        True,
+    )
 
 
 # preload the license on import
