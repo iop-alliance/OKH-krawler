@@ -86,7 +86,7 @@ class OshwaNormalizer(Normalizer):
 
             return additional_type[0]
 
-        return CATEGORIES_PRIMARY_TO_CPC.get(primary_type, primary_type) # FIXME Default (2nd arg) has to be None!
+        return CATEGORIES_PRIMARY_TO_CPC.get(primary_type, None)
 
     @classmethod
     def _normalize_organization(cls, raw: dict):
