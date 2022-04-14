@@ -17,6 +17,7 @@ from clikit.resolver.help_resolver import HelpResolver
 
 from krawl import __version__
 from krawl.cli.command.convert import ConvertManifestCommand
+from krawl.cli.command.convert_dir import ConvertDirManifestCommand
 from krawl.cli.command.fetch import FetchCommand
 from krawl.cli.command.list import ListCommand
 from krawl.cli.command.validate import ValidateCommand
@@ -31,6 +32,7 @@ class Application(BaseApplication):
 
         # add commands
         self.add(ConvertManifestCommand())
+        self.add(ConvertDirManifestCommand())
         self.add(FetchCommand())
         self.add(ListCommand())
         self.add(ValidateCommand())
