@@ -173,14 +173,14 @@ class ManifestNormalizer(Normalizer):
                 try:
                     info = PlatformURL.from_url(raw_file)
                     raw_file = {
-                        "path": info.path,
+                        "path": info.path, # FIXME This should be the repo path, but is the path part of the URL, which in case of git/github, would also contian user- and repo-name (though it may likely not be the same on most other platforms too)
                         "url": raw_file,
                         "perma-url": raw_file,
                     }
                 except ValueError:
                     parsed_url = urlparse(raw_file)
                     raw_file = {
-                        "path": parsed_url.path,
+                        "path": parsed_url.path, # FIXME This should be the repo path, but is the path part of the URL, which in case of git/github, would also contian user- and repo-name (though it may likely not be the same on most other platforms too)
                         "url": raw_file,
                         "perma-url": raw_file,
                     }
