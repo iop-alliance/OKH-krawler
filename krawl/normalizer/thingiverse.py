@@ -45,7 +45,7 @@ LICENSE_MAPPING = {
     "BSD": "BSD-4-Clause",
     "BSD License": "BSD-4-Clause"
 }
-
+BROKEN_IMAGE_URL = 'https://cdn.thingiverse.com/'
 
 class ThingiverseNormalizer(Normalizer):
 
@@ -147,7 +147,7 @@ class ThingiverseNormalizer(Normalizer):
     @classmethod
     def _normalize_image(cls, project: Project, raw: dict) -> File | None:
         image_raw = raw.get("thumbnail", None)
-        if not image_raw:
+        if not image_raw or image_raw == BROKEN_IMAGE_URL:
             return None
 
         file = File()
