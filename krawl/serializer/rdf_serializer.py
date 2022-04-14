@@ -164,6 +164,8 @@ class RDFProjectSerializer(ProjectSerializer):
 
             # export
             for i, file in enumerate(part.export):
+                if file is None:
+                    continue
                 export_subject = namespace[f"{partname}_export{i + 1}"]
                 cls.add(graph, part_subject, OKH.export, export_subject)
                 cls.add(graph, export_subject, rdflib.RDF.type, OKH.ExportFile)
