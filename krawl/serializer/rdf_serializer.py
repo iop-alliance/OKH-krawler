@@ -52,6 +52,14 @@ class RDFProjectSerializer(ProjectSerializer):
         return otrl_manifest.replace('OTRL-', 'Otrl')
 
     @staticmethod
+    def _make_ODRL(project):
+        v = project.documentation_readiness_level
+        if v is None:
+            return None
+        odrl_manifest = getattr(OTRL, v) # NOTE: Yes, ODRL is in the OTRL namespace too!
+        return odrl_manifest.replace('ODRL-', 'Odrl').replace('Star', '*')
+
+    @staticmethod
     def _titlecase(s):
         parts = s.split(" ")
         capitalized = "".join([p.capitalize() for p in parts])
@@ -207,6 +215,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
         # graph, add(OKH.timestamp, project.timestamp)
         cls.add(graph, module_subject, OKH.documentationLanguage, project.documentation_language)
+        cls.add(graph, module_subject, OKH.documentationReadinessLevel, cls._make_ODRL(project))
         cls.add(graph, module_subject, OKH.technologyReadinessLevel, cls._make_OTRL(project))
         cls.add(graph, module_subject, OKH.function, project.function)
         cls.add(graph, module_subject, OKH.cpcPatentClass, project.cpc_patent_class)
