@@ -72,7 +72,10 @@ class PlatformURL:
                 platform_url.branch = path_parts[3]
                 if len(path_parts) >= 6 and path_parts[4] in ["file", "files"]:
                     platform_url.path = "/".join(path_parts[5:])
-
+        elif domain == "certification.oshwa.org":
+            platform_url.platform = "oshwa.org"
+            platform_url.repo = f"https://certification.oshwa.org/{path_parts[0]}"
+            platform_url.path = path_parts[0]
         else:
             raise ValueError(f"unknown platfrom URL '{url}'")
 

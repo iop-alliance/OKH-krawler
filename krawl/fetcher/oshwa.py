@@ -83,7 +83,43 @@ class OshwaFetcher(Fetcher):
         })
 
     def fetch(self, id: ProjectID) -> Project:
-        pass
+
+        log.debug('Start fetching project %s', id)
+
+        oshwa_id = id.path.split(".")[0]
+
+        response = self._session.get(
+            url=f"https://certificationapi.oshwa.org/api/projects/{oshwa_id}",
+        )
+
+        if response.status_code > 205:
+            raise FetcherError(f"failed to fetch projects from OSHWA: {response.text}")
+
+        raw_project = response.json()[0]
+
+
+        last_visited = datetime.now(timezone.utc)
+
+        new_id = ProjectID(self.NAME, slugify(raw_project["responsibleParty"]), raw_project["oshwaUid"].lower())
+
+        meta = {
+            "meta": {
+                "id": new_id,
+                "fetcher": self.NAME,
+                "last_visited": last_visited,
+            }
+        }
+
+        # try normalizing it
+        try:
+            raw_project.update(meta)
+            project = self._normalizer.normalize(raw_project)
+        except NormalizerError as err:
+            raise FetcherError(f"normalization failed, that should not happen: {err}") from err
+
+        log.debug("yield project %s", project.id)
+
+        return project
 
     def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
         last_offset = 0

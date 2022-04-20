@@ -45,6 +45,9 @@ class ProjectID:
     def from_url(cls, url: str) -> ProjectID:
         pu = PlatformURL.from_url(url)
 
+        if pu.platform == "oshwa.org":
+            return cls(platform=pu.platform, repo=pu.repo, path=pu.path, owner='none')
+
         if not pu.owner:
             raise ValueError(f"could not extract owner from URL '{url}'")
         if not pu.repo:
