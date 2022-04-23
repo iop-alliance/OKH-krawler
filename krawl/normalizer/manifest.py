@@ -125,6 +125,7 @@ class ManifestNormalizer(Normalizer):
         for raw_part in raw_parts:
             part = Part()
             part.name = cls._string(raw_part.get("name"))
+            part.name_clean = cls._clean_name(part.name)
             part.image = cls._file(raw_part.get("image"), manifest_path, file_base_url)
             part.source = cls._file(raw_part.get("source"), manifest_path, file_base_url)
             part.export = cls._files(raw_part.get("export"), manifest_path, file_base_url)
@@ -137,6 +138,7 @@ class ManifestNormalizer(Normalizer):
             part.outer_dimensions = cls._outer_dimensions(raw_part.get("outer-dimensions"))
             part.tsdc = cls._string(raw_part.get("tsdc"))
             parts.append(part)
+        cls._ensure_unique_clean_names(parts)
         return parts
 
     @classmethod

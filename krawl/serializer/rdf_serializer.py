@@ -115,7 +115,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
         part_subjects = []
         for part in project.part:
-            partname = cls._titlecase(part.name if part.name != project.name else part.name + "_part")
+            partname = cls._titlecase(part.name_clean if part.name_clean != project.name else part.name_clean + "_part")
 
             part_subject = namespace[partname]
             cls.add(graph, part_subject, rdflib.RDF.type, OKH.Part)

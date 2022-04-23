@@ -4,6 +4,7 @@ from html.parser import HTMLParser
 from io import StringIO
 from pathlib import Path
 from typing import Any
+import re
 
 from krawl.project import Project
 
@@ -100,3 +101,26 @@ specification."""
         if value:
             return Path(value)
         return None
+
+    @classmethod
+    def _clean_name(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            no_special = re.sub('[^0-9a-zA-Z_]', '_', value)
+            no_double_underscore = re.sub('__+', '_', no_special)
+            trimmed = re.sub('_$', '', re.sub('^_', '', no_double_underscore))
+            return trimmed
+        return None
+
+    @classmethod
+    def _ensure_unique_clean_names(cls, parts: list):
+        uniques = []
+        for part in parts:
+            if part.name_clean is not None:
+                base = part.name_clean
+                cnt = 1
+                while part.name_clean in uniques:
+                    part.name_clean = base + str(cnt)
+                    cnt += 1
+                uniques.append(part.name_clean)

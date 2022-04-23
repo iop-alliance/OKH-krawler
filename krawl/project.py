@@ -238,12 +238,13 @@ class Part:
     """Part data model."""
 
     __slots__ = [
-        "name", "image", "source", "export", "auxiliary", "documentation_language", "material", "manufacturing_process",
+        "name", "name_clean", "image", "source", "export", "auxiliary", "documentation_language", "material", "manufacturing_process",
         "mass", "outer_dimensions", "tsdc", "license", "licensor"
     ]
 
     def __init__(self) -> None:
         self.name: str = None
+        self.name_clean: str = None
         self.image: File = None
         self.source: File = None
         self.export: list[File] = []
@@ -263,6 +264,7 @@ class Part:
             return None
         part = cls()
         part.name = data.get("name", None)
+        part.name_clean = data.get("name_clean", None)
         part.image = File.from_dict(data.get("image"))
         part.source = File.from_dict(data.get("source"))
         part.export = [File.from_dict(e) for e in data.get("export")]
@@ -280,6 +282,7 @@ class Part:
     def as_dict(self) -> dict:
         return {
             "name": self.name,
+            "name_clean": self.name_clean,
             "image": self.image.as_dict() if self.image is not None else None,
             "source": self.source.as_dict() if self.source is not None else None,
             "export": [e.as_dict() for e in self.export if e is not None],
