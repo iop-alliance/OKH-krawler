@@ -24,18 +24,26 @@ LICENSE_MAPPING = {
     "CERN OHL": "CERN-OHL-1.2",
     "CERN": "CERN-OHL-1.2",
 }
-CATEGORIES_UNMAPPABLE = ["Arts", "Education", "Environmental", "Manufacturing", "Other", "Science", "Tool"]
-CATEGORIES_PRIMARY_TO_CPC = {
+CATEGORIES_CPC_UNMAPPABLE = [
+    "Agriculture",
+    "Arts",
+    "Education",
+    "Electronics",
+    "Environmental",
+    "IOT",
+    "Manufacturing",
+    "Other",
+    "Science",
+    "Tool",
+    "Wearables"
+]
+CATEGORIES_CPC_MAPPING = {
     "3D Printing": "B33Y",
-    "Agriculture": "A01",
-    "Electronics": "H",
     "Enclosure": "F16M",
     "Home Connection": "H04W",
-    "IOT": "H04",
     "Robotics": "B25J9/00",
     "Sound": "H04R",
-    "Space": "B64G",
-    "Wearables": "H"
+    "Space": "B64G"
 }
 
 class OshwaNormalizer(Normalizer):
@@ -77,7 +85,7 @@ class OshwaNormalizer(Normalizer):
     def _normalize_classification(cls, raw: dict):
         primary_type = raw.get("primaryType")
 
-        if primary_type in CATEGORIES_UNMAPPABLE:
+        if primary_type in CATEGORIES_CPC_UNMAPPABLE:
             additional_type = raw.get("additionalType")
             if additional_type is None:
                 return ""
@@ -86,7 +94,7 @@ class OshwaNormalizer(Normalizer):
 
             return additional_type[0]
 
-        return CATEGORIES_PRIMARY_TO_CPC.get(primary_type, None)
+        return CATEGORIES_CPC_MAPPING.get(primary_type, None)
 
     @classmethod
     def _normalize_organization(cls, raw: dict):
