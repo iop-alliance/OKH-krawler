@@ -21,8 +21,12 @@ class ManifestNormalizer(Normalizer):
     def normalize(self, raw: dict) -> Project:
         project = Project()
         meta = raw.get("meta")
+        if meta is None:
+            meta = raw.get("__meta")
         if isinstance(meta, dict):
             project.meta.source = self._string(meta.get("fetcher"))
+            if project.meta.source is None:
+                project.meta.source = self._string(meta.get("source"))
             project.meta.owner = self._string(meta.get("owner"))
             project.meta.repo = self._string(meta.get("repo"))
             project.meta.path = self._string(meta.get("path"))
