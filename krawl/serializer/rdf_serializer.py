@@ -197,7 +197,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
     @classmethod
     def _add_module(cls, graph, namespace, project) -> rdflib.URIRef:
-        module_subject = namespace[cls._titlecase(project.name)]
+        module_subject = namespace['Project']
         cls.add(graph, module_subject, rdflib.RDF.type, OKH.Module)
 
         cls.add(graph, module_subject, rdflib.RDFS.label, project.name)
