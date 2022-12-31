@@ -16,7 +16,7 @@ from krawl.serializer import ProjectSerializer
 # https://medium.com/wallscope/understanding-linked-data-formats-rdf-xml-vs-turtle-vs-n-triples-eb931dbe9827
 
 BASE_IRI_OKH = "https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl"
-BASE_IRI_OTRL = "http://purl.org/oseg/ontologies/OTRL"
+BASE_IRI_OTRL = "https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OTRL.ttl"
 
 OKH = rdflib.Namespace(f"{BASE_IRI_OKH}#")
 OTRL = rdflib.Namespace(f"{BASE_IRI_OTRL}#")
