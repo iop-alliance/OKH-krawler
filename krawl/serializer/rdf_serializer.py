@@ -290,9 +290,9 @@ class RDFProjectSerializer(ProjectSerializer):
     def _make_graph(cls, project):
         graph = rdflib.Graph()
         graph.bind("okh", OKH)
+        graph.bind("otrl", OTRL)
         graph.bind("rdfs", rdflib.RDFS)
         graph.bind("owl", rdflib.OWL)
-        graph.bind("otrl", OTRL)
 
         namespace = cls._make_project_namespace(project)
         graph.bind("", namespace)
