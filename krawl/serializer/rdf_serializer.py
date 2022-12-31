@@ -225,7 +225,8 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.organisation, project.organization)
         # cls.add(graph, module_subject, OKH.contributorCount, None)  ## TODO see if github api can do this
 
-        # graph, add(OKH.timestamp, project.timestamp)
+        # graph
+        # TODO add(OKH.timestamp, project.timestamp)
         cls.add(graph, module_subject, OKH.documentationLanguage, project.documentation_language)
         cls.add(graph, module_subject, OKH.documentationReadinessLevel, cls._make_ODRL(project))
         cls.add(graph, module_subject, OKH.technologyReadinessLevel, cls._make_OTRL(project))
