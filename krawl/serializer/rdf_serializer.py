@@ -132,7 +132,7 @@ class RDFProjectSerializer(ProjectSerializer):
                        )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
             else:
                 if license.reference_url is None:
-                    alt_license = license.id[:-5]
+                    alt_license = license.id
                 else:
                     alt_license = license.reference_url[:-5]
                 cls.add(graph, part_subject, OKH.alternativeLicense, alt_license
@@ -218,7 +218,7 @@ class RDFProjectSerializer(ProjectSerializer):
                    )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
         else:
             if project.license.reference_url is None:
-                alt_license = project.license.id[:-5]
+                alt_license = project.license.id
             else:
                 alt_license = project.license.reference_url[:-5]
             cls.add(graph, module_subject, OKH.alternativeLicense, alt_license
