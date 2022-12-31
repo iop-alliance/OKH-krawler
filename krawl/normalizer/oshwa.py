@@ -88,11 +88,13 @@ class OshwaNormalizer(Normalizer):
         if primary_type in CATEGORIES_CPC_UNMAPPABLE:
             additional_type = raw.get("additionalType")
             if additional_type is None:
-                return ""
-            if len(additional_type) == 0:
-                return ""
+                return None
 
-            return additional_type[0]
+            for add_type in additional_type:
+                cpc_mapped = CATEGORIES_CPC_MAPPING.get(add_type, None)
+                if cpc_mapped is not None:
+                    return cpc_mapped
+            return None
 
         return CATEGORIES_CPC_MAPPING.get(primary_type, None)
 
