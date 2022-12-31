@@ -242,10 +242,13 @@ class RDFProjectSerializer(ProjectSerializer):
         # cls.add(graph, module_subject, OKH.source, [file.path for file in project.source])
         cls.add(graph, module_subject, OKH.uploadMethod, project.upload_method)
 
-        for index in project.specific_api_data:
-            cls.add(graph, module_subject,
-                    URIRef(f"{BASE_IRI_OKH}#{index}"),
-                    project.specific_api_data[index])
+        # NOTE We do not create a standard to then allow platform specific data again,
+        #      and definitely not by introducing arbitrary properties
+        #      into the OKH ontology on the fly, like we did here:
+        # for index in project.specific_api_data:
+        #     cls.add(graph, module_subject,
+        #             URIRef(f"{BASE_IRI_OKH}#{index}"),
+        #             project.specific_api_data[index])
 
         return module_subject
 
