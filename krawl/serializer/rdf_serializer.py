@@ -15,8 +15,11 @@ from krawl.serializer import ProjectSerializer
 # Useful info about RDF:
 # https://medium.com/wallscope/understanding-linked-data-formats-rdf-xml-vs-turtle-vs-n-triples-eb931dbe9827
 
-OKH = rdflib.Namespace("https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl#")
-OTRL = rdflib.Namespace("http://purl.org/oseg/ontologies/OTRL#")
+BASE_IRI_OKH = "https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl"
+BASE_IRI_OTRL = "http://purl.org/oseg/ontologies/OTRL"
+
+OKH = rdflib.Namespace(f"{BASE_IRI_OKH}#")
+OTRL = rdflib.Namespace(f"{BASE_IRI_OTRL}#")
 
 
 class RDFProjectSerializer(ProjectSerializer):
@@ -241,7 +244,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
         for index in project.specific_api_data:
             cls.add(graph, module_subject,
-                    URIRef(f"https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl#{index}"),
+                    URIRef(f"{BASE_IRI_OKH}#{index}"),
                     project.specific_api_data[index])
 
         return module_subject
