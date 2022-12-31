@@ -397,7 +397,7 @@ class GitHubFetcher(Fetcher):
                 # check file name
                 path = Path(raw_url.path)
                 if not is_accepted_manifest_file_name(path):
-                    log.debug("skipping file, because it is not an accepted manifest file name (%s)", id)
+                    log.debug("skipping file, because it is not an accepted manifest file name (%s)", path)
                     continue
 
                 # download the file
