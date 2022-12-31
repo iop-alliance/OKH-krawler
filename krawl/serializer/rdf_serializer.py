@@ -17,9 +17,11 @@ from krawl.serializer import ProjectSerializer
 
 BASE_IRI_OKH = "https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl"
 BASE_IRI_OTRL = "https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OTRL.ttl"
+BASE_IRI_TSDC = "https://gitlab.com/OSEGermany/oh-tsdc/-/raw/master/oh-tsdc.ttl"
 
 OKH = rdflib.Namespace(f"{BASE_IRI_OKH}#")
 OTRL = rdflib.Namespace(f"{BASE_IRI_OTRL}#")
+TSDC = rdflib.Namespace(f"{BASE_IRI_TSDC}#")
 
 
 class RDFProjectSerializer(ProjectSerializer):
@@ -294,6 +296,7 @@ class RDFProjectSerializer(ProjectSerializer):
         graph = rdflib.Graph()
         graph.bind("okh", OKH)
         graph.bind("otrl", OTRL)
+        graph.bind("tsdc", TSDC)
         graph.bind("rdfs", rdflib.RDFS)
         graph.bind("owl", rdflib.OWL)
 
