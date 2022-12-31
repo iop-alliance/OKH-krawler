@@ -1,6 +1,7 @@
 # krawler specific
 workdir/
 export/
+config.yml
 
 # IDE
 .vscode/
