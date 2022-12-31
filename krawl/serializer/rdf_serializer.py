@@ -60,7 +60,7 @@ class RDFProjectSerializer(ProjectSerializer):
         if v is None:
             return None
         odrl_manifest = getattr(OTRL, v) # NOTE: Yes, ODRL is in the OTRL namespace too!
-        return odrl_manifest.replace('ODRL-', 'Odrl').replace('Star', '*')
+        return odrl_manifest.replace('ODRL-', 'Odrl').replace('*', 'Star')
 
     @staticmethod
     def _titlecase(s):
