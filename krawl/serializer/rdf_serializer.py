@@ -224,8 +224,7 @@ class RDFProjectSerializer(ProjectSerializer):
             cls.add(graph, module_subject, OKH.alternativeLicense, alt_license
                    )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
         cls.add(graph, module_subject, OKH.licensor, project.licensor)
-        # FIXME: rename organisation to organization, once the frontend is adjusted
-        cls.add(graph, module_subject, OKH.organisation, project.organization)
+        cls.add(graph, module_subject, OKH.organization, project.organization)
         # cls.add(graph, module_subject, OKH.contributorCount, None)  # TODO see if GitHub API can do this
 
         # graph
