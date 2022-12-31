@@ -226,7 +226,7 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.licensor, project.licensor)
         # FIXME: rename organisation to organization, once the frontend is adjusted
         cls.add(graph, module_subject, OKH.organisation, project.organization)
-        # cls.add(graph, module_subject, OKH.contributorCount, None)  ## TODO see if github api can do this
+        # cls.add(graph, module_subject, OKH.contributorCount, None)  # TODO see if GitHub API can do this
 
         # graph
         # TODO add(OKH.timestamp, project.timestamp)
