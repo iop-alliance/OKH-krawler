@@ -128,8 +128,7 @@ class RDFProjectSerializer(ProjectSerializer):
             cls.add(graph, part_subject, OKH.documentationLanguage, get_fallback(part, "documentation_language"))
             license = get_fallback(part, "license")
             if license and license.is_spdx:
-                cls.add(graph, part_subject, OKH.spdxLicense, license.reference_url[:-5]
-                       )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
+                cls.add(graph, part_subject, OKH.spdxLicense, license.id)
             else:
                 if license.reference_url is None:
                     alt_license = license.id
@@ -214,8 +213,7 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.version, project.version)
         cls.add(graph, module_subject, OKH.release, project.release)
         if project.license.is_spdx:
-            cls.add(graph, module_subject, OKH.spdxLicense, project.license.reference_url[:-5]
-                   )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
+            cls.add(graph, module_subject, OKH.spdxLicense, project.license.id)
         else:
             if project.license.reference_url is None:
                 alt_license = project.license.id
