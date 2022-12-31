@@ -202,7 +202,8 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, rdflib.RDF.type, OKH.Module)
 
         cls.add(graph, module_subject, rdflib.RDFS.label, project.name)
-        cls.add(graph, module_subject, OKH.versionOf, project.repo)
+        # NOTE That is not how this works. It would have to link to an RDF subject (by IRI) that represents the same module but un-frozen/non-permanent. IT would likely be in an other file.
+        #cls.add(graph, module_subject, OKH.versionOf, project.repo)
         cls.add(graph, module_subject, OKH.repo, project.repo)
         cls.add(graph, module_subject, OKH.dataSource, project.meta.source)
 
