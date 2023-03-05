@@ -156,7 +156,9 @@ class RDFProjectSerializer(ProjectSerializer):
                 cls.add(graph, outer_dimensions, rdflib.RDFS.label, f"Outer Dimensions of {part.name}")
                 cls.add_outer_dimensions(graph, outer_dimensions, part.outer_dimensions)
 
-            cls.add(graph, part_subject, OKH.tsdc, part.tsdc)
+            if part.tsdc is not None:
+                # TODO Parse TsDCs, and check if part.tsdc is a valid tsdc, but maybe do that earlier in the process, not here, while serializing
+                cls.add(graph, part_subject, OKH.belongsUnderTsDC, URIRef(f"{BASE_IRI_TSDC}#{part.tsdc}"))
 
             # source
             if part.source is not None:
@@ -234,7 +236,9 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.technologyReadinessLevel, cls._make_OTRL(project))
         cls.add(graph, module_subject, OKH.function, project.function)
         cls.add(graph, module_subject, OKH.cpcPatentClass, project.cpc_patent_class)
-        cls.add(graph, module_subject, OKH.tsdc, project.tsdc)
+        if project.tsdc is not None:
+            # TODO Parse TsDCs, and check if part.tsdc is a valid tsdc, but maybe do that earlier in the process, not here, while serializing
+            cls.add(graph, module_subject, OKH.belongsUnderTsDC, URIRef(f"{BASE_IRI_TSDC}#{project.tsdc}"))
 
         # FIXME: yeah, this is not how this works
         # cls.add(graph, module_subject, OKH.export, [file.path for file in project.export])
