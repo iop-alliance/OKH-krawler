@@ -91,6 +91,19 @@ def _validate_url(title: str, url: str, missing_ok=False) -> list[str]:
         return [f"{title} must be a valid URL"]
     return []
 
+def _validate_relative_path(title: str, path: str, missing_ok=False) -> list[str]:
+    if path is None:
+        if missing_ok:
+            return []
+        return [f"missing {title}"]
+    if not isinstance(path, str):
+        return [f"{title} must be of type string"]
+    # Copied form here:
+    # <https://stackoverflow.com/a/11383064>
+    rel_path_pat = re.compile("^[a-z0-9]([a-z0-9-]*[a-z0-9])?(/[a-z0-9]([a-z0-9-]*[a-z0-9])?)*(/[a-z0-9]([a-z0-9-\.]*[a-z0-9])?)?$")
+    if not rel_path_pat.match(path):
+        return [f"{title} must be a valid, relative path: not starting with '/' or './', and not containing '..' or '/./'."]
+    return []
 
 def _validate_file(title: str, file: File, missing_ok=False) -> list[str]:
     if file is None:
@@ -104,6 +117,7 @@ def _validate_file(title: str, file: File, missing_ok=False) -> list[str]:
     reasons.extend(_validate_string(title + ".name", file.name, min=1, max=256))
     reasons.extend(_validate_url(title + ".url", file.url, missing_ok=True))
     reasons.extend(_validate_url(title + ".frozen_url", file.frozen_url, missing_ok=True))
+    reasons.extend(_validate_relative_path(title + ".path", file.path, missing_ok=True))
     #TODO: validate other fields of files
 
     return reasons
