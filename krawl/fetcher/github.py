@@ -118,16 +118,16 @@ class GitHubFetcher(Fetcher):
     of challenges that need to be addressed. Most of them stem from the rate
     limits that GitHub imposes.
 
-    - The code search feature only returns only results for repositories, that
+    - The code search feature only returns results for repositories that
       had any activity or popped up in search results within the last year. Long
-      existing projects with no activity whatsoever will there not be found. By
-      continuously searching for new results, the crawler will hopefully picked
-      up recent projects and keep an index. This way the projects will be
+      existing projects with no activity whatsoever, will therefore not be found. By
+      continuously searching for new results, the crawler will hopefully pick-up
+      recent projects, and keep an index. This way, the projects will be
       included in the database, even if these won't get any future updates.
 
-    - Using the API the code search will only return a maximum of 1000 results,
-      even if more were found. To get more than 1000 results the crawler needs
-      to split up the search query into timeframes. Using this method it should
+    - Using the API, the code search will only return a maximum of 1000 results,
+      even if more were found. To get more than 1000 results, the crawler needs
+      to split up the search query into timeframes. Using this method, it should
       be possible to get all the results (https://stackoverflow.com/a/37639739).
 
     - GitHub uses rate limits for all requests made to their API. These need to
@@ -145,13 +145,13 @@ class GitHubFetcher(Fetcher):
       (https://docs.github.com/en/rest/reference/search#timeouts-and-incomplete-results).
       The latter doesn't really matter, because it wouldn't help to get the
       desired results anyway. The concrete problem is the following: Results
-      from the code search can only accessed in a paginated form, meaning only
+      from the code search can only be accessed in a paginated form, meaning only
       up to 100 results can be retrieved in one batch. The next 100 results
-      could then be retrieved by querying the next page. Now comes the timeout
-      into play. If 100 results from page X are requested, but for example only
+      could then be retrieved by querying the next page. Now, the timeout comes
+      into play: If 100 results from page X are requested, but for example only
       15 are returned, then there is no way to access the other 75 results of
       that page. Going to the next page would return the results 100-200. To
-      conquer this, one could do the following:
+      counter this, one could do the following:
         - simple search query: The more complex the search query is, the more
           processing is required and the query will take longer. Therefore, the
           query needs to be kept simple, even if this means, that the search is
@@ -171,17 +171,17 @@ class GitHubFetcher(Fetcher):
 
         - small batch size: The more results are requested per page, the
           likelier it is, that the timeout will cut off the returned results.
-          Therefore, the batch size needs to be kept small. The a batch size of
+          Therefore, the batch size needs to be kept small. A batch size of
           10 might be reasonable.
 
-        - retry: Because the missing results cannot be requested properly, one
-          have to run the query again and hope, that the next time all the
+        - retry: Because the missing results cannot be requested properly, we
+          have to run the query again, and hope that the next time all the
           expected results show up.
 
     ### Development Information
 
-    GitHub offers a GraphQL API, that is used by the fetcher to get all projects
-    and their metadata. For developing the query one can use the in-browser tool
+    GitHub offers a GraphQL API that is used by the fetcher to get all projects
+    and their metadata. For developing the query, one can use the in-browser tool
     available at https://docs.github.com/en/graphql/overview/explorer. To debug
     the query, simply post it into the tool along with the following variables:
 

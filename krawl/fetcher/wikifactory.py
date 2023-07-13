@@ -145,7 +145,7 @@ class WikifactoryFetcher(Fetcher):
     """Fetcher for projects on Wikifactory.com.
 
     Wikifactory offers a GraphQL API, that is used by the fetcher to get all
-    projects and their metadata. For developing the query one can use the
+    projects and their metadata. For developing the query, one can use the
     in-browser tool available at https://wikifactory.com/api/graphql. To debug
     the query, simply post it into the tool along with the following variables:
 
