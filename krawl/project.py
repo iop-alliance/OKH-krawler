@@ -386,7 +386,7 @@ class File:
     """File data model."""
 
     __slots__ = [
-        "name", "path", "mime_type", "url", "perma_url", "created_at", "last_visited", "last_changed", "license",
+        "name", "path", "mime_type", "url", "frozen_url", "created_at", "last_visited", "last_changed", "license",
         "licensor"
     ]
 
@@ -395,7 +395,7 @@ class File:
         self.path: Path = None
         self.mime_type: str = None
         self.url: str = None
-        self.perma_url: str = None  # perma URL is bound to a specific commit
+        self.frozen_url: str = None  # frozen URL is bound to a specific version of the file, e.g. a git commit
         self.created_at: datetime = None
         self.last_visited: datetime = None
         self.last_changed: datetime = None
@@ -415,7 +415,7 @@ class File:
         file.path = Path(data["path"]) if data.get("path") is not None else None
         file.mime_type = data.get("mime-type", None)
         file.url = data.get("url", None)
-        file.perma_url = data.get("perma-url", None)
+        file.frozen_url = data.get("frozen-url", None)
         file.created_at = _parse_date(data.get("created-at"))
         file.last_visited = _parse_date(data.get("last-visited"))
         file.last_changed = _parse_date(data.get("last-changed"))
@@ -429,7 +429,7 @@ class File:
             "path": str(self.path),
             "mime-type": self.mime_type,
             "url": self.url,
-            "perma-url": self.perma_url,
+            "frozen-url": self.frozen_url,
             "created-at": self.created_at.isoformat() if self.created_at is not None else None,
             "last-visited": self.last_visited.isoformat() if self.last_visited is not None else None,
             "last-changed": self.last_changed.isoformat() if self.last_changed is not None else None,

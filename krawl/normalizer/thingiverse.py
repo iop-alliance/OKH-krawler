@@ -154,7 +154,7 @@ class ThingiverseNormalizer(Normalizer):
         file.path = Path(image_raw)
         file.name = file.path.stem if file.path else None
         file.url = image_raw
-        file.perma_url = image_raw
+        file.frozen_url = None
         file.created_at = datetime.strptime(raw["added"], "%Y-%m-%dT%H:%M:%S%z")
         file.last_changed = datetime.strptime(raw["added"], "%Y-%m-%dT%H:%M:%S%z")
         file.last_visited = datetime.now(timezone.utc)
@@ -174,7 +174,7 @@ class ThingiverseNormalizer(Normalizer):
         file.name = raw_file.get("name")
         file.mime_type = type[0] if type[0] is not None else "text/plain"
         file.url = raw_file.get("public_url")
-        file.perma_url = raw_file.get("public_url")
+        file.frozen_url = None
         file.created_at = datetime.strptime(raw_file.get("date"), "%Y-%m-%d %H:%M:%S")
         file.last_changed = datetime.strptime(raw_file.get("date"), "%Y-%m-%d %H:%M:%S")
         file.last_visited = datetime.now(timezone.utc)

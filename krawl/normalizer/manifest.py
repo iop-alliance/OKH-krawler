@@ -181,14 +181,14 @@ class ManifestNormalizer(Normalizer):
                     raw_file = {
                         "path": info.path, # FIXME This should be the repo path, but is the path part of the URL, which in case of git/github, would also contian user- and repo-name (though it may likely not be the same on most other platforms too)
                         "url": raw_file,
-                        "perma-url": raw_file,
+                        "frozen-url": raw_file,
                     }
                 except ValueError:
                     parsed_url = urlparse(raw_file)
                     raw_file = {
                         "path": parsed_url.path, # FIXME This should be the repo path, but is the path part of the URL, which in case of git/github, would also contian user- and repo-name (though it may likely not be the same on most other platforms too)
                         "url": raw_file,
-                        "perma-url": raw_file,
+                        "frozen-url": raw_file,
                     }
             else:
                 # is path within repo
@@ -206,7 +206,7 @@ class ManifestNormalizer(Normalizer):
                 raw_file = {
                     "path": path,
                     "url": url,
-                    "perma-url": url,
+                    "frozen-url": url,
                 }
         elif not isinstance(raw_file, dict):
             return None
@@ -219,9 +219,9 @@ class ManifestNormalizer(Normalizer):
         url = cls._string(raw_file.get("url"))
         if url and validators.url(url):
             file.url = url
-        perma_url = cls._string(raw_file.get("perma-url"))
-        if perma_url and validators.url(perma_url):
-            file.perma_url = perma_url
+        frozen_url = cls._string(raw_file.get("frozen-url"))
+        if frozen_url and validators.url(frozen_url):
+            file.frozen_url = frozen_url
 
         file.created_at = cls._string(raw_file.get("created-at"))
         file.last_changed = cls._string(raw_file.get("last-changed"))

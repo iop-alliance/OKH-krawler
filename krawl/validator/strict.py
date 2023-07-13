@@ -103,7 +103,7 @@ def _validate_file(title: str, file: File, missing_ok=False) -> list[str]:
     reasons = []
     reasons.extend(_validate_string(title + ".name", file.name, min=1, max=256))
     reasons.extend(_validate_url(title + ".url", file.url, missing_ok=True))
-    reasons.extend(_validate_url(title + ".perma_url", file.perma_url, missing_ok=True))
+    reasons.extend(_validate_url(title + ".frozen_url", file.frozen_url, missing_ok=True))
     #TODO: validate other fields of files
 
     return reasons
