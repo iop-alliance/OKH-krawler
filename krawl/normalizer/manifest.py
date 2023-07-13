@@ -170,28 +170,44 @@ class ManifestNormalizer(Normalizer):
         return files
 
     @classmethod
+    def is_url(cls, file_reference: str) -> bool:
+        """Figures out whether the argument is a URL (or a relative path).
+
+        Args:
+            file_reference (str): Should represent either a URL or a relative path
+        """
+        return validators.url(file_reference)
+
+    @classmethod
+    def extract_path(cls, url: str) -> bool:
+        """Figures out whether the argument is a URL (or a relative path).
+
+        Args:
+            file_reference (str): Should represent either a URL or a relative path
+        """
+        try:
+            parsed_url = PlatformURL.from_url(url)
+            return parsed_url.path
+        except ValueError:
+            parsed_url = urlparse(url)
+            return parsed_url.path
+
+    @classmethod
     def _file(cls, raw_file: dict, manifest_path: str, download_url: str) -> File | None:
         if raw_file is None:
             return None
         if isinstance(raw_file, str):
             # is url
-            if validators.url(raw_file):
-                try:
-                    info = PlatformURL.from_url(raw_file)
-                    raw_file = {
-                        "path": info.path, # FIXME This should be the repo path, but is the path part of the URL, which in case of git/github, would also contian user- and repo-name (though it may likely not be the same on most other platforms too)
-                        "url": raw_file,
-                        "frozen-url": raw_file,
-                    }
-                except ValueError:
-                    parsed_url = urlparse(raw_file)
-                    raw_file = {
-                        "path": parsed_url.path, # FIXME This should be the repo path, but is the path part of the URL, which in case of git/github, would also contian user- and repo-name (though it may likely not be the same on most other platforms too)
-                        "url": raw_file,
-                        "frozen-url": raw_file,
-                    }
+            if is_url(raw_file):
+                url = raw_file
+                path = extract_path(url)
+                raw_file = {
+                    "path": path, # FIXME This should be the repo path, but is the path part of the URL, which in case of git/github, would also contain user- and repo-name (though it may likely not be the same on most other platforms too)
+                    "url": url,
+                    "frozen-url": url, # FIXME Wrong!
+                }
             else:
-                # is path within repo
+                # is path relative to/within project/repo
                 path = Path(raw_file)
                 if path.is_absolute():
                     # path is absolute within repo
@@ -206,7 +222,7 @@ class ManifestNormalizer(Normalizer):
                 raw_file = {
                     "path": path,
                     "url": url,
-                    "frozen-url": url,
+                    "frozen-url": url, # FIXME Wrong!
                 }
         elif not isinstance(raw_file, dict):
             return None
