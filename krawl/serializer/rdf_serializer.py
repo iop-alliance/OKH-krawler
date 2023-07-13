@@ -93,7 +93,7 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, subject, OKH.fileURL, file.url) # TODO Maybe use file.perma_url instead here, becasue according to the spec/Ontology as of Dec. 2022), this is supposed ot be a permanent/frozen URL
         # NOTE This is not part of the spec (as of December 2022), and fileURL is mentioned in the spec to contain the permanent URL; related issue: https://github.com/OPEN-NEXT/OKH-LOSH/issues/132
         # cls.add(graph, subject, OKH.permaURL, file.perma_url)
-        cls.add(graph, subject, OKH.fileFormat, file.extension.upper())
+        cls.add(graph, subject, OKH.fileFormat, file.extension.upper()) # TODO We should change this to mime-type at some point
         # cls.add(graph, subject, OKH.mimeType, file.mime_type) # FIXME: only add if contained in ontology
         # cls.add(graph, subject, OKH.dateCreated, file.created_at) # FIXME: only add if contained in ontology
         # cls.add(graph, subject, OKH.dateLastChanged, file.last_changed) # FIXME: only add if contained in ontology
