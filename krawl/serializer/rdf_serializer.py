@@ -158,7 +158,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
             if part.tsdc is not None:
                 # TODO Parse TsDCs, and check if part.tsdc is a valid tsdc, but maybe do that earlier in the process, not here, while serializing
-                cls.add(graph, part_subject, OKH.belongsUnderTsDC, URIRef(f"{BASE_IRI_TSDC}#{part.tsdc}"))
+                cls.add(graph, part_subject, OKH.tsdc, URIRef(f"{BASE_IRI_TSDC}#{part.tsdc}"))
 
             # source
             if part.source is not None:
@@ -238,7 +238,7 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, module_subject, OKH.cpcPatentClass, project.cpc_patent_class)
         if project.tsdc is not None:
             # TODO Parse TsDCs, and check if part.tsdc is a valid tsdc, but maybe do that earlier in the process, not here, while serializing
-            cls.add(graph, module_subject, OKH.belongsUnderTsDC, URIRef(f"{BASE_IRI_TSDC}#{project.tsdc}"))
+            cls.add(graph, module_subject, OKH.tsdc, URIRef(f"{BASE_IRI_TSDC}#{project.tsdc}"))
 
         # FIXME: yeah, this is not how this works
         # cls.add(graph, module_subject, OKH.export, [file.path for file in project.export])
