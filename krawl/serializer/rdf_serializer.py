@@ -90,7 +90,10 @@ class RDFProjectSerializer(ProjectSerializer):
 
     @classmethod
     def add_file(cls, graph, subject, file):
-        cls.add(graph, subject, OKH.fileURL, file.url) # TODO Maybe use file.perma_url instead here, becasue according to the spec/Ontology as of Dec. 2022), this is supposed ot be a permanent/frozen URL
+        if file.path is not None:
+            cls.add(graph, subject, OKH.relativePath, file.path)
+        if file.url is not None:
+            cls.add(graph, subject, OKH.url, file.url) # TODO Maybe use file.permaURL instead here, because according to the spec/Ontology as of Dec. 2022), this is supposed ot be a permanent/frozen URL -> NO, change the spec! We removed permaURL, and rahter want ot have a frozen and a separate, unfrozen version of the whole manifest.
         # NOTE This is not part of the spec (as of December 2022), and fileURL is mentioned in the spec to contain the permanent URL; related issue: https://github.com/OPEN-NEXT/OKH-LOSH/issues/132
         # cls.add(graph, subject, OKH.permaURL, file.perma_url)
         cls.add(graph, subject, OKH.fileFormat, file.extension.upper()) # TODO We should change this to mime-type at some point
