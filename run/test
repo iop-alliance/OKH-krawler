@@ -1,0 +1,61 @@
+#!/usr/bin/env sh
+# SPDX-FileCopyrightText: 2023 Robin Vobruba <hoijui.quaero@gmail.com>
+# SPDX-License-Identifier: Unlicense
+#
+# See the output of "$0 -h" for details.
+
+# Exit immediately on each error and unset variable;
+# see: https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail/
+#set -Eeuo pipefail
+set -eu
+
+script_path="$(readlink -f "$0")"
+script_dir="$(dirname "$script_path")"
+script_name="$(basename "$script_path")"
+project_root=$(dirname "$script_dir")
+
+# initial default values
+APP_NAME="Project unit-tests"
+
+print_help() {
+
+	echo "$APP_NAME"
+	echo
+	echo "Usage:"
+	echo "  $script_name [OPTION...]"
+	echo "Options:"
+	echo "  -h, --help"
+	echo "    Shows this help message and exit"
+	echo "Examples:"
+	echo "  $script_name"
+	echo "  $script_name --help"
+}
+
+# read command-line args
+i=1
+while [ "$i" -lt "$#" ]
+do
+	arg="$(eval "echo \$$i")"
+
+	case "$arg" in
+		-h|--help)
+			shift "$i"
+			print_help
+			exit 0
+			;;
+		-C|--repo)
+			shift "$i"
+			# eval "arg_num=\$$i"
+			# repo="$arg_num"
+			repo="$(eval "echo \$$i")"
+			shift "$i"
+			;;
+		*) # non-/unknown option
+			i=$((i + 1))
+			;;
+	esac
+done
+
+cd "$project_root"
+
+python -m unittest tests/**/*.py
