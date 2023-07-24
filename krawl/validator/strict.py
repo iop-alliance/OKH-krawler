@@ -74,9 +74,9 @@ def _validate_string(title: str, string: str, min=None, max=None, missing_ok=Fal
     if not isinstance(string, str):
         return [f"{title} must be of type 'str'(ing), but is '{type(string)}'"]
     if min is not None and len(string) < min:
-        return [f"{title} is to short (<{min})"]
+        return [f"{title} is too short (<{min})"]
     if max is not None and len(string) > max:
-        return [f"{title} is to long (>{max})"]
+        return [f"{title} is too long (>{max})"]
     return []
 
 
