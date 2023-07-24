@@ -39,7 +39,7 @@ class PlatformURL:
             platform_url.owner = path_parts[0] if len(path_parts) >= 1 else None
             platform_url.repo = path_parts[1] if len(path_parts) >= 2 else None
             if domain == "github.com":
-                if len(path_parts) >= 4 and path_parts[2] in ["tree", "blob"]:
+                if len(path_parts) >= 4 and path_parts[2] in ["tree", "blob", "raw"]:
                     platform_url.branch = path_parts[3]
                     if len(path_parts) > 4:
                         platform_url.path = "/".join(path_parts[4:])
