@@ -66,12 +66,14 @@ class FetchURLCommand(KrawlCommand):
 
         # perform the deed
         report = []
+        failures = 0
         for id in ids:
             project = fetcher_factory.fetch(id)
             ok, reason = validator.validate(project)
             if not ok:
                 log.info("Skipping project '%s' because: %s", project.id, reason[0])
                 report.append(f"Skipped '{project.id}': {', '.join(reason)}")
+                failures = min(failures + 1, 255)
                 continue
             repository_factory.store(project)
             report.append(f"Added '{project.id}'")
@@ -79,3 +81,6 @@ class FetchURLCommand(KrawlCommand):
         if report_path:
             with report_path.open("w") as f:
                 f.writelines(report)
+
+        if failures > 0:
+            sys.exit(failures)
