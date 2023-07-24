@@ -11,12 +11,18 @@ def configure_logger(level, format, output_stream, error_stream):
     class StdoutFilter:
 
         def filter(self, record) -> bool:
-            return record.levelno < logging.WARNING
+            #return record.levelno < logging.WARNING
+            # NOTE According to <https://clig.dev/#the-basics>,
+            #      all logging should go to stderr.
+            return False
 
     class StderrFilter:
 
         def filter(self, record) -> bool:
-            return record.levelno >= logging.WARNING
+            #return record.levelno >= logging.WARNING
+            # NOTE According to <https://clig.dev/#the-basics>,
+            #      all logging should go to stderr.
+            return True
 
     logging_config = {
         "version": 1,
