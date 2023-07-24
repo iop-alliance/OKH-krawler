@@ -10,7 +10,6 @@ from krawl.project import Project, ProjectID
 from krawl.repository import ProjectRepository
 from krawl.serializer.rdf_serializer import RDFProjectSerializer
 from krawl.serializer.toml_serializer import TOMLProjectSerializer
-from krawl.serializer.yaml_serializer import YAMLProjectSerializer
 
 log = get_child_logger("repo_file")
 

@@ -7,7 +7,6 @@ from krawl.serializer.rdf_serializer import RDFProjectSerializer
 from krawl.serializer.toml_deserializer import TOMLProjectDeserializer
 from krawl.serializer.toml_serializer import TOMLProjectSerializer
 from krawl.serializer.yaml_deserializer import YAMLProjectDeserializer
-from krawl.serializer.yaml_serializer import YAMLProjectSerializer
 
 
 class SerializerFactory():
@@ -23,9 +22,6 @@ class SerializerFactory():
         return serializer.serialize(project)
 
     def _init_serializers(self):
-        yaml_serializer = YAMLProjectSerializer()
-        self._serializers[".yml"] = yaml_serializer
-        self._serializers[".yaml"] = yaml_serializer
 
         toml_serializer = TOMLProjectSerializer()
         self._serializers[".toml"] = toml_serializer
