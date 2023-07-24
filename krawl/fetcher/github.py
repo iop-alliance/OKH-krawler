@@ -287,6 +287,8 @@ class GitHubFetcher(Fetcher):
     def fetch(self, id: ProjectID) -> Project:
         log.debug("fetching project %s", id)
 
+        if id.path is None:
+            id.path = 'okh.toml'
         # download the file
         path = Path(id.path)
         base_download_url = self._get_file_base_url(id)
