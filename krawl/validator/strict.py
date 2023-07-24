@@ -30,10 +30,11 @@ class StrictValidator(Validator):
                                       missing_ok=True))
         reasons.extend(_validate_file("user_manual", project.user_manual, missing_ok=True))
 
-        if not is_non_zero_length_string(project.documentation_language):
-            reasons.append("missing documentation language")
-        elif not is_bcp_47_language_tag(project.documentation_language):
-            reasons.append(f"invalid language tag '{project.documentation_language}'")
+        if is_non_zero_length_string(project.documentation_language):
+            if not is_bcp_47_language_tag(project.documentation_language):
+                reasons.append(f"invalid language tag '{project.documentation_language}'")
+        # else:
+        #     reasons.append("missing documentation language")
 
         if not is_non_zero_length_string(project.version):
             reasons.append("missing version")
