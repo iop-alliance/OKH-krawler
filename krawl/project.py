@@ -1,20 +1,17 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 from krawl.licenses import License, get_by_id_or_name
 from krawl.platform_url import PlatformURL
 
-class UploadMethods(Enum):
+class UploadMethods(StrEnum):
     AUTO = "auto" # crawled through the project hosting platforms API
     MANIFEST = "manifest" # via okh.(toml|yaml|...) manifest file (and API?)
     MANIFEST_SCRIPT = "manifest-script" # via a script that creates manifest files
     MANUAL = "manual" # TODO Document
-
-    def __str__(self):
-        return self.value
 
 
 class ProjectID:
@@ -173,7 +170,7 @@ class Project:
             "part": [p.as_dict() for p in self.part],
             "software": [s.as_dict() for s in self.software],
             "specific-api-data": self.specific_api_data,
-            "upload-method": self.upload_method.value
+            "upload-method": str(self.upload_method)
         }
 
     @property
