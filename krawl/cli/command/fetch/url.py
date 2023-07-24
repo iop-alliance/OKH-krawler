@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 from clikit.api.args.format import Option
 
@@ -81,6 +82,8 @@ class FetchURLCommand(KrawlCommand):
         if report_path:
             with report_path.open("w") as f:
                 f.writelines(report)
+        else:
+            sys.stdout.writelines(report)
 
         if failures > 0:
             sys.exit(failures)
