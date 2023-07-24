@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from krawl.normalizer import Normalizer
 from krawl.project import Project
-from krawl.serializer.json_deserializer import JSONProjectDeserializer
-from krawl.serializer.json_serializer import JSONProjectSerializer
 from krawl.serializer.rdf_deserializer import RDFProjectDeserializer
 from krawl.serializer.rdf_serializer import RDFProjectSerializer
 from krawl.serializer.toml_deserializer import TOMLProjectDeserializer
@@ -32,8 +30,6 @@ class SerializerFactory():
         toml_serializer = TOMLProjectSerializer()
         self._serializers[".toml"] = toml_serializer
 
-        json_serializer = JSONProjectSerializer()
-        self._serializers[".json"] = json_serializer
 
         rdf_serializer = RDFProjectSerializer()
         self._serializers[".ttl"] = rdf_serializer
@@ -59,8 +55,6 @@ class DeserializerFactory():
         toml_deserializer = TOMLProjectDeserializer()
         self._deserializer[".toml"] = toml_deserializer
 
-        json_deserializer = JSONProjectDeserializer()
-        self._deserializer[".json"] = json_deserializer
 
         rdf_deserializer = RDFProjectDeserializer()
         self._deserializer[".ttl"] = rdf_deserializer
