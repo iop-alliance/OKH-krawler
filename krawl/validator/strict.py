@@ -47,7 +47,7 @@ class StrictValidator(Validator):
             reasons.append(f"'{project.license}' is not a conformant license")
 
         if not isinstance(project.part, list):
-            reasons.append("part must be of type list")
+            reasons.append(f"part must be of type 'list', but is '{type(project.part)}'")
         elif not isinstance(project.part, list):
             reasons.append("must have at least one part")
 
@@ -72,7 +72,7 @@ def _validate_string(title: str, string: str, min=None, max=None, missing_ok=Fal
             return []
         return [f"missing {title}"]
     if not isinstance(string, str):
-        return [f"{title} must be of type string"]
+        return [f"{title} must be of type 'str'(ing), but is '{type(string)}'"]
     if min is not None and len(string) < min:
         return [f"{title} is to short (<{min})"]
     if max is not None and len(string) > max:
@@ -86,7 +86,7 @@ def _validate_url(title: str, url: str, missing_ok=False) -> list[str]:
             return []
         return [f"missing {title}"]
     if not isinstance(url, str):
-        return [f"{title} must be of type string"]
+        return [f"{title} must be of type 'str'(ing), but is '{type(url)}'"]
     if not validators.url(url):
         return [f"{title} must be a valid URL"]
     return []
@@ -111,7 +111,7 @@ def _validate_file(title: str, file: File, missing_ok=False) -> list[str]:
             return []
         return [f"missing {title}"]
     if not isinstance(file, File):
-        return [f"{title} must be of type file"]
+        return [f"{title} must be of type 'File', but is '{type(file)}'"]
 
     reasons = []
     reasons.extend(_validate_string(title + ".name", file.name, min=1, max=256))
