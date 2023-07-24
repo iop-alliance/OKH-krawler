@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from typing import Any
+from pathlib import Path
 
 import validators
+import re
 
 from krawl.project import File, Project
 from krawl.validator import Validator, is_bcp_47_language_tag, is_non_zero_length_string, is_okh_version, is_version
@@ -92,18 +94,21 @@ def _validate_url(title: str, url: str, missing_ok=False) -> list[str]:
         return [f"{title} must be a valid URL"]
     return []
 
-def _validate_relative_path(title: str, path: str, missing_ok=False) -> list[str]:
+def _validate_relative_path(title: str, path: Path, missing_ok=False) -> list[str]:
     if path is None:
         if missing_ok:
             return []
         return [f"missing {title}"]
-    if not isinstance(path, str):
-        return [f"{title} must be of type string"]
+    if not isinstance(path, Path):
+        return [f"{title} must be of type 'Path', but is '{type(path)}'"]
     # Copied form here:
     # <https://stackoverflow.com/a/11383064>
-    rel_path_pat = re.compile("^[a-z0-9]([a-z0-9-]*[a-z0-9])?(/[a-z0-9]([a-z0-9-]*[a-z0-9])?)*(/[a-z0-9]([a-z0-9-\.]*[a-z0-9])?)?$")
-    if not rel_path_pat.match(path):
-        return [f"{title} must be a valid, relative path: not starting with '/' or './', and not containing '..' or '/./'."]
+    abs_path_pat = re.compile("^/")
+    dot_slash_start_pat = re.compile("^\.\.?/")
+    slash_dot_slash_pat = re.compile("/\.\.?/")
+    path_str = str(path)
+    if abs_path_pat.match(path_str) or dot_slash_start_pat.match(path_str) or slash_dot_slash_pat.match(path_str):
+        return [f"{title} must be a valid, relative path: not starting with '/', './' or '../', and not containing '/../' or '/./'; it is '{path_str}'."]
     return []
 
 def _validate_file(title: str, file: File, missing_ok=False) -> list[str]:

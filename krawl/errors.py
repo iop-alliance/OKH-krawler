@@ -34,3 +34,7 @@ class NotFound(FetcherError):
 
 class RepositoryError(KrawlerError):
     pass
+
+
+class ConversionError(KrawlerError):
+    pass

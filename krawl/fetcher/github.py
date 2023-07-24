@@ -6,6 +6,7 @@ from pathlib import Path
 from time import sleep
 from urllib.parse import urlparse, urlunparse
 
+import re
 import requests
 from gql import Client as GQLClient
 from gql import gql
@@ -16,9 +17,10 @@ from requests.adapters import HTTPAdapter, Retry
 from krawl.config import Config
 from krawl.errors import DeserializerError, FetcherError, NormalizerError, NotFound
 from krawl.fetcher import Fetcher
-from krawl.fetcher.util import is_accepted_manifest_file_name, is_binary, is_empty
+from krawl.fetcher.util import is_accepted_manifest_file_name, is_binary, is_empty, convert_okh_v1_to_losh
 from krawl.log import get_child_logger
 from krawl.normalizer.manifest import ManifestNormalizer
+from krawl.normalizer.github import GitHubFileHandler
 from krawl.project import Project, ProjectID
 from krawl.repository import FetcherStateRepository
 from krawl.request.rate_limit import RateLimitFixedTimedelta, RateLimitNumRequests
@@ -240,7 +242,7 @@ class GitHubFetcher(Fetcher):
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         self._state_repository = state_repository
-        self._normalizer = ManifestNormalizer()
+        self._normalizer = ManifestNormalizer(GitHubFileHandler())
         self._deserializer_factory = DeserializerFactory()
         self._repo_cache = {}
         # https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
@@ -291,6 +293,7 @@ class GitHubFetcher(Fetcher):
             id.path = 'okh.toml'
         # download the file
         path = Path(id.path)
+        format_suffix = path.suffix.lower()
         base_download_url = self._get_file_base_url(id)
         manifest_contents = self._download_manifest(f"{base_download_url}/{id.path}")
 
@@ -309,9 +312,18 @@ class GitHubFetcher(Fetcher):
             }
         }
 
+        yaml_suffix_pat = re.compile('^\.ya?ml$')
+        is_yaml = yaml_suffix_pat.match(format_suffix)
+        log.debug(f"Checking if manifest '{format_suffix}' is YAML ...")
+        if is_yaml:
+            log.debug(f"Manifest is YAML!")
+            manifest_contents = convert_okh_v1_to_losh(manifest_contents)
+            format_suffix = ".toml"
+            log.debug(f"YAML (v1) Manifest converted to TOML (LOSH)!")
+
         # try deserialize
         try:
-            project = self._deserializer_factory.deserialize(path.suffix, manifest_contents, self._normalizer, meta)
+            project = self._deserializer_factory.deserialize(format_suffix, manifest_contents, self._normalizer, meta)
         except DeserializerError as err:
             raise FetcherError(f"deserialization failed: {err}") from err
         except NormalizerError as err:

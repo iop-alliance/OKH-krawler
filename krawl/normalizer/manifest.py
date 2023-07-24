@@ -9,14 +9,18 @@ import validators
 
 from krawl.licenses import get_by_id_or_name as get_license
 from krawl.log import get_child_logger
-from krawl.normalizer import Normalizer
+from krawl.normalizer import Normalizer, FileHandler
 from krawl.platform_url import PlatformURL
 from krawl.project import File, Mass, Meta, OuterDimensions, Part, Project, Software, UploadMethods
+from krawl.util import is_url
 
 log = get_child_logger("mainfest")
 
 
 class ManifestNormalizer(Normalizer):
+
+    def __init__(self, file_handler: FileHandler = None):
+        self.file_handler = file_handler
 
     def normalize(self, raw: dict) -> Project:
         project = Project()
@@ -40,6 +44,10 @@ class ManifestNormalizer(Normalizer):
 
         download_url = self._base_url(raw, project.meta)
 
+        fh_proj_info: dict = None
+        if self.file_handler is not None:
+            fh_proj_info = self.file_handler.gen_proj_info(raw)
+
         project.name = self._string(raw.get("name"))
         project.repo = self._string(raw.get("repo"))
         project.version = self._string(raw.get("version"))
@@ -47,9 +55,9 @@ class ManifestNormalizer(Normalizer):
         project.license = get_license(self._string(raw.get("license")))
         project.licensor = self._string(raw.get("licensor"))
         project.organization = self._string(raw.get("organization"))
-        project.readme = self._file(raw.get("readme"), project.meta.path, download_url)
-        project.contribution_guide = self._file(raw.get("contribution-guide"), project.meta.path, download_url)
-        project.image = self._file(raw.get("image"), project.meta.path, download_url)
+        project.readme = self._file(self.file_handler, fh_proj_info, raw.get("readme"), project.meta.path, download_url)
+        project.contribution_guide = self._file(self.file_handler, fh_proj_info, raw.get("contribution-guide"), project.meta.path, download_url)
+        project.image = self._file(self.file_handler, fh_proj_info, raw.get("image"), project.meta.path, download_url)
         project.function = self._string(raw.get("function"))
         project.documentation_language = self._string(raw.get("documentation-language"))
         project.technology_readiness_level = self._string(raw.get("technology-readiness-level"))
@@ -59,12 +67,12 @@ class ManifestNormalizer(Normalizer):
         project.standard_compliance = self._string(raw.get("standard-compliance"))
         project.cpc_patent_class = self._string(raw.get("cpc-patent-class"))
         project.tsdc = self._string(raw.get("tsdc"))
-        project.bom = self._file(raw.get("bom"), project.meta.path, download_url)
-        project.manufacturing_instructions = self._file(raw.get("manufacturing-instructions"), project.meta.path,
+        project.bom = self._file(self.file_handler, fh_proj_info, raw.get("bom"), project.meta.path, download_url)
+        project.manufacturing_instructions = self._file(self.file_handler, fh_proj_info, raw.get("manufacturing-instructions"), project.meta.path,
                                                         download_url)
-        project.user_manual = self._file(raw.get("user-manual"), project.meta.path, download_url)
-        project.part = self._parts(raw.get("part"), project.meta.path, download_url)
-        project.software = self._software(raw.get("software"), project.meta.path, download_url)
+        project.user_manual = self._file(self.file_handler, fh_proj_info, raw.get("user-manual"), project.meta.path, download_url)
+        project.part = self._parts(self.file_handler, fh_proj_info, raw.get("part"), project.meta.path, download_url)
+        project.software = self._software(self.file_handler, fh_proj_info, raw.get("software"), project.meta.path, download_url)
         project.upload_method = raw.get("upload-method", UploadMethods.MANIFEST)
 
         return project
@@ -122,7 +130,7 @@ class ManifestNormalizer(Normalizer):
         return None
 
     @classmethod
-    def _parts(cls, raw_parts: Any, manifest_path: str, file_base_url: str) -> list[Part]:
+    def _parts(cls, file_handler: FileHandler, fh_proj_info, raw_parts: Any, manifest_path: str, file_base_url: str) -> list[Part]:
         if raw_parts is None or not isinstance(raw_parts, list):
             return []
         parts = []
@@ -130,9 +138,9 @@ class ManifestNormalizer(Normalizer):
             part = Part()
             part.name = cls._string(raw_part.get("name"))
             part.name_clean = cls._clean_name(part.name)
-            part.image = cls._file(raw_part.get("image"), manifest_path, file_base_url)
-            part.source = cls._file(raw_part.get("source"), manifest_path, file_base_url)
-            part.export = cls._files(raw_part.get("export"), manifest_path, file_base_url)
+            part.image = cls._file(file_handler, fh_proj_info, raw_part.get("image"), manifest_path, file_base_url)
+            part.source = cls._file(file_handler, fh_proj_info, raw_part.get("source"), manifest_path, file_base_url)
+            part.export = cls._files(file_handler, fh_proj_info, raw_part.get("export"), manifest_path, file_base_url)
             part.license = get_license(cls._string(raw_part.get("license")))
             part.licensor = cls._string(raw_part.get("licensor"))
             part.documentation_language = cls._string(raw_part.get("documentation-language"))
@@ -146,14 +154,14 @@ class ManifestNormalizer(Normalizer):
         return parts
 
     @classmethod
-    def _software(cls, raw_software: Any, manifest_path: str, file_base_url: str) -> list[Part]:
+    def _software(cls, file_handler: FileHandler, fh_proj_info: dict, raw_software: Any, manifest_path: str, file_base_url: str) -> list[Part]:
         if raw_software is None or not isinstance(raw_software, list):
             return []
         software = []
         for rs in raw_software:
             s = Software()
             s.release = cls._string(rs.get("name"))
-            s.installation_guide = cls._file(rs.get("installation-guide"), manifest_path, file_base_url)
+            s.installation_guide = cls._file(file_handler, fh_proj_info, rs.get("installation-guide"), manifest_path, file_base_url)
             s.documentation_language = cls._string(rs.get("documentation-language"))
             s.license = get_license(cls._string(rs.get("license")))
             s.licensor = cls._string(rs.get("licensor"))
@@ -161,25 +169,16 @@ class ManifestNormalizer(Normalizer):
         return software
 
     @classmethod
-    def _files(cls, raw_files: dict, manifest_path: str, download_url: str) -> list[File]:
+    def _files(cls, file_handler: FileHandler, fh_proj_info: dict, raw_files: dict, manifest_path: str, download_url: str) -> list[File]:
         if raw_files is None or not isinstance(raw_files, list):
             return []
         files = []
         for raw_file in raw_files:
-            files.append(cls._file(raw_file, manifest_path, download_url))
+            files.append(cls._file(file_handler, fh_proj_info, raw_file, manifest_path, download_url))
         return files
 
     @classmethod
-    def is_url(cls, file_reference: str) -> bool:
-        """Figures out whether the argument is a URL (or a relative path).
-
-        Args:
-            file_reference (str): Should represent either a URL or a relative path
-        """
-        return validators.url(file_reference)
-
-    @classmethod
-    def extract_path(cls, url: str) -> bool:
+    def extract_path(cls, url: str) -> str:
         """Figures out whether the argument is a URL (or a relative path).
 
         Args:
@@ -189,42 +188,55 @@ class ManifestNormalizer(Normalizer):
             parsed_url = PlatformURL.from_url(url)
             return parsed_url.path
         except ValueError:
-            parsed_url = urlparse(url)
-            return parsed_url.path
+            return krawl.util.extract_path(url)
 
     @classmethod
-    def _file(cls, raw_file: dict, manifest_path: str, download_url: str) -> File | None:
+    def _file(cls, file_handler: FileHandler, fh_proj_info: dict, raw_file: dict, manifest_path: str, download_url: str) -> File | None:
         if raw_file is None:
             return None
         if isinstance(raw_file, str):
-            # is url
+            # is URL
             if is_url(raw_file):
-                url = raw_file
-                path = extract_path(url)
+                if file_handler is None:
+                    url = raw_file
+                    # NOTE We assume, that all platforms we do not support FileHandler for -
+                    #      i.e. we do not support frozen and non-frozen URLs for -
+                    #      use (only) non-frozen URLs.
+                    frozen_url = None
+                    path = cls.extract_path(url)
+                else:
+                    path = file_handler.extract_path(fh_proj_info, url)
+                    if file_handler.is_frozen_url(fh_proj_info, url):
+                        frozen_url = url
+                        url = file_handler.to_url(fh_proj_info, path, False)
+                    else:
+                        frozen_url = file_handler.to_url(fh_proj_info, path, True)
                 raw_file = {
-                    "path": path, # FIXME This should be the repo path, but is the path part of the URL, which in case of git/github, would also contain user- and repo-name (though it may likely not be the same on most other platforms too)
+                    "path": path,
                     "url": url,
-                    "frozen-url": url, # FIXME Wrong!
+                    "frozen-url": frozen_url,
                 }
             else:
                 # is path relative to/within project/repo
                 path = Path(raw_file)
                 if path.is_absolute():
-                    # path is absolute within repo
-                    url = f"{download_url}{str(path)}"
+                    log.error("Manifest file path at '%s' is absolute, which is invalid!: '%s'", manifest_path, raw_file)
+                    return None
+                path = str(path)
+                if file_handler is None:
+                    url = f"{download_url}{path}"
+                    # NOTE Same as above assume, that all platforms we do not support FileHandler for -
+                    frozen_url = None
                 else:
-                    # path is relative to manifest file
-                    file_path = path
-                    if manifest_path:
-                        file_path = Path(manifest_path).parent / file_path
-                    file_path = file_path if file_path.is_absolute() else Path("/") / file_path
-                    url = f"{download_url}{str(file_path)}"
+                    url = file_handler.to_url(fh_proj_info, path, False)
+                    frozen_url = file_handler.to_url(fh_proj_info, path, True)
                 raw_file = {
                     "path": path,
                     "url": url,
-                    "frozen-url": url, # FIXME Wrong!
+                    "frozen-url": frozen_url,
                 }
         elif not isinstance(raw_file, dict):
+            log.error("Manifest file path '%s' is not a string, which is invalid!: '%s'", manifest_path, str(raw_file))
             return None
 
         file = File()
