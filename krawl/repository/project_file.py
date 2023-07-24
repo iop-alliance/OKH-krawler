@@ -38,8 +38,8 @@ class ProjectRepositoryFile(ProjectRepository):
             },
             "format": {
                 "type": "set",
-                "default": {"yaml", "rdf"},
-                "allowed": {"yaml", "toml", "rdf"},
+                "default": {"toml", "rdf"},
+                "allowed": {"toml", "rdf"},
                 "meta": {
                     "description": "File formats for storing projects (available: yaml, toml, rdf)"
                 },
@@ -47,7 +47,6 @@ class ProjectRepositoryFile(ProjectRepository):
         },
     }
     FORMATS = {
-        "yaml": (YAMLProjectSerializer(), "yml"),
         "toml": (TOMLProjectSerializer(), "toml"),
         "rdf": (RDFProjectSerializer(), "ttl"),
     }
