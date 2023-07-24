@@ -1,8 +1,17 @@
 # LOSH-Krawler
 
-This is a first implementation of the crawler for the [Library of Open Source Hardware (LOSH)](https://losh.opennext.eu). The crawler searches [Wikifactory](https://wikifactory.com) and [GitHub](https://github.com) for hardware projects, that comply with the [OKH-LOSH specification](https://github.com/OPEN-NEXT/OKH-LOSH). Once such a project is found, its metadata is downloaded, parsed and sanitize, converted into a RDF format and uploaded into the database.
+This is a first implementation of the crawler
+for the [Library of Open Source Hardware (LOSH)](https://losh.opennext.eu).
+The crawler searches [Wikifactory](https://wikifactory.com)
+and [GitHub](https://github.com) for hardware projects,
+that comply with the [OKH-LOSH specification](https://github.com/OPEN-NEXT/OKH-LOSH).
+Once such a project is found, its metadata is downloaded, parsed and sanitize,
+converted into a RDF format and uploaded into the database.
 
-The implementation is still pretty much work in progress. It misses parts of the spec (there open questions about it) and might have some nasty bugs. You've been warned!
+The implementation is still pretty much work in progress.
+It misses parts of the spec (there open questions about it)
+and might have some nasty bugs.
+You've been warned!
 
 ## Install
 
@@ -13,7 +22,9 @@ The project requires the following:
 - Python >= 3.7
 - [Poetry](https://python-poetry.org)
 
-Once you have `poetry` installed, you can install the project locally by running the following commands in the repository dir (where the `pyproject.toml` file is located):
+Once you have `poetry` installed,
+you can install the project locally by running the following commands in the repository dir
+(where the `pyproject.toml` file is located):
 
 ```sh
 poetry install
@@ -22,7 +33,8 @@ poetry shell
 
 ### Using Docker
 
-The application can be used with Docker. You first need to build the Docker Image by running:
+The application can be used with Docker.
+You first need to build the Docker Image by running:
 
 ```sh
 docker build -t open-next/losh-krawler .
@@ -43,7 +55,10 @@ docker run --rm -u $UID \
 
 ## Usage
 
-The application has a convenient CLI, that also explains itself, when you pass the `--help` flag to it. Here is a quick overview of the current available commands:
+The application has a convenient CLI,
+that also explains itself when you pass the `--help` flag to it.
+Here is a quick overview of the current available commands
+(make sure you are within the poetry shell when executing these):
 
 | Command | Description |
 |--|---|
