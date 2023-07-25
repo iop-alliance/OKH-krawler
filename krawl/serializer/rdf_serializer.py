@@ -195,7 +195,7 @@ class RDFProjectSerializer(ProjectSerializer):
             # image
             if part.image is not None:
                 image_subject = namespace[f"{partname}_image"]
-                cls.add(graph, part_subject, OKH.image, image_subject)
+                cls.add(graph, part_subject, OKH.hasImage, image_subject)
                 cls.add(graph, image_subject, rdflib.RDF.type, OKH.Image)
                 cls.add(graph, image_subject, rdflib.RDFS.label,
                         f"Image of {part.name} of {project.name} {project.version}")
