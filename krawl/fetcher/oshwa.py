@@ -55,7 +55,7 @@ class OshwaFetcher(Fetcher):
                 "nullable": False,
                 "meta": {
                     "long_name": "access-token",
-                    "description": "Personal access token for using the OSHWAS API"
+                    "description": "Personal access token for using the OSHWAs API"
                 }
             },
         },
