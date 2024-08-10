@@ -60,7 +60,7 @@ BASE_SCHEMA = {
     "user_agent": {
         "type": "string",
         "coerce": "strip_str",
-        "default": "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH",
+        "default": "OKH crawler github.com/iop-alliance/OpenKnowHow",
         "nullable": False,
         "empty": False,
         "meta": {

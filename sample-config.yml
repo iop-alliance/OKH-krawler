@@ -1,4 +1,4 @@
-user_agent: "OKH-LOSH-Crawler github.com/OPEN-NEXT/OKH-LOSH"  # (opt)
+user_agent: "OKH-LOSH-Crawler github.com/iop-alliance/OpenKnowHow"  # (opt)
 
 # for crawler state
 database:

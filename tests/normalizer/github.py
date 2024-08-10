@@ -6,14 +6,14 @@ from krawl.normalizer.github import GitHubFileHandler
 log = get_child_logger("github")
 
 BASE_URL='https://github.com'
-SLUG='OPEN-NEXT/OKH-LOSH'
+SLUG='iop-alliance/OpenKnowHow'
 FILE_RELATIVE_PATH='.gitignore'
 DEV_BRANCH='master'
 VERSION='v1.1.0'
-FILE_WEB_URL='https://github.com/OPEN-NEXT/OKH-LOSH/blob/master/.gitignore'
-FILE_DL_URL='https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/.gitignore'
-FILE_FROZEN_WEB_URL='https://github.com/OPEN-NEXT/OKH-LOSH/blob/v1.1.0/.gitignore'
-FILE_FROZEN_DL_URL='https://github.com/OPEN-NEXT/OKH-LOSH/raw/v1.1.0/.gitignore'
+FILE_WEB_URL=BASE_URL + '/' + SLUG + '/blob/master/.gitignore'
+FILE_DL_URL=BASE_URL + '/' + SLUG + '/raw/master/.gitignore'
+FILE_FROZEN_WEB_URL=BASE_URL + '/' + SLUG + '/blob/v1.1.0/.gitignore'
+FILE_FROZEN_DL_URL=BASE_URL + '/' + SLUG + '/raw/v1.1.0/.gitignore'
 
 import unittest
 

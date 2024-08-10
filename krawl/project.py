@@ -58,7 +58,7 @@ class ProjectID:
 
 class Project:
     """Project data model based on
-    https://github.com/OPEN-NEXT/OKH-LOSH/blob/master/sample_data/okh-TEMPLATE.toml.
+    https://github.com/iop-alliance/OpenKnowHow/blob/master/res/sample_data/okh-TEMPLATE.toml.
     """
 
     __slots__ = [

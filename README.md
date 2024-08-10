@@ -1,10 +1,9 @@
-# LOSH-Krawler
+# OKH Krawler
 
-This is a first implementation of the crawler
-for the [Library of Open Source Hardware (LOSH)](https://losh.opennext.eu).
+This is a crawler for the [Library of Open Source Hardware (LOSH)](https://losh.opennext.eu).
 The crawler searches [Wikifactory](https://wikifactory.com)
 and [GitHub](https://github.com) for hardware projects,
-that comply with the [OKH-LOSH specification](https://github.com/OPEN-NEXT/OKH-LOSH).
+that comply with the [OKH specification](https://github.com/iop-alliance/OpenKnowHow).
 Once such a project is found, its metadata is downloaded, parsed and sanitize,
 converted into a RDF format and uploaded into the database.
 
@@ -50,7 +49,7 @@ docker run --rm -u $UID open-next/losh-krawler --help
 docker run --rm -u $UID \
   -v "$PWD/config.yml:/opt/krawler/config.yml" \
   -v "$PWD/workdir:/opt/krawler/workdir" \
-   krawler fetch url -c config.yml -vv "https://github.com/OPEN-NEXT/OKH-LOSH/blob/master/sample_data/okh-OHLOOM.toml"
+   krawler fetch url -c config.yml -vv "https://github.com/iop-alliance/OpenKnowHow/blob/master/res/sample_data/okh-OHLOOM.toml"
 ```
 
 ## Usage
@@ -73,7 +72,7 @@ Examples:
 
 ```sh
 # fetch selected projects
-krawl fetch url -c config.yml -v "https://github.com/OPEN-NEXT/OKH-LOSH/blob/master/sample_data/okh-sample-OHLOOM.toml"
+krawl fetch url -c config.yml -v "https://github.com/iop-alliance/OpenKnowHow/blob/master/res/sample_data/okh-sample-OHLOOM.toml"
 krawl fetch url -c config.yml -v "https://wikifactory.com/+OttoDIY/otto-diy-plus"
 
 # search and fetch all projects of a platform

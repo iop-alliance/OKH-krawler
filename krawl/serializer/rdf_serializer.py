@@ -15,11 +15,13 @@ from krawl.serializer import ProjectSerializer
 # Useful info about RDF:
 # https://medium.com/wallscope/understanding-linked-data-formats-rdf-xml-vs-turtle-vs-n-triples-eb931dbe9827
 
-BASE_IRI_OKH = "https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl"
-BASE_IRI_OTRL = "https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OTRL.ttl"
-BASE_IRI_TSDC = "https://gitlab.com/OSEGermany/oh-tsdc/-/raw/master/oh-tsdc.ttl"
+BASE_IRI_OKH = "https://w3id.org/oseg/ont/okh"
+BASE_IRI_OKH_META = "https://w3id.org/oseg/ont/okhmeta"
+BASE_IRI_OTRL = "https://w3id.org/oseg/ont/otrl"
+BASE_IRI_TSDC = "https://w3id.org/oseg/ont/tsdc"
 
 OKH = rdflib.Namespace(f"{BASE_IRI_OKH}#")
+OKH_META = rdflib.Namespace(f"{BASE_IRI_OKH_META}#")
 OTRL = rdflib.Namespace(f"{BASE_IRI_OTRL}#")
 TSDC = rdflib.Namespace(f"{BASE_IRI_TSDC}#")
 
@@ -94,7 +96,7 @@ class RDFProjectSerializer(ProjectSerializer):
             cls.add(graph, subject, OKH.relativePath, file.path)
         if file.url is not None:
             cls.add(graph, subject, OKH.url, file.url) # TODO Maybe use file.permaURL instead here, because according to the spec/Ontology as of Dec. 2022), this is supposed ot be a permanent/frozen URL -> NO, change the spec! We removed permaURL, and rahter want ot have a frozen and a separate, unfrozen version of the whole manifest.
-        # NOTE This is not part of the spec (as of December 2022), and fileURL is mentioned in the spec to contain the permanent URL; related issue: https://github.com/OPEN-NEXT/OKH-LOSH/issues/132
+        # NOTE This is not part of the spec (as of December 2022), and fileURL is mentioned in the spec to contain the permanent URL; related issue: https://github.com/iop-alliance/OpenKnowHow/issues/132
         # cls.add(graph, subject, OKH.permaURL, file.perma_url)
         cls.add(graph, subject, OKH.fileFormat, file.extension.upper()) # TODO We should change this to mime-type at some point
         # cls.add(graph, subject, OKH.mimeType, file.mime_type) # FIXME: only add if contained in ontology

@@ -72,10 +72,10 @@ grep -r " OTRL\." krawl/serializer/rdf_serializer.py \
 
 
 wget \
-    https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OKH-LOSH.ttl \
+    https://github.com/iop-alliance/OpenKnowHow/raw/master/src/spec/okh.ttl \
     --output-document="$build_dir/OKH-LOSH.ttl"
 wget \
-    https://github.com/OPEN-NEXT/OKH-LOSH/raw/master/OTRL.ttl \
+    https://github.com/iop-alliance/OpenKnowHow/raw/master/src/spec/otrl.ttl \
     --output-document="$build_dir/OTRL.ttl"
 
 grep '^okh:' \
