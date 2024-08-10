@@ -76,7 +76,9 @@ class FetcherFactory:
     def fetch(self, id: ProjectID) -> Project:
         """Call `fetch` function on fitting fetcher."""
         if id.platform not in self._fetchers:
-            raise FetcherError(f"no fetcher available for '{id.platform}'")
+            name = id.platform
+            raise FetcherError(
+                f"no fetcher available for '{name}', available are: {', '.join(_fetcher_classes.keys())}")
         if id.platform not in self._fetchers:
             raise FetcherError(f"fetcher '{id.platform}' is not enabled")
         return self._fetchers[id.platform].fetch(id)
