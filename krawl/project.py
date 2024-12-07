@@ -61,7 +61,7 @@ class Project:
     https://github.com/iop-alliance/OpenKnowHow/blob/master/res/sample_data/okh-TEMPLATE.toml.
     """
 
-    __slots__ = [
+    __slots__ = [ # TODO Revise this list
         "meta", "okhv", "name", "repo", "version", "release", "license", "licensor", "organization", "readme",
         "contribution_guide", "image", "documentation_language", "technology_readiness_level",
         "documentation_readiness_level", "attestation", "publication", "function", "standard_compliance",
