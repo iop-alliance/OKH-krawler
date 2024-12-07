@@ -17,7 +17,7 @@ def strip_html(html):
             super().__init__()
             self.reset()
             self.strict = False
-            self.convert_charrefs = True
+            self.convert_char_refs = True
             self.text = StringIO()
 
         def handle_data(self, data):
@@ -123,7 +123,7 @@ class FileHandler:
 
     def gen_proj_info(self, manifest_raw: dict) -> dict:
         """From the raw manifest data, extracts and generates the essential info
-        requried by this handler for all its methods steps.
+        required by this handler for all its methods steps.
 
         Args:
             manifest_raw (dict): The raw manifest data.

@@ -11,7 +11,7 @@ def slugify(value):
     """Convert a string to a slug representation.
 
     Args:
-        value (str): The string value to be slugified.
+        value (str): The string value to be slug-ified.
 
     Returns:
         str: A slug representation of the string.

@@ -278,9 +278,9 @@ class WikifactoryFetcher(Fetcher):
 
             # process results
             raw = result["projects"]["result"]
-            pageinfo = raw["pageInfo"]
-            cursor = pageinfo["endCursor"]
-            has_next_page = pageinfo["hasNextPage"]
+            page_info = raw["pageInfo"]
+            cursor = page_info["endCursor"]
+            has_next_page = page_info["hasNextPage"]
             num_fetched = num_fetched + len(raw["edges"])
             last_visited = datetime.now(timezone.utc)
             for edge in raw["edges"]:

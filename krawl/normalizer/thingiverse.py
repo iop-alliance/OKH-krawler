@@ -107,7 +107,7 @@ class ThingiverseNormalizer(Normalizer):
         if not raw_license:
             return None
 
-        ## map those license to blocked licnesens
+        ## map those license to blocked licenses
         invalid_licenses = [
             "Creative Commons - Attribution - Non-Commercial - Share Alike",
             "Creative Commons - Attribution - Non-Commercial - No Derivatives",

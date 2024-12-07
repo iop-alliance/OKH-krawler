@@ -90,7 +90,7 @@ class ProjectRepositoryWikibase(ProjectRepository):
         # TODO: the whole Wikibase part must be rewritten too
         api = API(
             url=self._config.url,
-            reconcilepropid=self._config.reconcile_property,
+            reconcile_prop_id=self._config.reconcile_property,
             client_id=self._config.client_id,
             client_secret=self._config.client_secret,
             token_url=self._config.token_url,

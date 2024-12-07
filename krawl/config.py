@@ -126,35 +126,35 @@ def _flatten_list(list_: list) -> list:
     """Flatten a nested list.
 
     Args:
-        list_ (list): A nested list to be flattend.
+        list_ (list): A nested list to be flattened.
 
     Returns:
-        list: A recursively flattend list.
+        list: A recursively flattened list.
     """
     if not list_:
         return []
-    flattend = []
+    flattened = []
     for item in list_:
         if isinstance(item, list):
-            flattend.extend(_flatten_list(item))
+            flattened.extend(_flatten_list(item))
         else:
-            flattend.append(item)
-    return flattend
+            flattened.append(item)
+    return flattened
 
 
-def _flat_name(*args: str | list, seperator="_", uppercase=False) -> str:
+def _flat_name(*args: str | list, separator="_", uppercase=False) -> str:
     """Turn a list of names into a flat name.
 
     Args:
         *args (str or list): Names to be turned into a flat name.
-        seperator (str): Seperator used to separate each name component. Defaults to "_".
+        separator (str): Separator used to separate each name component. Defaults to "_".
         uppercase (bool, optional): [description]. Defaults to False.
 
     Returns:
         str: A flat name with underscore used as a delimiter.
     """
     components = [item for item in _flatten_list(args) if len(item) > 0]
-    flat_name = seperator.join(components)
+    flat_name = separator.join(components)
     if uppercase:
         flat_name = flat_name.upper()
     return flat_name
@@ -219,7 +219,7 @@ def validate(config: Mapping, schema: Mapping, middle_stage=False) -> tuple[Mapp
 def effective_config_info(config: Config) -> list[str]:
     redacted_value = "X" * 20
     for key_path, rules in iterate_schema(BASE_SCHEMA):
-        name = _flat_name(key_path, seperator=".")
+        name = _flat_name(key_path, separator=".")
         # redact sensitive information
         redacted = rules.get("meta", {}).get("redact_log", False)
         if redacted:

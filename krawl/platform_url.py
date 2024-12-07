@@ -77,7 +77,7 @@ class PlatformURL:
             platform_url.repo = f"https://certification.oshwa.org/{path_parts[0]}"
             platform_url.path = path_parts[0]
         else:
-            raise ValueError(f"unknown platfrom URL '{url}'")
+            raise ValueError(f"unknown platform URL '{url}'")
 
         return platform_url
 
@@ -140,4 +140,4 @@ class PlatformURL:
             )))
 
         else:
-            raise ValueError(f"unknown platfrom '{self.platform}'")
+            raise ValueError(f"unknown platform '{self.platform}'")

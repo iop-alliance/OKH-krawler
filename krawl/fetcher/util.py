@@ -33,7 +33,7 @@ def is_binary(content: str | bytes) -> bool:
 def _recuperate_invalid_yaml_manifest(manifest_contents: bytes) -> bytes | None:
     """Cleans up OKH v1 (YAMl) manifest content.
     Many manifests out there use bad syntax or invalid values,
-    which we try to undo as muhc as possible in here."""
+    which we try to undo as much as possible in here."""
 
     mfst = b''
     null_pat = re.compile(r'^\s+-\s+null\s*$')

@@ -11,7 +11,7 @@ class API:
     def __init__(
         self,
         url,
-        reconcilepropid,
+        reconcile_prop_id,
         client_id,
         client_secret,
         token_url,
@@ -19,7 +19,7 @@ class API:
         self.reconciler_url = f"{url}/rest.php/wikibase-reconcile-edit/v0/edit"
         self.api_url = f"{url}/api.php"
 
-        self.reconcilepropid = reconcilepropid
+        self.reconcile_prop_id = reconcile_prop_id
 
         self.session = requests.Session()
         self.session.mount(
@@ -188,7 +188,7 @@ class API:
         data = {
             "reconcile": {
                 "wikibasereconcileedit-version": "0.0.1",
-                "urlReconcile": self.reconcilepropid,  # the url property
+                "urlReconcile": self.reconcile_prop_id,  # the url property
             },
             "entity": {
                 "wikibasereconcileedit-version": "0.0.1/minimal",

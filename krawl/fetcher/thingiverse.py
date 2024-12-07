@@ -72,7 +72,7 @@ class ThingiverseFetcher(Fetcher):
         retry = Retry(
             total=config.retries,
             backoff_factor=15,
-            status_forcelist=self.RETRY_CODES,
+            status_force_list=self.RETRY_CODES,
         )
 
         self._session = requests.Session()

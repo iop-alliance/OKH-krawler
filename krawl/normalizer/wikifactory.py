@@ -215,7 +215,7 @@ class WikifactoryNormalizer(Normalizer):
                         part.image = file
                     continue
 
-            # if no sources are identified, but exports, then use the exportsinstead
+            # if no sources are identified, but exports, then use the exports instead
             if not part.source and part.export:
                 part.source = part.export.pop(0)
 

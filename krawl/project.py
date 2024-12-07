@@ -22,7 +22,7 @@ class ProjectID:
         platform (str): The domain of the platform.
         owner (str): User or group that owns the project.
         repo (str): Name of the project repository.
-        path (str): Canoncial path of the manifest file inside the repository, if any.
+        path (str): Canonical path of the manifest file inside the repository, if any.
     """
 
     __slots__ = ["platform", "owner", "repo", "path"]
@@ -362,7 +362,7 @@ class Software:
         if data is None:
             return None
         software = cls()
-        software.release = data.get("realease", None)
+        software.release = data.get("release", None)
         software.installation_guide = File.from_dict(data.get("installation-guide"))
         software.documentation_language = data.get("documentation-language", None)
         software.license = get_by_id_or_name(data.get("license", None))

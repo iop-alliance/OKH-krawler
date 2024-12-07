@@ -14,7 +14,7 @@ from krawl.platform_url import PlatformURL
 from krawl.project import File, Mass, Meta, OuterDimensions, Part, Project, Software, UploadMethods
 from krawl.util import is_url
 
-log = get_child_logger("mainfest")
+log = get_child_logger("manifest")
 
 
 class ManifestNormalizer(Normalizer):

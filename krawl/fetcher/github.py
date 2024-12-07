@@ -110,7 +110,7 @@ class GitHubFetcher(Fetcher):
     Therefore, to accelerate the search, the code search feature of GitHub is
     used
     (https://docs.github.com/en/search-github/searching-on-github/searching-code).
-    It offers the possibility to find files with certain critera. Once potential
+    It offers the possibility to find files with certain criteria. Once potential
     manifest files are identified, the fetcher will download these and processes
     them.
 
@@ -129,7 +129,7 @@ class GitHubFetcher(Fetcher):
 
     - Using the API, the code search will only return a maximum of 1000 results,
       even if more were found. To get more than 1000 results, the crawler needs
-      to split up the search query into timeframes. Using this method, it should
+      to split up the search query into time-frames. Using this method, it should
       be possible to get all the results (https://stackoverflow.com/a/37639739).
 
     - GitHub uses rate limits for all requests made to their API. These need to
@@ -256,7 +256,7 @@ class GitHubFetcher(Fetcher):
         retry = Retry(
             total=config.retries,
             backoff_factor=30,
-            status_forcelist=self.RETRY_CODES,
+            status_force_list=self.RETRY_CODES,
         )
 
         # client for GRAPHQL requests
@@ -403,7 +403,7 @@ class GitHubFetcher(Fetcher):
                 continue
             num_retries_after_incomplete_results = 0
 
-            # figure out what the links are in the default repo -> accessable later on
+            # figure out what the links are in the default repo -> accessible later on
             last_visited = datetime.now(timezone.utc)
             for raw_found_file in raw_found_files:
                 raw_url = urlparse(raw_found_file["html_url"])

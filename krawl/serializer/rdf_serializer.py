@@ -67,17 +67,17 @@ class RDFProjectSerializer(ProjectSerializer):
         return odrl_manifest.replace('ODRL-', 'ODRL').replace('*', 'Star')
 
     @staticmethod
-    def _titlecase(s):
+    def _title_case(s):
         parts = s.split(" ")
         capitalized = "".join([p.capitalize() for p in parts])
-        alphanum = "".join([l for l in capitalized if l.isalnum()])
-        return alphanum
+        alpha_num = "".join([l for l in capitalized if l.isalnum()])
+        return alpha_num
 
     @staticmethod
-    def _camelcase(s):
+    def _camel_case(s):
         parts = s.split("-")
-        withoutdash = "".join([parts[0]] + [p.capitalize() for p in parts[1:]])
-        return withoutdash
+        without_dash = "".join([parts[0]] + [p.capitalize() for p in parts[1:]])
+        return without_dash
 
     @staticmethod
     def add(graph: rdflib.Graph, subject, predicate, object):
@@ -95,7 +95,7 @@ class RDFProjectSerializer(ProjectSerializer):
         if file.path is not None:
             cls.add(graph, subject, OKH.relativePath, file.path)
         if file.url is not None:
-            cls.add(graph, subject, OKH.url, file.url) # TODO Maybe use file.permaURL instead here, because according to the spec/Ontology as of Dec. 2022), this is supposed ot be a permanent/frozen URL -> NO, change the spec! We removed permaURL, and rahter want ot have a frozen and a separate, unfrozen version of the whole manifest.
+            cls.add(graph, subject, OKH.url, file.url) # TODO Maybe use file.permaURL instead here, because according to the spec/Ontology as of Dec. 2022), this is supposed ot be a permanent/frozen URL -> NO, change the spec! We removed permaURL, and rather want to have a frozen and a separate, unfrozen version of the whole manifest.
         # NOTE This is not part of the spec (as of December 2022), and fileURL is mentioned in the spec to contain the permanent URL; related issue: https://github.com/iop-alliance/OpenKnowHow/issues/132
         # cls.add(graph, subject, OKH.permaURL, file.perma_url)
         cls.add(graph, subject, OKH.fileFormat, file.extension.upper()) # TODO We should change this to mime-type at some point
@@ -126,9 +126,9 @@ class RDFProjectSerializer(ProjectSerializer):
 
         part_subjects = []
         for part in project.part:
-            partname = cls._titlecase(part.name_clean if part.name_clean != project.name else part.name_clean + "_part")
+            part_name = cls._title_case(part.name_clean if part.name_clean != project.name else part.name_clean + "_part")
 
-            part_subject = namespace[partname]
+            part_subject = namespace[part_name]
             cls.add(graph, part_subject, rdflib.RDF.type, OKH.Part)
             cls.add(graph, part_subject, rdflib.RDFS.label, part.name)
 
@@ -148,14 +148,14 @@ class RDFProjectSerializer(ProjectSerializer):
             cls.add(graph, part_subject, OKH.manufacturingProcess, part.manufacturing_process)
 
             if part.mass is not None:
-                mass_subject = namespace[f"{partname}_Mass"]
+                mass_subject = namespace[f"{part_name}_Mass"]
                 cls.add(graph, part_subject, OKH.hasMass, mass_subject)
                 cls.add(graph, mass_subject, rdflib.RDF.type, OKH.Mass)
                 cls.add(graph, mass_subject, rdflib.RDFS.label, f"Mass of {part.name}")
                 cls.add_mass(graph, mass_subject, part.mass)
 
             if part.outer_dimensions is not None:
-                outer_dimensions = namespace[f"{partname}_OuterDimensions"]
+                outer_dimensions = namespace[f"{part_name}_OuterDimensions"]
                 cls.add(graph, part_subject, OKH.hasOuterDimensions, outer_dimensions)
                 cls.add(graph, outer_dimensions, rdflib.RDF.type, OKH.OuterDimensions)
                 cls.add(graph, outer_dimensions, rdflib.RDFS.label, f"Outer Dimensions of {part.name}")
@@ -167,7 +167,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
             # source
             if part.source is not None:
-                source_subject = namespace[f"{partname}_source"]
+                source_subject = namespace[f"{part_name}_source"]
                 cls.add(graph, part_subject, OKH.source, source_subject)
                 cls.add(graph, source_subject, rdflib.RDF.type, OKH.SourceFile)
                 cls.add(graph, source_subject, rdflib.RDFS.label,
@@ -178,7 +178,7 @@ class RDFProjectSerializer(ProjectSerializer):
             for i, file in enumerate(part.export):
                 if file is None:
                     continue
-                export_subject = namespace[f"{partname}_export{i + 1}"]
+                export_subject = namespace[f"{part_name}_export{i + 1}"]
                 cls.add(graph, part_subject, OKH.export, export_subject)
                 cls.add(graph, export_subject, rdflib.RDF.type, OKH.ExportFile)
                 cls.add(graph, export_subject, rdflib.RDFS.label,
@@ -187,7 +187,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
             # auxiliary
             for i, file in enumerate(part.auxiliary):
-                auxiliary_subject = namespace[f"{partname}_auxiliary{i + 1}"]
+                auxiliary_subject = namespace[f"{part_name}_auxiliary{i + 1}"]
                 cls.add(graph, part_subject, OKH.auxiliary, auxiliary_subject)
                 cls.add(graph, auxiliary_subject, rdflib.RDF.type, OKH.AuxiliaryFile)
                 cls.add(graph, auxiliary_subject, rdflib.RDFS.label,
@@ -196,7 +196,7 @@ class RDFProjectSerializer(ProjectSerializer):
 
             # image
             if part.image is not None:
-                image_subject = namespace[f"{partname}_image"]
+                image_subject = namespace[f"{part_name}_image"]
                 cls.add(graph, part_subject, OKH.hasImage, image_subject)
                 cls.add(graph, image_subject, rdflib.RDF.type, OKH.Image)
                 cls.add(graph, image_subject, rdflib.RDFS.label,
@@ -263,7 +263,7 @@ class RDFProjectSerializer(ProjectSerializer):
     # def _make_functional_metadata_list(self, module, functional_metadata, BASE):
     #     l = []
     #     for key, value in functional_metadata.items():
-    #         keyC = self._camelcase(key)
+    #         keyC = self._camel_case(key)
     #         l.append((module, BASE[keyC], rdflib.Literal(value)))
     #         entity = BASE[keyC]
     #         l.append((entity, rdflib.RDF.type, rdflib.OWL.DatatypeProperty))
@@ -288,15 +288,15 @@ class RDFProjectSerializer(ProjectSerializer):
     #     return entity, l
 
     @classmethod
-    def _add_info_file(cls, graph, namespace, project, key, entityname, rdftype):
-        parentname = f"{project.name} {project.version}"
+    def _add_info_file(cls, graph, namespace, project, key, entity_name, rdf_type):
+        parent_name = f"{project.name} {project.version}"
         file = getattr(project, key) if hasattr(project, key) else None
         if file is None:
             return None
 
-        subject = namespace[entityname]
-        cls.add(graph, subject, rdflib.RDF.type, rdftype)
-        cls.add(graph, subject, rdflib.RDFS.label, f"{entityname} of {parentname}")
+        subject = namespace[entity_name]
+        cls.add(graph, subject, rdflib.RDF.type, rdf_type)
+        cls.add(graph, subject, rdflib.RDFS.label, f"{entity_name} of {parent_name}")
         cls.add_file(graph, subject, file)
         return subject
 
@@ -319,8 +319,8 @@ class RDFProjectSerializer(ProjectSerializer):
             namespace=namespace,
             project=project,
             key="readme",
-            entityname="Readme",
-            rdftype=OKH.Readme,
+            entity_name="Readme",
+            rdf_type=OKH.Readme,
         )
         if readme_subject is not None:
             cls.add(graph, module_subject, OKH.hasReadme, readme_subject)
@@ -330,8 +330,8 @@ class RDFProjectSerializer(ProjectSerializer):
             namespace=namespace,
             project=project,
             key="manifest_file",
-            entityname="ManifestFile",
-            rdftype=OKH.ManifestFile,
+            entity_name="ManifestFile",
+            rdf_type=OKH.ManifestFile,
         )
         if manifest_file_subject is not None:
             cls.add(graph, manifest_file_subject, OKH.okhv, project.okhv)
@@ -342,8 +342,8 @@ class RDFProjectSerializer(ProjectSerializer):
             namespace=namespace,
             project=project,
             key="image",
-            entityname="Image",
-            rdftype=OKH.Image,
+            entity_name="Image",
+            rdf_type=OKH.Image,
         )
         if image_subject is not None:
             cls.add(graph, module_subject, OKH.hasImage, image_subject)
@@ -353,8 +353,8 @@ class RDFProjectSerializer(ProjectSerializer):
             namespace=namespace,
             project=project,
             key="bom",
-            entityname="BillOfMaterials",
-            rdftype=OKH.BoM,
+            entity_name="BillOfMaterials",
+            rdf_type=OKH.BoM,
         )
         if bom_subject is not None:
             cls.add(graph, module_subject, OKH.hasBoM, bom_subject)
@@ -364,8 +364,8 @@ class RDFProjectSerializer(ProjectSerializer):
             namespace=namespace,
             project=project,
             key="manufacturing_instructions",
-            entityname="ManufacturingInstructions",
-            rdftype=OKH.ManufacturingInstructions,
+            entity_name="ManufacturingInstructions",
+            rdf_type=OKH.ManufacturingInstructions,
         )
         if manufacturing_instructions_subject is not None:
             cls.add(graph, module_subject, OKH.hasManufacturingInstructions, manufacturing_instructions_subject)
@@ -375,8 +375,8 @@ class RDFProjectSerializer(ProjectSerializer):
             namespace=namespace,
             project=project,
             key="user_manual",
-            entityname="UserManual",
-            rdftype=OKH.UserManual,
+            entity_name="UserManual",
+            rdf_type=OKH.UserManual,
         )
         if user_manual_subject is not None:
             cls.add(graph, module_subject, OKH.hasUserManual, user_manual_subject)
