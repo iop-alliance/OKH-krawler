@@ -1,5 +1,20 @@
 # LOSH-Krawler
 
+---
+---
+
+!!!
+**DEPRECATED**
+This repo is now deprecated,
+and superseded by <https://github.com/iop-alliance/OKH-krawler>.
+!!!
+
+---
+---
+
+<s>
+
+
 This is a first implementation of the crawler for the [Library of Open Source Hardware (LOSH)](https://losh.opennext.eu). The crawler searches [Wikifactory](https://wikifactory.com) and [GitHub](https://github.com) for hardware projects, that comply with the [OKH-LOSH specification](https://github.com/OPEN-NEXT/OKH-LOSH). Once such a project is found, its metadata is downloaded, parsed and sanitize, converted into a RDF format and uploaded into the database.
 
 The implementation is still pretty much work in progress. It misses parts of the spec (there open questions about it) and might have some nasty bugs. You've been warned!
@@ -74,3 +89,5 @@ krawl validate -v project.yml
 ## Configuration
 
 A sample configuration file with explanations can be found [here](sample-config.yml).
+
+</s>
