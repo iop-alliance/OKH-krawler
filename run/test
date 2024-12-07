@@ -43,13 +43,6 @@ do
 			print_help
 			exit 0
 			;;
-		-C|--repo)
-			shift "$i"
-			# eval "arg_num=\$$i"
-			# repo="$arg_num"
-			repo="$(eval "echo \$$i")"
-			shift "$i"
-			;;
 		*) # non-/unknown option
 			i=$((i + 1))
 			;;
