@@ -88,3 +88,38 @@ krawl validate -v project.yml
 ## Configuration
 
 A sample configuration file with explanations can be found int [sample-config.yml](sample-config.yml).
+
+## Development
+
+### Release a new version
+
+Make sure you have the latest version
+of the `bump-my-version` tool installed:
+
+```shell
+pip install --upgrade bump-my-version
+```
+
+Then, to see what would happen without actually doing anything,
+try these commands:
+
+```shell
+bump-my-version bump patch --dry-run -v --allow-dirty
+bump-my-version bump minor --dry-run -v --allow-dirty
+bump-my-version bump major --dry-run -v --allow-dirty
+bump-my-version bump --dry-run -v --allow-dirty --new-version 3.0.0
+bump-my-version bump --help
+```
+
+To actually execute a release,
+which crates a git tag, and commits changes to files,
+choose one of these commands:
+
+```shell
+bump-my-version bump patch -v
+bump-my-version bump minor -v
+bump-my-version bump major -v
+bump-my-version bump -v --new-version 3.0.0
+```
+
+And then push the changes; done!
