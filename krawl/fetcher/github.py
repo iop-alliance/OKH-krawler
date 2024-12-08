@@ -312,7 +312,7 @@ class GitHubFetcher(Fetcher):
             }
         }
 
-        yaml_suffix_pat = re.compile('^\.ya?ml$')
+        yaml_suffix_pat = re.compile('^\\.ya?ml$')
         is_yaml = yaml_suffix_pat.match(format_suffix)
         log.debug(f"Checking if manifest '{format_suffix}' is YAML ...")
         if is_yaml:
