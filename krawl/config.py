@@ -15,9 +15,25 @@ from __future__ import annotations
 from collections.abc import Mapping, MutableMapping
 from copy import deepcopy
 from datetime import datetime
-from distutils.util import strtobool
+# from str_to_bool import str_to_bool
 from pathlib import Path
 from typing import Any
+
+"""Implementation of str_to_bool from Python 3.8.2.""" # HACK Copied from library python-strtobool, because it does not support python < 3.9
+def str_to_bool(val: str) -> bool:
+    """Convert a string representation of truth to `True` or `False`.
+
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+    """
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return True
+    if val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return False
+    msg = f'Invalid truth value "{val}"'
+    raise ValueError(msg)
 
 import yaml
 from cerberus import TypeDefinition, Validator
@@ -413,7 +429,7 @@ class ConfigValidator(Validator):
     def _normalize_coerce_boolean(self, value: Any) -> bool:
         if isinstance(value, bool):
             return value
-        return bool(strtobool(value))
+        return bool(str_to_bool(value))
 
     def _normalize_coerce_float(self, value: Any) -> float:
         if isinstance(value, float):
