@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2021-2024 Robin Vobruba <hoijui.quaero@gmail.com>
+#
+# SPDX-License-Identifier: Unlicense
+
+name: Publish Docker image
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  release:
+    types: [ published ]
+
+env:
+  IMAGE_NAME: hoijui/okh-crawler
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          submodules: true
+      -
+        name: Login to DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      -
+        name: Prepare build meta-data
+        run: |
+          # This allows reproducible docker builds
+          echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> $GITHUB_ENV
+          echo "GIT_VERSION=$(git describe --broken --always --tags --dirty)" >> $GITHUB_ENV
+      -
+        name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+          labels: |
+            org.opencontainers.image.version=${{ env.GIT_VERSION }}
+            org.opencontainers.image.documentation=https://github.com/$GITHUB_REPOSITORY/blob/${{ env.GIT_VERSION }}/README.md
+            org.opencontainers.image.vendor=Open Source Ecology Germany e.V.
+      -
+        name: Push to Docker Hub
+        uses: docker/build-push-action@v6
+        env:
+          SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}
+        with:
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          build-args: |
+            BUILDKIT_CONTEXT_KEEP_GIT_DIR=true
