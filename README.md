@@ -8,7 +8,7 @@ Once such a project is found, its metadata is downloaded, parsed and sanitize,
 converted into a RDF format and uploaded into the database.
 
 The implementation is still pretty much work in progress.
-It misses parts of the spec (there open questions about it)
+It misses parts of the spec (there are open questions about it)
 and might have some nasty bugs.
 You've been warned!
 
