@@ -90,7 +90,8 @@ krawl validate -v project.yml
 
 ## Configuration
 
-A sample configuration file with explanations can be found int [sample-config.yml](sample-config.yml).
+A sample configuration file with explanations
+can be found in [sample-config.yml](sample-config.yml).
 
 ## Development
 
