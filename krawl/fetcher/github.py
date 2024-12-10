@@ -256,7 +256,7 @@ class GitHubFetcher(Fetcher):
         retry = Retry(
             total=config.retries,
             backoff_factor=30,
-            status_force_list=self.RETRY_CODES,
+            status_forcelist=self.RETRY_CODES,
         )
 
         # client for GRAPHQL requests
