@@ -30,6 +30,9 @@ poetry install
 poetry shell
 ```
 
+Within that shell, you should then have `krawl` in your _PATH_.
+You can verify that with `krawl --help`.
+
 ### Using Docker
 
 The application can be used with Docker.
