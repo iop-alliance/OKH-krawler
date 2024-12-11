@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "krawl"
-version = "0.9.0"
+version = "2.2.3"
 description = ""
 authors = ["Andre Lehmann <aisberg@posteo.de>"]
 
