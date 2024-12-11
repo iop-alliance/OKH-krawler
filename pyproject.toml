@@ -2,7 +2,10 @@
 name = "krawl"
 version = "2.2.3"
 description = ""
-authors = ["Andre Lehmann <aisberg@posteo.de>"]
+authors = [
+       "Robin Vobruba <hoijui.quaero@gmail.com>",
+       "Andre Lehmann <aisberg@posteo.de>"
+       ]
 
 [tool.poetry.scripts]
 krawl = "krawl.cli:main"
