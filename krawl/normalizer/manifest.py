@@ -25,6 +25,10 @@ class ManifestNormalizer(Normalizer):
     def normalize(self, raw: dict) -> Project:
         project = Project()
         meta = raw.get("meta")
+        okhv = raw.get("okhv", None)
+        if okhv is None:
+            # We assume it is OKH v1
+            raw = convert_okh_v1_to_losh(raw)
         if meta is None:
             meta = raw.get("__meta")
         if isinstance(meta, dict):
