@@ -55,7 +55,10 @@ class GitHubFileHandler(FileHandler):
     def gen_proj_info(self, manifest_raw: dict) -> dict:
         repo_url = manifest_raw.get("repo")
         log.debug('XXX repo_url type: "%s"', type(repo_url))
-        slug = self._extract_slug(repo_url)
+        if repo_url is None:
+            slug = None
+        else:
+            slug = self._extract_slug(repo_url)
         version = manifest_raw.get("version")
         dev_branch = None # TODO Maybe try to extract this from a files URL, if URLs are used ...
         return self.gen_proj_info_raw(slug, version, dev_branch)
