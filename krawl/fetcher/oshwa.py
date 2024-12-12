@@ -82,6 +82,27 @@ class OshwaFetcher(Fetcher):
             "Authorization": f"Bearer {config.access_token}",
         })
 
+    def __fetch_one(self, raw_project: dict, last_visited: datetime) -> Project:
+        id = ProjectID(self.NAME, slugify(raw_project["responsibleParty"]), raw_project["oshwaUid"].lower())
+
+        meta = {
+            "meta": {
+                "id": id,
+                "fetcher": self.NAME,
+                "last_visited": last_visited,
+            }
+        }
+
+        # try normalizing it
+        try:
+            raw_project.update(meta)
+            project = self._normalizer.normalize(raw_project)
+        except NormalizerError as err:
+            raise FetcherError(f"normalization failed, that should not happen: {err}") from err
+
+        return project
+
+
     def fetch(self, id: ProjectID) -> Project:
 
         log.debug('Start fetching project %s', id)
@@ -97,25 +118,9 @@ class OshwaFetcher(Fetcher):
 
         raw_project = response.json()[0]
 
-
         last_visited = datetime.now(timezone.utc)
 
-        new_id = ProjectID(self.NAME, slugify(raw_project["responsibleParty"]), raw_project["oshwaUid"].lower())
-
-        meta = {
-            "meta": {
-                "id": new_id,
-                "fetcher": self.NAME,
-                "last_visited": last_visited,
-            }
-        }
-
-        # try normalizing it
-        try:
-            raw_project.update(meta)
-            project = self._normalizer.normalize(raw_project)
-        except NormalizerError as err:
-            raise FetcherError(f"normalization failed, that should not happen: {err}") from err
+        project = self.__fetch_one(raw_project, last_visited)
 
         log.debug("yield project %s", project.id)
 
@@ -151,23 +156,7 @@ class OshwaFetcher(Fetcher):
             data = response.json()
             last_visited = datetime.now(timezone.utc)
             for raw_project in data["items"]:
-                # create fetcher metadata
-                id = ProjectID(self.NAME, slugify(raw_project["responsibleParty"]), raw_project["oshwaUid"].lower())
-                meta = {
-                    "meta": {
-                        "id": id,
-                        "fetcher": self.NAME,
-                        "last_visited": last_visited,
-                    }
-                }
-
-                # try normalizing it
-                try:
-                    raw_project.update(meta)
-                    project = self._normalizer.normalize(raw_project)
-                except NormalizerError as err:
-                    raise FetcherError(f"normalization failed, that should not happen: {err}") from err
-
+                project = self.__fetch_one(raw_project, last_visited)
                 log.debug("yield project %s", project.id)
                 yield project
 

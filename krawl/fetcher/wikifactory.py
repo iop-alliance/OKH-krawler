@@ -220,6 +220,27 @@ class WikifactoryFetcher(Fetcher):
             fetch_schema_from_transport=False,
         )
 
+    def __fetch_one(self, raw_project: dict, last_visited: datetime) -> Project:
+        id = ProjectID(self.NAME, raw_project["parentSlug"], raw_project["slug"])
+        meta = {
+            "meta": {
+                "owner": id.owner,
+                "repo": id.repo,
+                "path": id.path,
+                "fetcher": self.NAME,
+                "last_visited": last_visited,
+            }
+        }
+
+        # try normalizing it
+        try:
+            raw_project.update(meta)
+            project = self._normalizer.normalize(raw_project)
+        except NormalizerError as err:
+            raise FetcherError(f"normalization failed, that should not happen: {err}") from err
+
+        return project
+
     def fetch(self, id: ProjectID) -> Project:
         log.debug("fetching project %s", id)
 
@@ -232,25 +253,10 @@ class WikifactoryFetcher(Fetcher):
         if not result:
             raise FetcherError(f"project '{id}' not found")
 
-        # create fetcher metadata
-        raw_project = result["project"]["result"]
-        id = ProjectID(self.NAME, raw_project["parentSlug"], raw_project["slug"])
-        meta = {
-            "meta": {
-                "owner": id.owner,
-                "repo": id.repo,
-                "path": id.path,
-                "fetcher": self.NAME,
-                "last_visited": datetime.now(timezone.utc),
-            }
-        }
+        last_visited = datetime.now(timezone.utc)
 
-        # try normalizing it
-        try:
-            raw_project.update(meta)
-            project = self._normalizer.normalize(raw_project)
-        except NormalizerError as err:
-            raise FetcherError(f"normalization failed, that should not happen: {err}") from err
+        raw_project = result["project"]["result"]
+        project = self.__fetch_one(self, raw_project, last_visited)
 
         return project
 
@@ -285,26 +291,7 @@ class WikifactoryFetcher(Fetcher):
             last_visited = datetime.now(timezone.utc)
             for edge in raw["edges"]:
                 raw_project = edge["node"]
-
-                # create fetcher metadata
-                id = ProjectID(self.NAME, raw_project["parentSlug"], raw_project["slug"])
-                meta = {
-                    "meta": {
-                        "owner": id.owner,
-                        "repo": id.repo,
-                        "path": id.path,
-                        "fetcher": self.NAME,
-                        "last_visited": last_visited,
-                    }
-                }
-
-                # try normalizing it
-                try:
-                    raw_project.update(meta)
-                    project = self._normalizer.normalize(raw_project)
-                except NormalizerError as err:
-                    raise FetcherError(f"normalization failed, that should not happen: {err}") from err
-
+                project = self.__fetch_one(self, raw_project, last_visited)
                 log.debug("yield project %s", project.id)
                 yield project
 

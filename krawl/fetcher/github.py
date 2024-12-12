@@ -15,7 +15,7 @@ from gql.transport.requests import RequestsHTTPTransport
 from requests.adapters import HTTPAdapter, Retry
 
 from krawl.config import Config
-from krawl.errors import DeserializerError, FetcherError, NormalizerError, NotFound
+from krawl.errors import ConversionError, DeserializerError, FetcherError, NormalizerError, NotFound
 from krawl.fetcher import Fetcher
 from krawl.fetcher.util import is_accepted_manifest_file_name, is_binary, is_empty, convert_okh_v1_to_losh
 from krawl.log import get_child_logger
@@ -286,20 +286,36 @@ class GitHubFetcher(Fetcher):
             "Authorization": f"token {config.access_token}",
         })
 
-    def fetch(self, id: ProjectID) -> Project:
-        log.debug("fetching project %s", id)
+    def __fetch_one(self, id: ProjectID, path: Path, last_visited: datetime) -> Project:
+        log.debug("fetching project %s ...", id)
 
-        if id.path is None:
-            id.path = 'okh.toml'
-        # download the file
-        path = Path(id.path)
         format_suffix = path.suffix.lower()
+
+        # check file name
+        if not is_accepted_manifest_file_name(path):
+            raise FetcherError(f"Not an accepted manifest file name: '{path}'")
+
+        # download the file
         base_download_url = self._get_file_base_url(id)
         manifest_contents = self._download_manifest(f"{base_download_url}/{id.path}")
 
         # check file contents
-        if is_empty(manifest_contents) or is_binary(manifest_contents):
-            log.debug("skipping file, because it has invalid content (%s)", id)
+        if is_empty(manifest_contents):
+            raise FetcherError(f"Manifest file is empty: '{id}'")
+        if is_binary(manifest_contents):
+            raise FetcherError(f"Manifest file is binary (should be text): '{id}'")
+
+        yaml_suffix_pat = re.compile('^\\.ya?ml$')
+        is_yaml = yaml_suffix_pat.match(format_suffix)
+        log.debug(f"Checking if manifest '{format_suffix}' is YAML ...")
+        if is_yaml:
+            log.debug(f"Manifest is YAML!")
+            try:
+                manifest_contents = convert_okh_v1_to_losh(manifest_contents)
+            except ConversionError as err:
+                raise FetcherError(f"Failed to convert YAML (v1) Manifest to TOML (LOSH): {err}") from err
+            format_suffix = ".toml"
+            log.debug(f"YAML (v1) Manifest converted to TOML (LOSH)!")
 
         # create fetcher meta data
         meta = {
@@ -308,28 +324,28 @@ class GitHubFetcher(Fetcher):
                 "repo": id.repo,
                 "path": id.path,
                 "fetcher": self.NAME,
-                "last_visited": datetime.now(timezone.utc),
+                "last_visited": last_visited,
             }
         }
-
-        yaml_suffix_pat = re.compile('^\\.ya?ml$')
-        is_yaml = yaml_suffix_pat.match(format_suffix)
-        log.debug(f"Checking if manifest '{format_suffix}' is YAML ...")
-        if is_yaml:
-            log.debug(f"Manifest is YAML!")
-            manifest_contents = convert_okh_v1_to_losh(manifest_contents)
-            format_suffix = ".toml"
-            log.debug(f"YAML (v1) Manifest converted to TOML (LOSH)!")
 
         # try deserialize
         try:
             project = self._deserializer_factory.deserialize(format_suffix, manifest_contents, self._normalizer, meta)
         except DeserializerError as err:
-            raise FetcherError(f"deserialization failed: {err}") from err
+            raise FetcherError(f"deserialization failed (invalid content/format for its file-type): {err}") from err
         except NormalizerError as err:
-            raise FetcherError(f"normalization failed, that should not happen: {err}") from err
+            raise FetcherError(f"normalization failed: {err}") from err
 
+        log.debug("fetched project %s", project.id)
         return project
+
+    def fetch(self, id: ProjectID) -> Project:
+        if id.path is None:
+            id.path = 'okh.toml'
+        last_visited = datetime.now(timezone.utc)
+        path = Path(id.path)
+
+        return self.__fetch_one(id, path, last_visited)
 
     def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
         num_fetched_projects = 0
@@ -407,46 +423,14 @@ class GitHubFetcher(Fetcher):
             last_visited = datetime.now(timezone.utc)
             for raw_found_file in raw_found_files:
                 raw_url = urlparse(raw_found_file["html_url"])
-
-                # check file name
                 path = Path(raw_url.path)
-                if not is_accepted_manifest_file_name(path):
-                    log.debug("skipping file, because it is not an accepted manifest file name (%s)", path)
-                    continue
-
-                # download the file
                 path_parts = path.parts
                 id = ProjectID(self.NAME, path_parts[1], path_parts[2], str(Path(*path_parts[5:])))
-                base_download_url = self._get_file_base_url(id)
-                manifest_contents = self._download_manifest(f"{base_download_url}/{id.path}")
 
-                # check file contents
-                if is_empty(manifest_contents) or is_binary(manifest_contents):
-                    log.debug("skipping file, because it has invalid content (%s)", id)
-
-                # create fetcher metadata
-                meta = {
-                    "meta": {
-                        "owner": id.owner,
-                        "repo": id.repo,
-                        "path": id.path,
-                        "fetcher": self.NAME,
-                        "last_visited": last_visited,
-                    }
-                }
-
-                # try deserialize
                 try:
-                    project = self._deserializer_factory.deserialize(path.suffix, manifest_contents, self._normalizer,
-                                                                     meta)
-                except DeserializerError:
-                    log.debug("skipping file, because it has invalid content (%s)", id)
-                    continue
-                except NormalizerError as err:
-                    raise FetcherError(f"normalization failed, that should not happen: {err}") from err
-
-                log.debug("yield project %s", project.id)
-                yield project
+                    yield self.__fetch_one(id, path, last_visited)
+                except FetcherError as err:
+                    log.debug(f"skipping file, because: {err}")
 
             # save current progress
             page = page + 1
