@@ -136,7 +136,7 @@ class GitHubFetcher(Fetcher):
       be respected, otherwise the application might get blocked completely. The
       different sets of rate limits can be found here:
         - REST: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
-        - GRAPHQL: https://docs.github.com/en/graphql/overview/resource-limitations#rate-limit
+        - GraphQL: https://docs.github.com/en/graphql/overview/resource-limitations#rate-limit
         - Secondary: https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits
 
     - One of the most annoying limits is the imposed timeout for code search
@@ -259,7 +259,7 @@ class GitHubFetcher(Fetcher):
             status_forcelist=self.RETRY_CODES,
         )
 
-        # client for GRAPHQL requests
+        # client for GraphQL requests
         self._transport = RequestsHTTPTransportRetries(
             url="https://api.github.com/graphql",
             headers={
@@ -275,7 +275,7 @@ class GitHubFetcher(Fetcher):
             fetch_schema_from_transport=False,
         )
 
-        # client REST requests (used because the GRAPHQL API doesn't support code searches)
+        # client REST requests (used because the GraphQL API doesn't support code searches)
         self._session = requests.Session()
         self._session.mount(
             "https://",

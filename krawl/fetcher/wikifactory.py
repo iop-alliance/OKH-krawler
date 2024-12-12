@@ -207,7 +207,7 @@ class WikifactoryFetcher(Fetcher):
         self._state_repository = state_repository
         self._normalizer = WikifactoryNormalizer()
 
-        # client for GRAPHQL requests
+        # client for GraphQL requests
         self._transport = RequestsHTTPTransport(
             url="https://wikifactory.com/api/graphql",
             headers={"User-Agent": config.user_agent},
