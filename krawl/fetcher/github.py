@@ -392,9 +392,9 @@ class GitHubFetcher(Fetcher):
                     log.debug("hit secondary rate limit, now waiting %d seconds...", seconds)
                     sleep(seconds)
                     continue  # restart loop
-                raise FetcherError(f"failed to fetch projects from GitHub: {response.text}")
+                raise FetcherError(f"failed to fetch projects from GitHub (HTTP Response: {response.status_code}): {response.text}")
             elif response.status_code != 200:
-                raise FetcherError(f"failed to fetch projects from GitHub: {response.text}")
+                raise FetcherError(f"failed to fetch projects from GitHub (HTTP Response: {response.status_code}): {response.text}")
 
             # parse response data
             response_data = response.json()
