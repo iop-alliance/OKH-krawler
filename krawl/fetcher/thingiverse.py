@@ -86,7 +86,7 @@ class ThingiverseFetcher(Fetcher):
         })
 
     def fetch(self, id: ProjectID) -> Project:
-        pass
+        raise FetcherError(f"Single project fetching is not implemented for Thingiverse")
 
     def _do_request(self, url, params=None):
 
