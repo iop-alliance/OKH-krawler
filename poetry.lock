@@ -1163,6 +1163,17 @@ files = [
 six = ">=1.5"
 
 [[package]]
+name = "python-strtobool"
+version = "1.0.3"
+description = "str_to_bool function for Python"
+optional = false
+python-versions = ">=3.0"
+files = [
+    {file = "python_strtobool-1.0.3-py3-none-any.whl", hash = "sha256:a9f6988be13660fbb451023fe2966aae423b48c8f67bd5948f7dc315184575d2"},
+    {file = "python_strtobool-1.0.3.tar.gz", hash = "sha256:b05e8a732025907e0ab900693cf574bb275d0ef3473e3255dbb2958e0db32e1b"},
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.1"
 description = "YAML parser and emitter for Python"
@@ -1687,4 +1698,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7,<4.0"
-content-hash = "da9546efb89359693a9312f0c2cd4752756aea8a23973699be512d47de6bd408"
+content-hash = "42ee98b71141b2a3987b04ebf264e23df1ea66beb69113cfcc0b482b12453685"
