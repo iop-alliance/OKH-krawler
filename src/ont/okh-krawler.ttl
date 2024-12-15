@@ -1,0 +1,96 @@
+@base             <https://w3id.org/oseg/ont/okh-krawler> .
+@prefix osegprof: <#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix foaf:     <http://xmlns.com/foaf/0.1/> .
+@prefix orcid:    <https://orcid.org/> .
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema:   <http://schema.org/> .
+@prefix vaem:     <http://www.linkedmodel.org/schema/vaem#> .
+
+:okhKrawlerDataset
+  a okh:Dataset ;
+  rdfs:label "OKH Krawler Dataset" ;
+  okh:dataProvider <> ;
+  void:sparqlEndpoint <http://okh.dev.opensourceecology.de/sparql>;
+  spdxt:licenseDeclared spdxl:ODbL-1.0 ;
+  schema:comment '''
+# SPDX-FileCopyrightText: Robin Vobruba <hoijui.quaero@gmail.com>
+# SPDX-License-Identifier: ODbL-1.0
+''' ;
+  dcterms:creator osegprof:robinVobruba ;
+  okh:organization osegprof:osegAssociation ;
+  dcterms:description "The OKH triples specific to crawling OHS projects with the Krawler software"@en ;
+  dcterms:identifier <> ;
+  dcat:distribution :okhKrawlerDataset-ttl ;
+  .
+
+:okhKrawlerDataset-ttl
+  a dcat:Distribution ;
+  rdfs:label "OKH Krawler Dataset Distribution" ;
+  dcat:downloadURL <> ;
+  dcat:mediaType <http://www.iana.org/assignments/media-types/text/turtle> ;
+  .
+
+okhkrawl:dataProviderAppropedia
+  a okh:DataProvider ;
+  rdfs:label "Appropedia" ;
+  dcterms:title "Appropedia" ;
+  dcterms:identifier "https://appropedia.org"^^xsd:anyURI ;
+  .
+
+okhkrawl:dataProviderGithub
+  a okh:DataProvider ;
+  rdfs:label "GitHub" ;
+  dcterms:title "GitHub" ;
+  dcterms:identifier "https://github.com"^^xsd:anyURI ;
+  .
+
+okhkrawl:dataProviderGitlab
+  a okh:DataProvider ;
+  rdfs:label "GitLab.com" ;
+  dcterms:title "GitLab.com" ;
+  dcterms:identifier "https://gitlab.com"^^xsd:anyURI ;
+  .
+
+okhkrawl:dataProviderThingiverse
+  a okh:DataProvider ;
+  rdfs:label "Thingiverse" ;
+  dcterms:title "Thingiverse" ;
+  dcterms:identifier "https://www.thingiverse.com"^^xsd:anyURI ;
+  .
+
+okhkrawl:dataProviderWikifactory
+  a okh:DataProvider ;
+  rdfs:label "Wikifactory" ;
+  dcterms:title "Wikifactory" ;
+  dcterms:identifier "https://wikifactory.com"^^xsd:anyURI ;
+  .
+
+okhkrawl:dataSourcingProcedureApi
+  a okh:DataSourcingProcedure ;
+  rdfs:label "API" ;
+  dcterms:title "API" ;
+  rdfs:comment "The API of the platform hosting the project is crawled to create a manifest, which is then converted to (OKH) RDF triples" ;
+  .
+
+okhkrawl:dataSourcingProcedureGeneratedManifest
+  a okh:DataSourcingProcedure ;
+  rdfs:label "Generated Manifest" ;
+  dcterms:title "Generated Manifest" ;
+  rdfs:comment "The platform hosting the project generates a manifest, which is then crawled and converted to (OKH) RDF triples" ;
+  .
+
+okhkrawl:dataSourcingProcedureManifest
+  a okh:DataSourcingProcedure ;
+  rdfs:label "Manifest" ;
+  dcterms:title "Manifest" ;
+  rdfs:comment "The project supplies a manifest, which is then crawled and converted to (OKH) RDF triples" ;
+  .
+
+okhkrawl:dataSourcingProcedureDirect
+  a okh:DataSourcingProcedure ;
+  rdfs:label "Direct" ;
+  dcterms:title "Direct" ;
+  rdfs:comment "The project directly supplies (OKH) RDF triples, which are then crawled" ;
+  .
