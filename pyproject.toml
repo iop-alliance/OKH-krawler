@@ -47,6 +47,7 @@ rm -rf .coverage
        ./**/__pycache__
 """
 clean = {ref = "_clean", help = "Clean up temporary files"}
+build = {cmd = "poetry build"}
 format = {shell = "isort krawl && yapf -i -r -vv -p krawl", help = "Format the code using YAPF"}
 lint = {cmd = "pylint ./krawl", help = "Use PyLint to evaluate the code quality"}
 _publish = {cmd = "poetry publish"}
