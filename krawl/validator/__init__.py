@@ -8,16 +8,14 @@ from langcodes import tag_is_valid
 from krawl.project import Project
 
 # see https://semver.org
-_semver_pattern = re.compile(
-    r"^(0|[1-9][0-9]*)"
-    r"\.(0|[1-9][0-9]*)"
-    r"\.(0|[1-9][0-9]*)"
-    r"(?:-("
-    r"(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)"
-    r"(?:\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))"
-    r"*))?"
-    r"(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
-)
+_semver_pattern = re.compile(r"^(0|[1-9][0-9]*)"
+                             r"\.(0|[1-9][0-9]*)"
+                             r"\.(0|[1-9][0-9]*)"
+                             r"(?:-("
+                             r"(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)"
+                             r"(?:\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))"
+                             r"*))?"
+                             r"(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$")
 _sha1_pattern = re.compile(r"^[A-Fa-f0-9]{40}$")
 _sha256_pattern = re.compile(r"^[A-Fa-f0-9]{64}$")
 _known_okh_versions = {"okhv1.0", "okh-loshv1.0"}
