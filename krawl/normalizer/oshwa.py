@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import datetime
 
 from langdetect import LangDetectException
-from langdetect import detect as detect_language
 
 from krawl import licenses
 from krawl.log import get_child_logger
@@ -50,15 +49,15 @@ class OshwaNormalizer(Normalizer):
 
         log.debug("normalizing project metadata '%s'", project.id)
         project.name = self._get_key(raw, "projectName")
-        project.repo = self._normalize_repo(raw)
+        project.repo = self._repo(raw)
         project.version = self._get_key(raw, "projectVersion", default="1.0.0")
-        project.license = self._normalize_license(raw)
+        project.license = self._license(raw)
         project.licensor = self._get_key(raw, "responsibleParty")
 
-        project.function = self._normalize_function(raw)
-        project.documentation_language = self._normalize_language(project.function)
+        project.function = self._function(raw)
+        project.documentation_language = self._language(project.function)
         project.documentation_readiness_level = "ODRL-3*"
-        project.cpc_patent_class = self._normalize_classification(raw)
+        project.cpc_patent_class = self._classification(raw)
         project.upload_method = UploadMethods.AUTO
 
         project.specific_api_data["primaryType"] = self._get_key(raw, "primaryType")
@@ -74,7 +73,7 @@ class OshwaNormalizer(Normalizer):
         return project
 
     @classmethod
-    def _normalize_classification(cls, raw: dict):
+    def _classification(cls, raw: dict):
         primary_type = raw.get("primaryType")
 
         if primary_type in CATEGORIES_CPC_UNMAPPABLE:
@@ -91,14 +90,14 @@ class OshwaNormalizer(Normalizer):
         return CATEGORIES_CPC_MAPPING.get(primary_type, None)
 
     @classmethod
-    def _normalize_organization(cls, raw: dict):
+    def _organization(cls, raw: dict):
         parent_type = raw["parentContent"]["type"]
         if parent_type == "initiative":
             return raw["parentContent"]["title"]
         return None
 
     @classmethod
-    def _normalize_license(cls, raw: dict):
+    def _license(cls, raw: dict):
         raw_license = cls._get_key(raw, "hardwareLicense")
 
         if not raw_license:
@@ -113,7 +112,7 @@ class OshwaNormalizer(Normalizer):
         return licenses.get_by_id_or_name(LICENSE_MAPPING.get(raw_license))
 
     @classmethod
-    def _normalize_function(cls, raw: dict):
+    def _function(cls, raw: dict):
         raw_description = raw.get("projectDescription")
         if not raw_description:
             return ""
@@ -121,17 +120,5 @@ class OshwaNormalizer(Normalizer):
         return description
 
     @classmethod
-    def _normalize_language(cls, description: str):
-        if not description:
-            return "en"
-        try:
-            lang = detect_language(description)
-        except LangDetectException:
-            return "en"
-        if lang == "unknown":
-            return "en"
-        return lang
-
-    @classmethod
-    def _normalize_repo(cls, raw: dict):
+    def _repo(cls, raw: dict):
         return f"https://certification.oshwa.org/{raw['oshwaUid'].lower()}.html"
