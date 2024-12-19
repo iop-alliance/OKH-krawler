@@ -164,14 +164,55 @@ class WikifactoryNormalizer(Normalizer):
         return files
 
     @classmethod
-    def _parts(cls, files: list[File]) -> list[Part]:
-        # filter out readme and other files
+    def _filter(cls, files: list[File]) -> list[File]:
+        """Filters out readme and other files"""
         filtered = []
         for file in files:
             normalized_name = file.path.stem.replace(" ", "_").replace("-", "_").upper()
             if normalized_name in EXCLUDE_FILES:
                 continue
             filtered.append(file)
+        return filtered
+
+    @classmethod
+    def _adds_part_files(cls, part: Part, files: list[File]):
+        """Figures out what files are the sources, exports or images"""
+        cad_formats = get_formats("cad")
+        pcb_formats = get_formats("pcb")
+        image_formats = get_formats("image")
+        for file in files:
+            ext = "." + file.extension
+
+            # get sources and exports by extension
+            is_tech = False
+            for tech_format in [cad_formats, pcb_formats]:
+                if ext in tech_format:
+                    format_ = tech_format[ext]
+                    match format_.category:
+                        case "source":
+                            if not part.source:
+                                part.source = file
+                            else:
+                                part.export.append(file)
+                        case "export":
+                            part.export.append(file)
+                        case _:
+                            raise ValueError(f"Unknown tech format category: '{format_.category}'")
+                    is_tech = True
+                    break
+            if is_tech:
+                continue
+
+            # get first image by extension
+            if ext in image_formats:
+                format_ = image_formats[ext]
+                if not part.image:
+                    part.image = file
+                continue
+
+    @classmethod
+    def _parts(cls, files: list[File]) -> list[Part]:
+        filtered = cls._filter(files)
 
         # put files in buckets
         buckets = defaultdict(list)
@@ -179,46 +220,13 @@ class WikifactoryNormalizer(Normalizer):
             normalized_name = str(file.path.with_suffix("")).lower()
             buckets[normalized_name].append(file)
 
-        # figure out what files are the sources, the exports and the images
-        cad_formats = get_formats("cad")
-        pcb_formats = get_formats("pcb")
-        image_formats = get_formats("image")
         parts = []
         for fl in buckets.values():
             part = Part()
-            for file in fl:
-                ext = "." + file.extension
+            cls._adds_part_files(part, fl)
 
-                # get sources and exports by extension
-                if ext in cad_formats:
-                    format_ = cad_formats[ext]
-                    if format_.category == "source":
-                        if not part.source:
-                            part.source = file
-                        else:
-                            part.export.append(file)
-                    elif format_.category == "export":
-                        part.export.append(file)
-                    continue
-                if ext in pcb_formats:
-                    format_ = pcb_formats[ext]
-                    if format_.category == "source":
-                        if not part.source:
-                            part.source = file
-                        else:
-                            part.export.append(file)
-                    elif format_.category == "export":
-                        part.export.append(file)
-                    continue
-
-                # get first image by extension
-                if ext in image_formats:
-                    format_ = image_formats[ext]
-                    if not part.image:
-                        part.image = file
-                    continue
-
-            # if no sources are identified, but exports, then use the exports instead
+            # if no sources are identified, but exports
+            # use the first export as the source
             if not part.source and part.export:
                 part.source = part.export.pop(0)
 

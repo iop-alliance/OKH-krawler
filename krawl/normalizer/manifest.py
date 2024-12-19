@@ -206,73 +206,80 @@ class ManifestNormalizer(Normalizer):
             return krawl_util_extract_path(url)
 
     @classmethod
+    def _pre_parse_file(cls, file_handler: FileHandler, fh_proj_info: dict, raw_file: str, manifest_path: str,
+                        download_url: str) -> dict:
+        if is_url(raw_file):
+            # is URL
+            if file_handler is None:
+                url = raw_file
+                # NOTE We assume, that all platforms we do not support FileHandler for -
+                #      i.e. we do not support frozen and non-frozen URLs for -
+                #      use (only) non-frozen URLs.
+                frozen_url = None
+                path = cls.extract_path(url)
+            else:
+                path = file_handler.extract_path(fh_proj_info, url)
+                if file_handler.is_frozen_url(fh_proj_info, url):
+                    frozen_url = url
+                    url = file_handler.to_url(fh_proj_info, path, False)
+                else:
+                    frozen_url = file_handler.to_url(fh_proj_info, path, True)
+            return {
+                "path": path,
+                "url": url,
+                "frozen-url": frozen_url,
+            }
+        else:
+            # is path relative to/within project/repo
+            path = Path(raw_file)
+            if path.is_absolute():
+                raise ValueError(
+                    f"Manifest file path at '{manifest_path}' is absolute, which is invalid!: '{raw_file}'")
+            path = str(path)
+            if file_handler is None:
+                url = f"{download_url}{path}"
+                # NOTE Same as above assume, that all platforms we do not support FileHandler for -
+                frozen_url = None
+            else:
+                url = file_handler.to_url(fh_proj_info, path, False)
+                frozen_url = file_handler.to_url(fh_proj_info, path, True)
+            return {
+                "path": path,
+                "url": url,
+                "frozen-url": frozen_url,
+            }
+
+    @classmethod
     def _file(cls, file_handler: FileHandler, fh_proj_info: dict, raw_file: dict, manifest_path: str,
               download_url: str) -> File | None:
         if raw_file is None:
             return None
         if isinstance(raw_file, str):
-            # is URL
-            if is_url(raw_file):
-                if file_handler is None:
-                    url = raw_file
-                    # NOTE We assume, that all platforms we do not support FileHandler for -
-                    #      i.e. we do not support frozen and non-frozen URLs for -
-                    #      use (only) non-frozen URLs.
-                    frozen_url = None
-                    path = cls.extract_path(url)
-                else:
-                    path = file_handler.extract_path(fh_proj_info, url)
-                    if file_handler.is_frozen_url(fh_proj_info, url):
-                        frozen_url = url
-                        url = file_handler.to_url(fh_proj_info, path, False)
-                    else:
-                        frozen_url = file_handler.to_url(fh_proj_info, path, True)
-                raw_file = {
-                    "path": path,
-                    "url": url,
-                    "frozen-url": frozen_url,
-                }
-            else:
-                # is path relative to/within project/repo
-                path = Path(raw_file)
-                if path.is_absolute():
-                    log.error("Manifest file path at '%s' is absolute, which is invalid!: '%s'", manifest_path,
-                              raw_file)
-                    return None
-                path = str(path)
-                if file_handler is None:
-                    url = f"{download_url}{path}"
-                    # NOTE Same as above assume, that all platforms we do not support FileHandler for -
-                    frozen_url = None
-                else:
-                    url = file_handler.to_url(fh_proj_info, path, False)
-                    frozen_url = file_handler.to_url(fh_proj_info, path, True)
-                raw_file = {
-                    "path": path,
-                    "url": url,
-                    "frozen-url": frozen_url,
-                }
-        elif not isinstance(raw_file, dict):
-            log.error("Manifest file path '%s' is not a string, which is invalid!: '%s'", manifest_path, str(raw_file))
-            return None
+            try:
+                file_dict = cls._pre_parse_file(cls, file_handler, fh_proj_info, raw_file, manifest_path, download_url)
+            except ValueError:
+                log.error("Failed pre-parsing raw file: {err}")
+                return None
+        if isinstance(raw_file, dict):
+            file_dict = raw_file
 
         file = File()
-        file.path = cls._path(raw_file.get("path"))
+        file.path = cls._path(file_dict.get("path"))
         file.name = str(file.path.with_suffix("")) if file.path and file.path.name else None
-        file.mime_type = cls._string(raw_file.get("mime-type"))
+        file.mime_type = cls._string(file_dict.get("mime-type"))
 
-        url = cls._string(raw_file.get("url"))
+        url = cls._string(file_dict.get("url"))
         if url and validators.url(url):
             file.url = url
-        frozen_url = cls._string(raw_file.get("frozen-url"))
+        frozen_url = cls._string(file_dict.get("frozen-url"))
         if frozen_url and validators.url(frozen_url):
             file.frozen_url = frozen_url
 
-        file.created_at = cls._string(raw_file.get("created-at"))
-        file.last_changed = cls._string(raw_file.get("last-changed"))
+        file.created_at = cls._string(file_dict.get("created-at"))
+        file.last_changed = cls._string(file_dict.get("last-changed"))
         file.last_visited = datetime.now(timezone.utc)
-        file.license = get_license(cls._string(raw_file.get("license")))
-        file.licensor = cls._string(raw_file.get("licensor"))
+        file.license = get_license(cls._string(file_dict.get("license")))
+        file.licensor = cls._string(file_dict.get("licensor"))
 
         return file
 

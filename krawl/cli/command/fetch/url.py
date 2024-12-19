@@ -43,19 +43,16 @@ class FetchURLCommand(KrawlCommand):
         self._add_options_from_schema(schema=self._config_schema)
 
     def handle(self):
-        urls = self.argument("url")
-        enabled_repositories = self.option("repository")
-        report_path = Path(self.option("report")) if self.option("report") else None
-
         # parse urls
         ids = []
         required_fetchers = set()
-        for url in urls:
+        for url in self.argument("url"):
             id = ProjectID.from_url(url)
             required_fetchers.add(id.platform)
             ids.append(id)
 
         # load, normalize and validate config
+        enabled_repositories = self.option("repository")
         config = self._load_config(enabled_repositories=enabled_repositories, enabled_fetchers=required_fetchers)
 
         # initialize fetchers and repositories
@@ -79,6 +76,7 @@ class FetchURLCommand(KrawlCommand):
             repository_factory.store(project)
             report.append(f"Added '{project.id}'")
 
+        report_path = Path(self.option("report")) if self.option("report") else None
         if report_path:
             with report_path.open("w") as f:
                 f.writelines(report)
