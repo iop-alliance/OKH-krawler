@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from langdetect import LangDetectException
-from langdetect import detect as detect_language
 
 from krawl import licenses
 from krawl.file_formats import get_formats
@@ -113,18 +112,6 @@ class WikifactoryNormalizer(Normalizer):
             return ""
         description = strip_html(raw_description).strip()
         return description
-
-    @classmethod
-    def _language(cls, description: str):
-        if not description:
-            return "en"
-        try:
-            lang = detect_language(description)
-        except LangDetectException:
-            return "en"
-        if lang == "unknown":
-            return "en"
-        return lang
 
     @classmethod
     def _file(cls, file_raw: dict) -> File:

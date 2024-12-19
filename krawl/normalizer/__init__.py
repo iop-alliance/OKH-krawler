@@ -6,6 +6,8 @@ from io import StringIO
 from pathlib import Path
 from typing import Any
 
+from langdetect import detect as detect_language
+
 from krawl.project import Project
 
 
@@ -177,3 +179,15 @@ specification."""
             raw (dict): Raw project metadata to be normalized
         """
         raise NotImplementedError()
+
+    @classmethod
+    def _language(cls, description: str | None):
+        if not description:
+            return "en"
+        try:
+            lang = detect_language(description)
+        except LangDetectException:
+            return "en"
+        if lang == "unknown":
+            return "en"
+        return lang
