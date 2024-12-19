@@ -256,7 +256,7 @@ class WikifactoryFetcher(Fetcher):
         last_visited = datetime.now(timezone.utc)
 
         raw_project = result["project"]["result"]
-        project = self.__fetch_one(self, raw_project, last_visited)
+        project = self.__fetch_one(raw_project, last_visited)
 
         return project
 
@@ -291,7 +291,7 @@ class WikifactoryFetcher(Fetcher):
             last_visited = datetime.now(timezone.utc)
             for edge in raw["edges"]:
                 raw_project = edge["node"]
-                project = self.__fetch_one(self, raw_project, last_visited)
+                project = self.__fetch_one(raw_project, last_visited)
                 log.debug("yield project %s", project.id)
                 yield project
 
