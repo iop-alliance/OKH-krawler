@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from langdetect import LangDetectException
-
 from krawl import dict_utils, licenses
 from krawl.log import get_child_logger
 from krawl.normalizer import Normalizer, strip_html

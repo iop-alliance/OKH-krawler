@@ -5,8 +5,6 @@ import pathlib
 from datetime import datetime, timezone
 from pathlib import Path
 
-from langdetect import LangDetectException
-
 from krawl import dict_utils, licenses
 from krawl.file_formats import get_type_from_extension
 from krawl.log import get_child_logger
