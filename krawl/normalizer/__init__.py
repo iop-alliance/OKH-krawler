@@ -6,6 +6,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Any
 
+from langdetect import LangDetectException
 from langdetect import detect as detect_language
 
 from krawl.project import Project
