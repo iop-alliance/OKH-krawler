@@ -12,6 +12,7 @@ from krawl.log import get_child_logger
 from krawl.normalizer import FileHandler, Normalizer
 from krawl.platform_url import PlatformURL
 from krawl.project import File, Mass, Meta, OuterDimensions, Part, Project, Software, UploadMethods
+from krawl.util import extract_path as krawl_util_extract_path
 from krawl.util import is_url
 
 log = get_child_logger("manifest")
@@ -200,7 +201,7 @@ class ManifestNormalizer(Normalizer):
             parsed_url = PlatformURL.from_url(url)
             return parsed_url.path
         except ValueError:
-            return krawl.util.extract_path(url)
+            return krawl_util_extract_path(url)
 
     @classmethod
     def _file(cls, file_handler: FileHandler, fh_proj_info: dict, raw_file: dict, manifest_path: str,
