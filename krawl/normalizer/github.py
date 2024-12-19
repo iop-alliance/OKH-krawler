@@ -1,17 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
-from urllib.parse import urlparse
 
-import validators
-
-from krawl.licenses import get_by_id_or_name as get_license
 from krawl.log import get_child_logger
-from krawl.normalizer import FileHandler, Normalizer
-from krawl.platform_url import PlatformURL
-from krawl.project import File, Mass, Meta, OuterDimensions, Part, Project, Software, UploadMethods
+from krawl.normalizer import FileHandler
+from krawl.project import File, Project
 from krawl.util import extract_path
 
 log = get_child_logger("github")
