@@ -57,6 +57,8 @@ class FetcherXCommand(KrawlCommand):
         # initialize fetchers and repositories
         if config.database.type == "file":
             fetcher_state_repository = FetcherStateRepositoryFile(config.database.path)
+        else:
+            raise ValueError(f"Unknown database type: {config.database.type}")
         fetcher_factory = FetcherFactory(fetcher_state_repository, config.fetchers, [self.name])
         repository_factory = ProjectRepositoryFactory(config.repositories, enabled_repositories)
         fetcher = fetcher_factory.get(self.name)

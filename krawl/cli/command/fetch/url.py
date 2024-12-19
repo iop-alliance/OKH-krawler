@@ -58,6 +58,8 @@ class FetchURLCommand(KrawlCommand):
         # initialize fetchers and repositories
         if config.database.type == "file":
             fetcher_state_repository = FetcherStateRepositoryFile(config.database.path)
+        else:
+            raise ValueError(f"Unknown database type: {config.database.type}")
         fetcher_factory = FetcherFactory(fetcher_state_repository, config.fetchers, list(required_fetchers))
         repository_factory = ProjectRepositoryFactory(config.repositories, enabled_repositories)
         validator = StrictValidator()
