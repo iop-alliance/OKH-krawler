@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 
 import validators
 
+from krawl import dict_utils
 from krawl.errors import ParserError
 from krawl.fetcher.util import convert_okh_v1_to_losh
 from krawl.licenses import get_by_id_or_name as get_license
@@ -36,15 +37,15 @@ class ManifestNormalizer(Normalizer):
         if meta is None:
             meta = raw.get("__meta")
         if isinstance(meta, dict):
-            project.meta.source = self._string(meta.get("fetcher"))
+            project.meta.source = dict_utils.to_string(meta.get("fetcher"))
             if project.meta.source is None:
-                project.meta.source = self._string(meta.get("source"))
-            project.meta.owner = self._string(meta.get("owner"))
-            project.meta.repo = self._string(meta.get("repo"))
-            project.meta.path = self._string(meta.get("path"))
-            project.meta.branch = self._string(meta.get("branch"))
+                project.meta.source = dict_utils.to_string(meta.get("source"))
+            project.meta.owner = dict_utils.to_string(meta.get("owner"))
+            project.meta.repo = dict_utils.to_string(meta.get("repo"))
+            project.meta.path = dict_utils.to_string(meta.get("path"))
+            project.meta.branch = dict_utils.to_string(meta.get("branch"))
             # project.meta.created_at = ??? # TODO
-            project.meta.last_visited = self._string(meta.get("last_visited"))
+            project.meta.last_visited = dict_utils.to_string(meta.get("last_visited"))
             # project.meta.last_changed = ??? # TODO
             log.debug("normalizing manifest of '%s'", project.id)
         else:
@@ -56,26 +57,26 @@ class ManifestNormalizer(Normalizer):
         if self.file_handler is not None:
             fh_proj_info = self.file_handler.gen_proj_info(raw)
 
-        project.name = self._string(raw.get("name"))
-        project.repo = self._string(raw.get("repo"))
-        project.version = self._string(raw.get("version"))
-        project.release = self._string(raw.get("release"))
-        project.license = get_license(self._string(raw.get("license")))
-        project.licensor = self._string(raw.get("licensor"))
-        project.organization = self._string(raw.get("organization"))
+        project.name = dict_utils.to_string(raw.get("name"))
+        project.repo = dict_utils.to_string(raw.get("repo"))
+        project.version = dict_utils.to_string(raw.get("version"))
+        project.release = dict_utils.to_string(raw.get("release"))
+        project.license = get_license(dict_utils.to_string(raw.get("license")))
+        project.licensor = dict_utils.to_string(raw.get("licensor"))
+        project.organization = dict_utils.to_string(raw.get("organization"))
         project.readme = self._file(self.file_handler, fh_proj_info, raw.get("readme"), project.meta.path, download_url)
         project.contribution_guide = self._file(self.file_handler, fh_proj_info, raw.get("contribution-guide"),
                                                 project.meta.path, download_url)
         project.image = self._file(self.file_handler, fh_proj_info, raw.get("image"), project.meta.path, download_url)
-        project.function = self._string(raw.get("function"))
+        project.function = dict_utils.to_string(raw.get("function"))
         project.documentation_language = self._language(raw.get("documentation-language"))
-        project.technology_readiness_level = self._string(raw.get("technology-readiness-level"))
-        project.documentation_readiness_level = self._string(raw.get("documentation-readiness-level"))
-        project.attestation = self._string(raw.get("attestation"))
-        project.publication = self._string(raw.get("publication"))
-        project.standard_compliance = self._string(raw.get("standard-compliance"))
-        project.cpc_patent_class = self._string(raw.get("cpc-patent-class"))
-        project.tsdc = self._string(raw.get("tsdc"))
+        project.technology_readiness_level = dict_utils.to_string(raw.get("technology-readiness-level"))
+        project.documentation_readiness_level = dict_utils.to_string(raw.get("documentation-readiness-level"))
+        project.attestation = dict_utils.to_string(raw.get("attestation"))
+        project.publication = dict_utils.to_string(raw.get("publication"))
+        project.standard_compliance = dict_utils.to_string(raw.get("standard-compliance"))
+        project.cpc_patent_class = dict_utils.to_string(raw.get("cpc-patent-class"))
+        project.tsdc = dict_utils.to_string(raw.get("tsdc"))
         project.bom = self._file(self.file_handler, fh_proj_info, raw.get("bom"), project.meta.path, download_url)
         project.manufacturing_instructions = self._file(self.file_handler, fh_proj_info,
                                                         raw.get("manufacturing-instructions"), project.meta.path,
@@ -92,7 +93,7 @@ class ManifestNormalizer(Normalizer):
     @classmethod
     def _base_url(cls, raw: dict, meta: Meta) -> str:
         # try to use release URL, if exists
-        release = cls._string(raw.get("release"))
+        release = dict_utils.to_string(raw.get("release"))
         if release:
             try:
                 info = PlatformURL.from_url(release)
@@ -101,8 +102,8 @@ class ManifestNormalizer(Normalizer):
                 pass
 
         # try to use repo URL and version info
-        repo = cls._string(raw.get("repo"))
-        version = cls._string(raw.get("version"))
+        repo = dict_utils.to_string(raw.get("repo"))
+        version = dict_utils.to_string(raw.get("version"))
         if repo and version:
             try:
                 platform_url = PlatformURL.from_url(repo)
@@ -129,10 +130,10 @@ class ManifestNormalizer(Normalizer):
     @classmethod
     def _host(cls, raw: dict) -> str | None:
         manifest = raw["manifest"]
-        host = cls._string(manifest.get("dataHost"))
+        host = dict_utils.to_string(manifest.get("dataHost"))
         if host:
             return host
-        repo = cls._string(raw.get("repo"))
+        repo = dict_utils.to_string(raw.get("repo"))
         if not repo:
             return None
         repo_url = urlparse(repo)
@@ -155,21 +156,21 @@ class ManifestNormalizer(Normalizer):
         parts = []
         for raw_part in raw_parts:
             part = Part()
-            part.name = cls._string(raw_part.get("name"))
-            part.name_clean = cls._clean_name(part.name)
+            part.name = dict_utils.to_string(raw_part.get("name"))
+            part.name_clean = dict_utils.clean_name(part.name)
             part.image = cls._file(file_handler, fh_proj_info, raw_part.get("image"), manifest_path, file_base_url)
             part.source = cls._file(file_handler, fh_proj_info, raw_part.get("source"), manifest_path, file_base_url)
             part.export = cls._files(file_handler, fh_proj_info, raw_part.get("export"), manifest_path, file_base_url)
-            part.license = get_license(cls._string(raw_part.get("license")))
-            part.licensor = cls._string(raw_part.get("licensor"))
+            part.license = get_license(dict_utils.to_string(raw_part.get("license")))
+            part.licensor = dict_utils.to_string(raw_part.get("licensor"))
             part.documentation_language = cls._language(raw_part.get("documentation-language"))
-            part.material = cls._string(raw_part.get("material"))
-            part.manufacturing_process = cls._string(raw_part.get("manufacturing-process"))
-            part.mass = cls._float(raw_part.get("mass"))
+            part.material = dict_utils.to_string(raw_part.get("material"))
+            part.manufacturing_process = dict_utils.to_string(raw_part.get("manufacturing-process"))
+            part.mass = dict_utils.to_float(raw_part.get("mass"))
             part.outer_dimensions = cls._outer_dimensions(raw_part.get("outer-dimensions"))
-            part.tsdc = cls._string(raw_part.get("tsdc"))
+            part.tsdc = dict_utils.to_string(raw_part.get("tsdc"))
             parts.append(part)
-        cls._ensure_unique_clean_names(parts)
+        dict_utils.ensure_unique_clean_names(parts)
         return parts
 
     @classmethod
@@ -180,12 +181,12 @@ class ManifestNormalizer(Normalizer):
         software = []
         for rs in raw_software:
             s = Software()
-            s.release = cls._string(rs.get("name"))
+            s.release = dict_utils.to_string(rs.get("name"))
             s.installation_guide = cls._file(file_handler, fh_proj_info, rs.get("installation-guide"), manifest_path,
                                              file_base_url)
             s.documentation_language = cls._language(rs.get("documentation-language"))
-            s.license = get_license(cls._string(rs.get("license")))
-            s.licensor = cls._string(rs.get("licensor"))
+            s.license = get_license(dict_utils.to_string(rs.get("license")))
+            s.licensor = dict_utils.to_string(rs.get("licensor"))
             software.append(s)
         return software
 
@@ -271,22 +272,22 @@ class ManifestNormalizer(Normalizer):
             file_dict = raw_file
 
         file = File()
-        file.path = cls._path(file_dict.get("path"))
+        file.path = dict_utils.to_path(file_dict.get("path"))
         file.name = str(file.path.with_suffix("")) if file.path and file.path.name else None
-        file.mime_type = cls._string(file_dict.get("mime-type"))
+        file.mime_type = dict_utils.to_string(file_dict.get("mime-type"))
 
-        url = cls._string(file_dict.get("url"))
+        url = dict_utils.to_string(file_dict.get("url"))
         if url and validators.url(url):
             file.url = url
-        frozen_url = cls._string(file_dict.get("frozen-url"))
+        frozen_url = dict_utils.to_string(file_dict.get("frozen-url"))
         if frozen_url and validators.url(frozen_url):
             file.frozen_url = frozen_url
 
-        file.created_at = cls._string(file_dict.get("created-at"))
-        file.last_changed = cls._string(file_dict.get("last-changed"))
+        file.created_at = dict_utils.to_string(file_dict.get("created-at"))
+        file.last_changed = dict_utils.to_string(file_dict.get("last-changed"))
         file.last_visited = datetime.now(timezone.utc)
-        file.license = get_license(cls._string(file_dict.get("license")))
-        file.licensor = cls._string(file_dict.get("licensor"))
+        file.license = get_license(dict_utils.to_string(file_dict.get("license")))
+        file.licensor = dict_utils.to_string(file_dict.get("licensor"))
 
         return file
 

@@ -5,6 +5,7 @@ from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
 
+from krawl import dict_utils
 from krawl.errors import ParserError
 from krawl.licenses import License, get_by_id_or_name
 from krawl.platform_url import PlatformURL
@@ -251,7 +252,7 @@ class Part:  # pylint: disable=too-many-instance-attributes
         part.documentation_language = data.get("documentation-language", None)
         part.material = data.get("material", None)
         part.manufacturing_process = data.get("manufacturing-process", None)
-        part.mass = cls._float(data.get("mass"))
+        part.mass = dict_utils.to_float(data.get("mass"))
         outer_dimensions_raw = data.get("outer-dimensions")
         part.outer_dimensions = OuterDimensions.from_dict(outer_dimensions_raw)
         part.tsdc = data.get("tsdc", None)
@@ -344,9 +345,9 @@ class OuterDimensions:
         if data is None:
             return None
         outer_dimensions = cls()
-        outer_dimensions.width = cls._float(data.get("width", None))
-        outer_dimensions.height = cls._float(data.get("height", None))
-        outer_dimensions.depth = cls._float(data.get("depth", None))
+        outer_dimensions.width = dict_utils.to_float(data.get("width", None))
+        outer_dimensions.height = dict_utils.to_float(data.get("height", None))
+        outer_dimensions.depth = dict_utils.to_float(data.get("depth", None))
         if not outer_dimensions.is_valid():
             raise ParserError(f"Not all required fields for {cls} are present: {data}")
         return outer_dimensions

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from langdetect import LangDetectException
 
-from krawl import licenses
+from krawl import dict_utils, licenses
 from krawl.file_formats import get_formats
 from krawl.log import get_child_logger
 from krawl.normalizer import Normalizer, strip_html
@@ -52,11 +52,11 @@ class WikifactoryNormalizer(Normalizer):
     def normalize(self, raw: dict) -> Project:
         project = Project()
         meta = raw.get("meta")
-        project.meta.source = self._string(meta.get("fetcher"))
-        project.meta.owner = self._string(meta.get("owner"))
-        project.meta.repo = self._string(meta.get("repo"))
-        project.meta.path = self._string(meta.get("path"))
-        project.meta.branch = self._string(meta.get("branch"))
+        project.meta.source = dict_utils.to_string(meta.get("fetcher"))
+        project.meta.owner = dict_utils.to_string(meta.get("owner"))
+        project.meta.repo = dict_utils.to_string(meta.get("repo"))
+        project.meta.path = dict_utils.to_string(meta.get("path"))
+        project.meta.branch = dict_utils.to_string(meta.get("branch"))
         project.meta.created_at = datetime.fromisoformat(raw["dateCreated"])
         project.meta.last_visited = meta.get("last_visited")
         project.meta.last_changed = datetime.fromisoformat(raw["lastUpdated"])
@@ -64,13 +64,13 @@ class WikifactoryNormalizer(Normalizer):
 
         log.debug("normalizing project metadata '%s'", project.id)
         files = self._get_files(raw)
-        project.name = self._string(raw.get("name"))
+        project.name = dict_utils.to_string(raw.get("name"))
         project.repo = f"https://wikifactory.com/{raw['parentSlug']}/{raw['slug']}"
-        project.version = self._get_key(raw, "contribution", "version")
+        project.version = dict_utils.get_key(raw, "contribution", "version")
         version = project.version[:7] if project.version else ''
         project.release = f"https://wikifactory.com/{raw['parentSlug']}/{raw['slug']}/v/{version}"
         project.license = self._license(raw)
-        project.licensor = self._get_key(raw, "creator", "profile", "fullName")
+        project.licensor = dict_utils.get_key(raw, "creator", "profile", "fullName")
         project.organization = self._organization(raw)
         project.readme = self._get_info_file(["README"], files)
         project.contribution_guide = self._get_info_file(["CONTRIBUTING"], files)
@@ -101,7 +101,8 @@ class WikifactoryNormalizer(Normalizer):
 
     @classmethod
     def _license(cls, raw: dict):
-        raw_license = cls._get_key(raw, "license", "abreviation")  # must be spelled wrong, because it is in the schema
+        raw_license = dict_utils.get_key(raw, "license",
+                                         "abreviation")  # must be spelled wrong, because it is in the schema
         if not raw_license:
             return None
         license = licenses.get_by_id_or_name(LICENSE_MAPPING.get(raw_license))
@@ -130,12 +131,12 @@ class WikifactoryNormalizer(Normalizer):
         file.last_changed = datetime.strptime(file_raw["lastUpdated"], "%Y-%m-%dT%H:%M:%S.%f%z")
         file.last_visited = datetime.now(timezone.utc)
         file.license = file_raw["license"]
-        file.licensor = cls._get_key(file_raw, "creator", "profile", "fullName")
+        file.licensor = dict_utils.get_key(file_raw, "creator", "profile", "fullName")
         return file
 
     @classmethod
     def _get_files(cls, raw: dict) -> list[File]:
-        raw_files = cls._get_key(raw, "contribution", "files", default=[])
+        raw_files = dict_utils.get_key(raw, "contribution", "files", default=[])
         files = []
         license = cls._license(raw)
         for meta in raw_files:

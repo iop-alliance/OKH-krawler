@@ -4,7 +4,7 @@ from datetime import datetime
 
 from langdetect import LangDetectException
 
-from krawl import licenses
+from krawl import dict_utils, licenses
 from krawl.log import get_child_logger
 from krawl.normalizer import Normalizer, strip_html
 from krawl.project import Project, UploadMethods
@@ -48,11 +48,11 @@ class OshwaNormalizer(Normalizer):
         project.meta.last_visited = meta.get("last_visited")
 
         log.debug("normalizing project metadata '%s'", project.id)
-        project.name = self._get_key(raw, "projectName")
+        project.name = dict_utils.get_key(raw, "projectName")
         project.repo = self._repo(raw)
-        project.version = self._get_key(raw, "projectVersion", default="1.0.0")
+        project.version = dict_utils.get_key(raw, "projectVersion", default="1.0.0")
         project.license = self._license(raw)
-        project.licensor = self._get_key(raw, "responsibleParty")
+        project.licensor = dict_utils.get_key(raw, "responsibleParty")
 
         project.function = self._function(raw)
         project.documentation_language = self._language(project.function)
@@ -60,14 +60,14 @@ class OshwaNormalizer(Normalizer):
         project.cpc_patent_class = self._classification(raw)
         project.upload_method = UploadMethods.AUTO
 
-        project.specific_api_data["primaryType"] = self._get_key(raw, "primaryType")
-        project.specific_api_data["additionalType"] = self._get_key(raw, "additionalType")
-        project.specific_api_data["hardwareLicense"] = self._get_key(raw, "hardwareLicense")
-        project.specific_api_data["softwareLicense"] = self._get_key(raw, "softwareLicense")
-        project.specific_api_data["documentationLicense"] = self._get_key(raw, "documentationLicense")
-        project.specific_api_data["country"] = self._get_key(raw, "country")
+        project.specific_api_data["primaryType"] = dict_utils.get_key(raw, "primaryType")
+        project.specific_api_data["additionalType"] = dict_utils.get_key(raw, "additionalType")
+        project.specific_api_data["hardwareLicense"] = dict_utils.get_key(raw, "hardwareLicense")
+        project.specific_api_data["softwareLicense"] = dict_utils.get_key(raw, "softwareLicense")
+        project.specific_api_data["documentationLicense"] = dict_utils.get_key(raw, "documentationLicense")
+        project.specific_api_data["country"] = dict_utils.get_key(raw, "country")
 
-        certification_date = self._get_key(raw, "certificationDate")
+        certification_date = dict_utils.get_key(raw, "certificationDate")
         if certification_date:
             project.specific_api_data["certificationDate"] = datetime.strptime(certification_date, "%Y-%m-%dT%H:%M%z")
         return project
@@ -98,13 +98,13 @@ class OshwaNormalizer(Normalizer):
 
     @classmethod
     def _license(cls, raw: dict):
-        raw_license = cls._get_key(raw, "hardwareLicense")
+        raw_license = dict_utils.get_key(raw, "hardwareLicense")
 
         if not raw_license:
             return None
 
         if raw_license == "Other":
-            raw_license = cls._get_key(raw, "documentationLicense")
+            raw_license = dict_utils.get_key(raw, "documentationLicense")
 
         if not raw_license or raw_license in ["None", "Other"]:
             return None

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from langdetect import LangDetectException
 
-from krawl import licenses
+from krawl import dict_utils, licenses
 from krawl.file_formats import get_type_from_extension
 from krawl.log import get_child_logger
 from krawl.normalizer import Normalizer, strip_html
@@ -79,7 +79,7 @@ class ThingiverseNormalizer(Normalizer):
 
     @classmethod
     def _license(cls, raw: dict):
-        raw_license = cls._get_key(raw, "license")
+        raw_license = dict_utils.get_key(raw, "license")
 
         if not raw_license:
             return None

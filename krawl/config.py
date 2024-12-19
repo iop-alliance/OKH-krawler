@@ -23,6 +23,7 @@ from cerberus import TypeDefinition, Validator
 from cerberus.errors import REQUIRED_FIELD, BasicErrorHandler, ValidationError
 from str_to_bool import str_to_bool
 
+from krawl import dict_utils
 from krawl.errors import ConfigError
 
 # schema for normalization/validation
@@ -513,14 +514,14 @@ class YamlFileConfigLoader(ConfigLoader):
 
     def __init__(self, schema: Mapping, path: str | Path | None) -> None:
         self._schema = schema
-        self._path = path if isinstance(path, Path) else Path(path) if path is not None else None
+        dict_utils.to_path = path if isinstance(path, Path) else Path(path) if path is not None else None
 
     def load(self) -> Config:
-        if not self._path:
+        if not dict_utils.to_path:
             return Config()
         try:
             # get YAML file content
-            with self._path.open("r") as f:
+            with dict_utils.to_path.open("r") as f:
                 raw = yaml.safe_load(f) or {}
         except OSError as e:
             raise ConfigError(f"Failed to load YAML config: {e}", reasons=str(e)) from e
@@ -530,7 +531,7 @@ class YamlFileConfigLoader(ConfigLoader):
         if reasons:
             raise ConfigError(
                 "There is one or more errors in the configuration file '{}':\n    {}".format(
-                    self._path, "\n    ".join(reasons)),
+                    dict_utils.to_path, "\n    ".join(reasons)),
                 reasons,
             )
         return Config(validated)
