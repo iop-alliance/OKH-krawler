@@ -141,8 +141,14 @@ class ManifestNormalizer(Normalizer):
         return None
 
     @classmethod
-    def _parts(cls, file_handler: FileHandler, fh_proj_info, raw_parts: Any, manifest_path: str,
-               file_base_url: str) -> list[Part]:
+    def _parts(
+            cls,
+            file_handler: FileHandler,
+            fh_proj_info,
+            raw_parts: Any,
+            manifest_path: str,
+            file_base_url: str) \
+            -> list[Part]:
         if raw_parts is None or not isinstance(raw_parts, list):
             return []
         parts = []

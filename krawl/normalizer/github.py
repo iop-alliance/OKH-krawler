@@ -76,10 +76,11 @@ class GitHubFileHandler(FileHandler):
         return not self._is_dev_branch(proj_info, version)
 
     def to_url(self, proj_info: dict, relative_path: str, frozen: bool) -> str:
-        return '{base}/{slug}/raw/{version}/{path}'.format(base=BASE_URL,
-                                                           slug=proj_info['slug'],
-                                                           version=proj_info['version'],
-                                                           path=relative_path)
+        base = BASE_URL
+        slug = proj_info['slug']
+        version = proj_info['version']
+        path = relative_path
+        return f'{base}/{slug}/raw/{version}/{path}'
 
     def extract_path(self, proj_info: dict, url: str) -> str:
         url_path = extract_path(url)
