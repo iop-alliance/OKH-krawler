@@ -11,7 +11,7 @@ authors = [
 krawl = "krawl.cli:main"
 
 [tool.poetry.dependencies]
-python = ">=3.7,<4.0"
+python = ">=3.9,<4.0"
 PyGithub = "^1.55"
 toml = "^0.10.2"
 rdflib = "^5.0.0"
@@ -29,13 +29,13 @@ cleo = "^0.8.1"
 langcodes = "^3.3.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
-poethepoet = "^0.10.0"
-yapf = "^0.31.0"
-isort = "^5.10.1"
-pylint = "^2.11.1"
-pytest-cov = "^3.0.0"
-pytest-icdiff = "^0.5"
+pytest = "^8.3.4"
+poethepoet = "^0.31.1"
+yapf = "^0.43.0"
+isort = "^5.13.2"
+pylint = "^3.3.2"
+pytest-cov = "^6.0.0"
+pytest-icdiff = "^0.9"
 
 [tool.poe.tasks]
 bump = {cmd = "bump2version --allow-dirty", help = "Bump the app version"}
