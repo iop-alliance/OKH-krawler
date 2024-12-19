@@ -6,15 +6,15 @@ from cleo import Application as BaseApplication
 from clikit.api.args.format.argument import Argument
 from clikit.api.args.format.option import Option
 from clikit.api.event import PRE_HANDLE, PRE_RESOLVE
+from clikit.api.formatter import Formatter
+from clikit.api.formatter.style_set import StyleSet
 from clikit.api.io import Input, Output
 from clikit.api.io.flags import DEBUG, VERBOSE, VERY_VERBOSE
+from clikit.api.io.input_stream import InputStream
+from clikit.api.io.output_stream import OutputStream
 from clikit.config import DefaultApplicationConfig
 from clikit.formatter import AnsiFormatter, PlainFormatter
 from clikit.handler.help import HelpTextHandler
-from clikit.api.formatter import Formatter
-from clikit.api.formatter.style_set import StyleSet
-from clikit.api.io.input_stream import InputStream
-from clikit.api.io.output_stream import OutputStream
 from clikit.io.console_io import ConsoleIO
 from clikit.io.input_stream import StandardInputStream
 from clikit.io.output_stream import ErrorOutputStream, StandardOutputStream
