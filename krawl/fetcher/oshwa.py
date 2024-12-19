@@ -102,16 +102,13 @@ class OshwaFetcher(Fetcher):
 
         return project
 
-
     def fetch(self, id: ProjectID) -> Project:
 
         log.debug('Start fetching project %s', id)
 
         oshwa_id = id.path.split(".")[0]
 
-        response = self._session.get(
-            url=f"https://certificationapi.oshwa.org/api/projects/{oshwa_id}",
-        )
+        response = self._session.get(url=f"https://certificationapi.oshwa.org/api/projects/{oshwa_id}",)
 
         if response.status_code > 205:
             raise FetcherError(f"failed to fetch projects from OSHWA: {response.text}")

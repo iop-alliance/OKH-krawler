@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import re
 from html.parser import HTMLParser
 from io import StringIO
 from pathlib import Path
 from typing import Any
-import re
 
 from krawl.project import Project
 

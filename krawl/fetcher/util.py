@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import os
 import re
-import sys
-from pathlib import Path
 import subprocess
+import sys
 import tempfile
+from pathlib import Path
 
-from krawl.log import get_child_logger
 from krawl.errors import ConversionError
+from krawl.log import get_child_logger
 
 log = get_child_logger("util")
 
@@ -31,6 +31,7 @@ def is_binary(content: str | bytes) -> bool:
         return "\0" in content
     return b"\0" in content
 
+
 def _recuperate_invalid_yaml_manifest(manifest_contents: bytes) -> bytes:
     """Cleans up OKH v1 (YAMl) manifest content.
     Many manifests out there use bad syntax or invalid values,
@@ -50,6 +51,7 @@ def _recuperate_invalid_yaml_manifest(manifest_contents: bytes) -> bytes:
         os.remove(fn_v1)
         return manifest_contents
 
+
 def sanitize_okh_v1_yaml(manifest_file: Path):
     """Sanitizes an OKH v1 (YAMl) manifest,
     using the external software 'sanitize-v1-yaml'
@@ -60,7 +62,10 @@ def sanitize_okh_v1_yaml(manifest_file: Path):
     try:
         subprocess.check_output(conv_cmd, stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as err:
-        raise ConversionError(f"Failed to sanitize OKH v1 manifest, exitcode: {err.returncode}, stderr: {err.stderr.decode(sys.getfilesystemencoding())}, stdout: {err.output.decode(sys.getfilesystemencoding())}", [])
+        raise ConversionError(
+            f"Failed to sanitize OKH v1 manifest, exitcode: {err.returncode}, stderr: {err.stderr.decode(sys.getfilesystemencoding())}, stdout: {err.output.decode(sys.getfilesystemencoding())}",
+            [])
+
 
 def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes | None:
     """Converts OKH v1 (YAMl) manifest contents to OKH LOSH (TOML) manifest contents,
@@ -80,7 +85,9 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes | None:
     try:
         subprocess.check_output(conv_cmd, stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as err:
-        raise ConversionError(f"Failed to convert OKH v1 manifest to OKH LOSH, exitcode: {err.returncode}, stderr: {err.stderr.decode(sys.getfilesystemencoding())}, stdout: {err.output.decode(sys.getfilesystemencoding())}", [])
+        raise ConversionError(
+            f"Failed to convert OKH v1 manifest to OKH LOSH, exitcode: {err.returncode}, stderr: {err.stderr.decode(sys.getfilesystemencoding())}, stdout: {err.output.decode(sys.getfilesystemencoding())}",
+            [])
 
     # res.check_returncode()
     with open(fn_losh, "rb") as binary_file:

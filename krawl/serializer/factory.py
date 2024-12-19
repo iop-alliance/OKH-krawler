@@ -26,7 +26,6 @@ class SerializerFactory():
         toml_serializer = TOMLProjectSerializer()
         self._serializers[".toml"] = toml_serializer
 
-
         rdf_serializer = RDFProjectSerializer()
         self._serializers[".ttl"] = rdf_serializer
 
@@ -50,7 +49,6 @@ class DeserializerFactory():
 
         toml_deserializer = TOMLProjectDeserializer()
         self._deserializer[".toml"] = toml_deserializer
-
 
         rdf_deserializer = RDFProjectDeserializer()
         self._deserializer[".ttl"] = rdf_deserializer

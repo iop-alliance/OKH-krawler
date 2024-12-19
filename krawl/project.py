@@ -7,11 +7,12 @@ from pathlib import Path
 from krawl.licenses import License, get_by_id_or_name
 from krawl.platform_url import PlatformURL
 
+
 class UploadMethods(StrEnum):
-    AUTO = "auto" # crawled through the project hosting platforms API
-    MANIFEST = "manifest" # via okh.(toml|yaml|...) manifest file (and API?)
-    MANIFEST_SCRIPT = "manifest-script" # via a script that creates manifest files
-    MANUAL = "manual" # TODO Document
+    AUTO = "auto"  # crawled through the project hosting platforms API
+    MANIFEST = "manifest"  # via okh.(toml|yaml|...) manifest file (and API?)
+    MANIFEST_SCRIPT = "manifest-script"  # via a script that creates manifest files
+    MANUAL = "manual"  # TODO Document
 
 
 class ProjectID:
@@ -61,7 +62,7 @@ class Project:
     https://github.com/iop-alliance/OpenKnowHow/blob/master/res/sample_data/okh-TEMPLATE.toml.
     """
 
-    __slots__ = [ # TODO Revise this list
+    __slots__ = [  # TODO Revise this list
         "meta", "okhv", "name", "repo", "version", "release", "license", "licensor", "organization", "readme",
         "contribution_guide", "image", "documentation_language", "technology_readiness_level",
         "documentation_readiness_level", "attestation", "publication", "function", "standard_compliance",
@@ -235,8 +236,8 @@ class Part:
     """Part data model."""
 
     __slots__ = [
-        "name", "name_clean", "image", "source", "export", "auxiliary", "documentation_language", "material", "manufacturing_process",
-        "mass", "outer_dimensions", "tsdc", "license", "licensor"
+        "name", "name_clean", "image", "source", "export", "auxiliary", "documentation_language", "material",
+        "manufacturing_process", "mass", "outer_dimensions", "tsdc", "license", "licensor"
     ]
 
     def __init__(self) -> None:

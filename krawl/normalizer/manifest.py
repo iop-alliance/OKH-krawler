@@ -9,7 +9,7 @@ import validators
 
 from krawl.licenses import get_by_id_or_name as get_license
 from krawl.log import get_child_logger
-from krawl.normalizer import Normalizer, FileHandler
+from krawl.normalizer import FileHandler, Normalizer
 from krawl.platform_url import PlatformURL
 from krawl.project import File, Mass, Meta, OuterDimensions, Part, Project, Software, UploadMethods
 from krawl.util import is_url
@@ -60,7 +60,8 @@ class ManifestNormalizer(Normalizer):
         project.licensor = self._string(raw.get("licensor"))
         project.organization = self._string(raw.get("organization"))
         project.readme = self._file(self.file_handler, fh_proj_info, raw.get("readme"), project.meta.path, download_url)
-        project.contribution_guide = self._file(self.file_handler, fh_proj_info, raw.get("contribution-guide"), project.meta.path, download_url)
+        project.contribution_guide = self._file(self.file_handler, fh_proj_info, raw.get("contribution-guide"),
+                                                project.meta.path, download_url)
         project.image = self._file(self.file_handler, fh_proj_info, raw.get("image"), project.meta.path, download_url)
         project.function = self._string(raw.get("function"))
         project.documentation_language = self._string(raw.get("documentation-language"))
@@ -72,11 +73,14 @@ class ManifestNormalizer(Normalizer):
         project.cpc_patent_class = self._string(raw.get("cpc-patent-class"))
         project.tsdc = self._string(raw.get("tsdc"))
         project.bom = self._file(self.file_handler, fh_proj_info, raw.get("bom"), project.meta.path, download_url)
-        project.manufacturing_instructions = self._file(self.file_handler, fh_proj_info, raw.get("manufacturing-instructions"), project.meta.path,
+        project.manufacturing_instructions = self._file(self.file_handler, fh_proj_info,
+                                                        raw.get("manufacturing-instructions"), project.meta.path,
                                                         download_url)
-        project.user_manual = self._file(self.file_handler, fh_proj_info, raw.get("user-manual"), project.meta.path, download_url)
+        project.user_manual = self._file(self.file_handler, fh_proj_info, raw.get("user-manual"), project.meta.path,
+                                         download_url)
         project.part = self._parts(self.file_handler, fh_proj_info, raw.get("part"), project.meta.path, download_url)
-        project.software = self._software(self.file_handler, fh_proj_info, raw.get("software"), project.meta.path, download_url)
+        project.software = self._software(self.file_handler, fh_proj_info, raw.get("software"), project.meta.path,
+                                          download_url)
         project.upload_method = raw.get("upload-method", UploadMethods.MANIFEST)
 
         return project
@@ -134,7 +138,8 @@ class ManifestNormalizer(Normalizer):
         return None
 
     @classmethod
-    def _parts(cls, file_handler: FileHandler, fh_proj_info, raw_parts: Any, manifest_path: str, file_base_url: str) -> list[Part]:
+    def _parts(cls, file_handler: FileHandler, fh_proj_info, raw_parts: Any, manifest_path: str,
+               file_base_url: str) -> list[Part]:
         if raw_parts is None or not isinstance(raw_parts, list):
             return []
         parts = []
@@ -158,14 +163,16 @@ class ManifestNormalizer(Normalizer):
         return parts
 
     @classmethod
-    def _software(cls, file_handler: FileHandler, fh_proj_info: dict, raw_software: Any, manifest_path: str, file_base_url: str) -> list[Part]:
+    def _software(cls, file_handler: FileHandler, fh_proj_info: dict, raw_software: Any, manifest_path: str,
+                  file_base_url: str) -> list[Part]:
         if raw_software is None or not isinstance(raw_software, list):
             return []
         software = []
         for rs in raw_software:
             s = Software()
             s.release = cls._string(rs.get("name"))
-            s.installation_guide = cls._file(file_handler, fh_proj_info, rs.get("installation-guide"), manifest_path, file_base_url)
+            s.installation_guide = cls._file(file_handler, fh_proj_info, rs.get("installation-guide"), manifest_path,
+                                             file_base_url)
             s.documentation_language = cls._string(rs.get("documentation-language"))
             s.license = get_license(cls._string(rs.get("license")))
             s.licensor = cls._string(rs.get("licensor"))
@@ -173,7 +180,8 @@ class ManifestNormalizer(Normalizer):
         return software
 
     @classmethod
-    def _files(cls, file_handler: FileHandler, fh_proj_info: dict, raw_files: dict, manifest_path: str, download_url: str) -> list[File]:
+    def _files(cls, file_handler: FileHandler, fh_proj_info: dict, raw_files: dict, manifest_path: str,
+               download_url: str) -> list[File]:
         if raw_files is None or not isinstance(raw_files, list):
             return []
         files = []
@@ -195,7 +203,8 @@ class ManifestNormalizer(Normalizer):
             return krawl.util.extract_path(url)
 
     @classmethod
-    def _file(cls, file_handler: FileHandler, fh_proj_info: dict, raw_file: dict, manifest_path: str, download_url: str) -> File | None:
+    def _file(cls, file_handler: FileHandler, fh_proj_info: dict, raw_file: dict, manifest_path: str,
+              download_url: str) -> File | None:
         if raw_file is None:
             return None
         if isinstance(raw_file, str):
@@ -224,7 +233,8 @@ class ManifestNormalizer(Normalizer):
                 # is path relative to/within project/repo
                 path = Path(raw_file)
                 if path.is_absolute():
-                    log.error("Manifest file path at '%s' is absolute, which is invalid!: '%s'", manifest_path, raw_file)
+                    log.error("Manifest file path at '%s' is absolute, which is invalid!: '%s'", manifest_path,
+                              raw_file)
                     return None
                 path = str(path)
                 if file_handler is None:

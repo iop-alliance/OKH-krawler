@@ -63,7 +63,7 @@ class RDFProjectSerializer(ProjectSerializer):
         v = project.documentation_readiness_level
         if v is None:
             return None
-        odrl_manifest = getattr(OTRL, v) # NOTE: Yes, ODRL is in the OTRL namespace too!
+        odrl_manifest = getattr(OTRL, v)  # NOTE: Yes, ODRL is in the OTRL namespace too!
         return odrl_manifest.replace('ODRL-', 'ODRL').replace('*', 'Star')
 
     @staticmethod
@@ -95,10 +95,13 @@ class RDFProjectSerializer(ProjectSerializer):
         if file.path is not None:
             cls.add(graph, subject, OKH.relativePath, file.path)
         if file.url is not None:
-            cls.add(graph, subject, OKH.url, file.url) # TODO Maybe use file.permaURL instead here, because according to the spec/Ontology as of Dec. 2022), this is supposed ot be a permanent/frozen URL -> NO, change the spec! We removed permaURL, and rather want to have a frozen and a separate, unfrozen version of the whole manifest.
+            cls.add(
+                graph, subject, OKH.url, file.url
+            )  # TODO Maybe use file.permaURL instead here, because according to the spec/Ontology as of Dec. 2022), this is supposed ot be a permanent/frozen URL -> NO, change the spec! We removed permaURL, and rather want to have a frozen and a separate, unfrozen version of the whole manifest.
         # NOTE This is not part of the spec (as of December 2022), and fileURL is mentioned in the spec to contain the permanent URL; related issue: https://github.com/iop-alliance/OpenKnowHow/issues/132
         # cls.add(graph, subject, OKH.permaURL, file.perma_url)
-        cls.add(graph, subject, OKH.fileFormat, file.extension.upper()) # TODO We should change this to mime-type at some point
+        cls.add(graph, subject, OKH.fileFormat,
+                file.extension.upper())  # TODO We should change this to mime-type at some point
         # cls.add(graph, subject, OKH.mimeType, file.mime_type) # FIXME: only add if contained in ontology
         # cls.add(graph, subject, OKH.dateCreated, file.created_at) # FIXME: only add if contained in ontology
         # cls.add(graph, subject, OKH.dateLastChanged, file.last_changed) # FIXME: only add if contained in ontology
@@ -126,7 +129,8 @@ class RDFProjectSerializer(ProjectSerializer):
 
         part_subjects = []
         for part in project.part:
-            part_name = cls._title_case(part.name_clean if part.name_clean != project.name else part.name_clean + "_part")
+            part_name = cls._title_case(part.name_clean if part.name_clean != project.name else part.name_clean +
+                                        "_part")
 
             part_subject = namespace[part_name]
             cls.add(graph, part_subject, rdflib.RDF.type, OKH.Part)
@@ -141,8 +145,9 @@ class RDFProjectSerializer(ProjectSerializer):
                     alt_license = license.id
                 else:
                     alt_license = license.reference_url[:-5]
-                cls.add(graph, part_subject, OKH.alternativeLicense, alt_license
-                       )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
+                cls.add(
+                    graph, part_subject, OKH.alternativeLicense,
+                    alt_license)  # FIXME: should be the license ID not the reference url, but it breaks the frontend
             cls.add(graph, part_subject, OKH.licensor, get_fallback(part, "licensor"))
             cls.add(graph, part_subject, OKH.material, part.material)
             cls.add(graph, part_subject, OKH.manufacturingProcess, part.manufacturing_process)
@@ -228,8 +233,8 @@ class RDFProjectSerializer(ProjectSerializer):
                 alt_license = project.license.id
             else:
                 alt_license = project.license.reference_url[:-5]
-            cls.add(graph, module_subject, OKH.alternativeLicense, alt_license
-                   )  # FIXME: should be the license ID not the reference url, but it breaks the frontend
+            cls.add(graph, module_subject, OKH.alternativeLicense,
+                    alt_license)  # FIXME: should be the license ID not the reference url, but it breaks the frontend
         cls.add(graph, module_subject, OKH.licensor, project.licensor)
         cls.add(graph, module_subject, OKH.organization, project.organization)
         # cls.add(graph, module_subject, OKH.contributorCount, None)  # TODO see if GitHub API can do this

@@ -133,7 +133,9 @@ class WikifactoryNormalizer(Normalizer):
         file.name = str(file.path.with_suffix("")) if file.path else None
         file.mime_type = file_raw.get("mimeType", None)
         file.url = file_raw.get("url", None)
-        file.frozen_url = file_raw.get("permalink", None) # TODO Check if this is right . is this permalink form Wikifactory really a version/commit specific link?
+        file.frozen_url = file_raw.get(
+            "permalink", None
+        )  # TODO Check if this is right . is this permalink form Wikifactory really a version/commit specific link?
         file.created_at = datetime.strptime(file_raw["dateCreated"], "%Y-%m-%dT%H:%M:%S.%f%z")
         file.last_changed = datetime.strptime(file_raw["lastUpdated"], "%Y-%m-%dT%H:%M:%S.%f%z")
         file.last_visited = datetime.now(timezone.utc)

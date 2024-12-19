@@ -47,6 +47,7 @@ LICENSE_MAPPING = {
 }
 BROKEN_IMAGE_URL = 'https://cdn.thingiverse.com/'
 
+
 class ThingiverseNormalizer(Normalizer):
 
     def __init__(self):

@@ -15,13 +15,13 @@ from __future__ import annotations
 from collections.abc import Mapping, MutableMapping
 from copy import deepcopy
 from datetime import datetime
-from str_to_bool import str_to_bool
 from pathlib import Path
 from typing import Any
 
 import yaml
 from cerberus import TypeDefinition, Validator
 from cerberus.errors import REQUIRED_FIELD, BasicErrorHandler, ValidationError
+from str_to_bool import str_to_bool
 
 from krawl.errors import ConfigError
 

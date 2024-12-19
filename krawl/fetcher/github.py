@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Generator
 from datetime import datetime, timezone
 from pathlib import Path
 from time import sleep
 from urllib.parse import urlparse, urlunparse
 
-import re
 import requests
 from gql import Client as GQLClient
 from gql import gql
@@ -17,10 +17,10 @@ from requests.adapters import HTTPAdapter, Retry
 from krawl.config import Config
 from krawl.errors import ConversionError, DeserializerError, FetcherError, NormalizerError, NotFound
 from krawl.fetcher import Fetcher
-from krawl.fetcher.util import is_accepted_manifest_file_name, is_binary, is_empty, convert_okh_v1_to_losh
+from krawl.fetcher.util import convert_okh_v1_to_losh, is_accepted_manifest_file_name, is_binary, is_empty
 from krawl.log import get_child_logger
-from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.normalizer.github import GitHubFileHandler
+from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.project import Project, ProjectID
 from krawl.repository import FetcherStateRepository
 from krawl.request.rate_limit import RateLimitFixedTimedelta, RateLimitNumRequests
@@ -392,9 +392,11 @@ class GitHubFetcher(Fetcher):
                     log.debug("hit secondary rate limit, now waiting %d seconds...", seconds)
                     sleep(seconds)
                     continue  # restart loop
-                raise FetcherError(f"failed to fetch projects from GitHub (HTTP Response: {response.status_code}): {response.text}")
+                raise FetcherError(
+                    f"failed to fetch projects from GitHub (HTTP Response: {response.status_code}): {response.text}")
             elif response.status_code != 200:
-                raise FetcherError(f"failed to fetch projects from GitHub (HTTP Response: {response.status_code}): {response.text}")
+                raise FetcherError(
+                    f"failed to fetch projects from GitHub (HTTP Response: {response.status_code}): {response.text}")
 
             # parse response data
             response_data = response.json()

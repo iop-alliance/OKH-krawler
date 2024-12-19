@@ -25,17 +25,8 @@ LICENSE_MAPPING = {
     "CERN": "CERN-OHL-1.2",
 }
 CATEGORIES_CPC_UNMAPPABLE = [
-    "Agriculture",
-    "Arts",
-    "Education",
-    "Electronics",
-    "Environmental",
-    "IOT",
-    "Manufacturing",
-    "Other",
-    "Science",
-    "Tool",
-    "Wearables"
+    "Agriculture", "Arts", "Education", "Electronics", "Environmental", "IOT", "Manufacturing", "Other", "Science",
+    "Tool", "Wearables"
 ]
 CATEGORIES_CPC_MAPPING = {
     "3D Printing": "B33Y",
@@ -45,6 +36,7 @@ CATEGORIES_CPC_MAPPING = {
     "Sound": "H04R",
     "Space": "B64G"
 }
+
 
 class OshwaNormalizer(Normalizer):
 
