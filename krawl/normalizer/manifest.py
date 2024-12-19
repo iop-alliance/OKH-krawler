@@ -232,11 +232,6 @@ class ManifestNormalizer(Normalizer):
                     url = file_handler.to_url(fh_proj_info, path, False)
                 else:
                     frozen_url = file_handler.to_url(fh_proj_info, path, True)
-            return {
-                "path": path,
-                "url": url,
-                "frozen-url": frozen_url,
-            }
         else:
             # is path relative to/within project/repo
             path = Path(raw_file)
@@ -251,11 +246,11 @@ class ManifestNormalizer(Normalizer):
             else:
                 url = file_handler.to_url(fh_proj_info, path, False)
                 frozen_url = file_handler.to_url(fh_proj_info, path, True)
-            return {
-                "path": path,
-                "url": url,
-                "frozen-url": frozen_url,
-            }
+        return {
+            "path": path,
+            "url": url,
+            "frozen-url": frozen_url,
+        }
 
     @classmethod
     def _file(cls, file_handler: FileHandler, fh_proj_info: dict, raw_file: dict, manifest_path: str,
