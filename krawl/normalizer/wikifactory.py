@@ -39,9 +39,11 @@ LICENSE_MAPPING = {
     "MIT": "MIT",
     "BSD-2-Clause": "BSD-2-Clause",
     "CC-BY-SA-4.0": "CC-BY-SA-4.0",
+    "CC BY-SA": "CC-BY-SA-4.0",
     "GPL-3.0": "GPL-3.0-only",
     "OHL": "TAPR-OHL-1.0",
-    "CERN OHL": "CERN-OHL-1.2"
+    "CERN OHL": "CERN-OHL-1.2",
+    "CERN": "CERN-OHL-1.2",
 }
 
 
