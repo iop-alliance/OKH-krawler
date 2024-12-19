@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 import validators
 
 from krawl.errors import ParserError
+from krawl.fetcher.util import convert_okh_v1_to_losh
 from krawl.licenses import get_by_id_or_name as get_license
 from krawl.log import get_child_logger
 from krawl.normalizer import FileHandler, Normalizer
