@@ -69,9 +69,8 @@ class FetcherFactory:
             raise FetcherError(f"fetcher '{name}' is not enabled")
         return self._fetchers[name]
 
-    def get_all(self) -> Generator[Fetcher, None, None]:
-        for fetcher in self._fetchers.values():
-            yield fetcher
+    def get_all(self) -> Generator[Fetcher]:
+        yield from self._fetchers.values()
 
     def fetch(self, id: ProjectID) -> Project:
         """Call `fetch` function on fitting fetcher."""
@@ -83,7 +82,7 @@ class FetcherFactory:
             raise FetcherError(f"fetcher '{id.platform}' is not enabled")
         return self._fetchers[id.platform].fetch(id)
 
-    def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
+    def fetch_all(self, start_over=True) -> Generator[Project]:
         """Call `fetch_all` function on all enabled fetchers."""
         # TODO: should be parallelized
         for fetcher in self._fetchers.values():

@@ -6,8 +6,6 @@ from urllib.parse import urlparse
 
 import validators
 
-from krawl.platform_url import PlatformURL
-
 
 def slugify(value):
     """Convert a string to a slug representation.

@@ -80,7 +80,7 @@ class ProjectRepositoryWikibase(ProjectRepository):
     def load(self, id) -> Project:
         raise NotImplementedError()
 
-    def load_all(self, id) -> Generator[Project, None, None]:
+    def load_all(self, id) -> Generator[Project]:
         raise NotImplementedError()
 
     def store(self, project: Project) -> None:
@@ -109,7 +109,7 @@ class ProjectRepositoryWikibase(ProjectRepository):
     def search(self,
                platform: str | None = None,
                owner: str | None = None,
-               name: str | None = None) -> Generator[Project, None, None]:
+               name: str | None = None) -> Generator[Project]:
         raise NotImplementedError()
 
     def delete(self, id: str) -> None:

@@ -18,7 +18,7 @@ class SerializerFactory():
     def serialize(self, suffix: str, project: Project) -> str:
         serializer = self._serializers.get(suffix.lower())
         if not serializer:
-            raise Exception(f"Unknown type '{suffix}'")
+            raise ValueError(f"Unknown serializer type: '{suffix}'")
         return serializer.serialize(project)
 
     def _init_serializers(self):
@@ -39,7 +39,7 @@ class DeserializerFactory():
     def deserialize(self, suffix: str, serialized: str | bytes, normalizer: Normalizer, enrich: dict = None) -> Project:
         deserializer = self._deserializer.get(suffix.lower())
         if not deserializer:
-            raise Exception(f"Unknown type '{suffix}'")
+            raise ValueError(f"Unknown deserializer type: '{suffix}'")
         return deserializer.deserialize(serialized, normalizer, enrich)
 
     def _init_deserializer(self):

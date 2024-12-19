@@ -7,7 +7,7 @@ from pathlib import Path
 from langdetect import LangDetectException
 from langdetect import detect as detect_language
 
-import krawl.licenses as licenses
+from krawl import licenses
 from krawl.file_formats import get_formats
 from krawl.log import get_child_logger
 from krawl.normalizer import Normalizer, strip_html

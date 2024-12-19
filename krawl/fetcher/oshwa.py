@@ -119,11 +119,11 @@ class OshwaFetcher(Fetcher):
 
         project = self.__fetch_one(raw_project, last_visited)
 
-        log.debug("yield project %s", project.id)
+        log.debug(f"yield project {project.id}")
 
         return project
 
-    def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
+    def fetch_all(self, start_over=True) -> Generator[Project]:
         last_offset = 0
         num_fetched = 0
         batch_size = self.BATCH_SIZE

@@ -86,7 +86,7 @@ class ThingiverseFetcher(Fetcher):
         })
 
     def fetch(self, id: ProjectID) -> Project:
-        raise FetcherError(f"Single project fetching is not implemented for Thingiverse")
+        raise FetcherError("Single project fetching is not implemented for Thingiverse")
 
     def _do_request(self, url, params=None):
 
@@ -105,7 +105,7 @@ class ThingiverseFetcher(Fetcher):
 
         return response.json()
 
-    def fetch_all(self, start_over=False) -> Generator[Project, None, None]:
+    def fetch_all(self, start_over=False) -> Generator[Project]:
         id_cursor = 0
         projects_counter = 0
         fetch_things_ids = []

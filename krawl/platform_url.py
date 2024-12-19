@@ -85,59 +85,60 @@ class PlatformURL:
         if not self.platform or not self.owner or not self.repo:
             raise ValueError("missing owner or repo")
 
-        # format: https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
-        if self.platform == "github.com":
-            if not self.branch:
-                raise ValueError("missing branch")
-            if self.path:
-                path = f"/{self.owner}/{self.repo}/{self.branch}/{str(self.path)}"
-            else:
-                path = f"/{self.owner}/{self.repo}/{self.branch}"
-            return str(urlunparse((
-                "https",
-                "raw.githubusercontent.com",
-                path,
-                None,
-                None,
-                None,
-            )))
-
-        # format: https://gitlab.com/{owner}/{repo}/-/raw/{branch}/{path}
-        elif self.platform == "gitlab.com":
-            if not self.branch:
-                raise ValueError("missing branch")
-            if self.path:
-                path = f"/{self.owner}/{self.repo}/-/raw/{self.branch}/{str(self.path)}"
-            else:
-                path = f"/{self.owner}/{self.repo}/-/raw/{self.branch}"
-            return str(urlunparse((
-                "https",
-                "gitlab.com",
-                path,
-                None,
-                None,
-                None,
-            )))
-
-        # format: https://projects.fablabs.io/{owner}/{repo}/contributions/{branch}/file/{path}
-        elif self.platform == "wikifactory.com":
-            if isinstance(self.branch, str) and _sha1_pattern.match(self.branch):
+        match self.platform:
+            case "github.com":
+                # format: https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
+                if not self.branch:
+                    raise ValueError("missing branch")
                 if self.path:
-                    path = f"/{self.owner}/{self.repo}/contributions/{self.branch[:7]}/file/{self.path}"
+                    path = f"/{self.owner}/{self.repo}/{self.branch}/{str(self.path)}"
                 else:
-                    path = f"/{self.owner}/{self.repo}/contributions/{self.branch[:7]}/file"
-            elif self.path:
-                path = f"/{self.owner}/{self.repo}/file/{self.path}"
-            else:
-                path = f"/{self.owner}/{self.repo}/file"
-            return str(urlunparse((
-                "https",
-                "projects.fablabs.io",
-                path,
-                None,
-                None,
-                None,
-            )))
+                    path = f"/{self.owner}/{self.repo}/{self.branch}"
+                return str(urlunparse((
+                    "https",
+                    "raw.githubusercontent.com",
+                    path,
+                    None,
+                    None,
+                    None,
+                )))
 
-        else:
-            raise ValueError(f"unknown platform '{self.platform}'")
+            case "gitlab.com":
+                # format: https://gitlab.com/{owner}/{repo}/-/raw/{branch}/{path}
+                if not self.branch:
+                    raise ValueError("missing branch")
+                if self.path:
+                    path = f"/{self.owner}/{self.repo}/-/raw/{self.branch}/{str(self.path)}"
+                else:
+                    path = f"/{self.owner}/{self.repo}/-/raw/{self.branch}"
+                return str(urlunparse((
+                    "https",
+                    "gitlab.com",
+                    path,
+                    None,
+                    None,
+                    None,
+                )))
+
+            case "wikifactory.com":
+                # format: https://projects.fablabs.io/{owner}/{repo}/contributions/{branch}/file/{path}
+                if isinstance(self.branch, str) and _sha1_pattern.match(self.branch):
+                    if self.path:
+                        path = f"/{self.owner}/{self.repo}/contributions/{self.branch[:7]}/file/{self.path}"
+                    else:
+                        path = f"/{self.owner}/{self.repo}/contributions/{self.branch[:7]}/file"
+                elif self.path:
+                    path = f"/{self.owner}/{self.repo}/file/{self.path}"
+                else:
+                    path = f"/{self.owner}/{self.repo}/file"
+                return str(urlunparse((
+                    "https",
+                    "projects.fablabs.io",
+                    path,
+                    None,
+                    None,
+                    None,
+                )))
+
+            case _:
+                raise ValueError(f"unknown platform '{self.platform}'")

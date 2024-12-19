@@ -56,14 +56,14 @@ def _init_file_formats():
 
 def get_formats(type_):
     if not type_ in _formats:
-        raise Exception(f"no such file format '{type_}'")
+        raise ValueError(f"no such file format: '{type_}'")
     return _formats[type_]
 
 
 def get_type_from_extension(ext) -> FileFormat | None:
-    for index in _formats.keys():
-        if ext in _formats[index]:
-            return _formats[index][ext]
+    for fmt in _formats.values():
+        if ext in fmt:
+            return fmt[ext]
 
     return None
 

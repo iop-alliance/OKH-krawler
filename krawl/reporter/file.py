@@ -16,10 +16,13 @@ class FileReporter(Reporter):
 
     def add(self, project_id: ProjectID, status: Status, reasons: list[str] = None, project: Project = None) -> None:
         """Add an entry to the report."""
-        if status in (Status.OK, Status.UNKNOWN):
-            line = f"{str(status):<8}: {str(project_id)}\n"
-        elif status == Status.FAILED:
-            line = f"{str(status):<8}: {str(project_id)} : {', '.join(reasons)}\n"
+        match status:
+            case Status.OK | Status.UNKNOWN:
+                line = f"{str(status):<8}: {str(project_id)}\n"
+            case Status.FAILED:
+                line = f"{str(status):<8}: {str(project_id)} : {', '.join(reasons)}\n"
+            case _:
+                raise ValueError(f"unknown status: {status}")
         self._file.write(line)
 
     def close(self) -> None:

@@ -135,9 +135,12 @@ class GitHubFetcher(Fetcher):
     - GitHub uses rate limits for all requests made to their API. These need to
       be respected, otherwise the application might get blocked completely. The
       different sets of rate limits can be found here:
-        - REST: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
-        - GraphQL: https://docs.github.com/en/graphql/overview/resource-limitations#rate-limit
-        - Secondary: https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits
+        - REST:
+          <https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting>
+        - GraphQL:
+          <https://docs.github.com/en/graphql/overview/resource-limitations#rate-limit>
+        - Secondary:
+          <https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits>
 
     - One of the most annoying limits is the imposed timeout for code search
       queries. When a query exceeds a certain short timeout, only the results
@@ -309,13 +312,13 @@ class GitHubFetcher(Fetcher):
         is_yaml = yaml_suffix_pat.match(format_suffix)
         log.debug(f"Checking if manifest '{format_suffix}' is YAML ...")
         if is_yaml:
-            log.debug(f"Manifest is YAML!")
+            log.debug("Manifest is YAML!")
             try:
                 manifest_contents = convert_okh_v1_to_losh(manifest_contents)
             except ConversionError as err:
                 raise FetcherError(f"Failed to convert YAML (v1) Manifest to TOML (LOSH): {err}") from err
             format_suffix = ".toml"
-            log.debug(f"YAML (v1) Manifest converted to TOML (LOSH)!")
+            log.debug("YAML (v1) Manifest converted to TOML (LOSH)!")
 
         # create fetcher meta data
         meta = {
@@ -347,7 +350,7 @@ class GitHubFetcher(Fetcher):
 
         return self.__fetch_one(id, path, last_visited)
 
-    def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
+    def fetch_all(self, start_over=True) -> Generator[Project]:
         num_fetched_projects = 0
         if start_over:
             self._state_repository.delete(self.NAME)
@@ -385,18 +388,23 @@ class GitHubFetcher(Fetcher):
             )
             self._secondary_rate_limit.update()
 
-            if response.status_code == 403:
-                message = response.json().get("message", "")
-                if "rate limit" in message:
-                    seconds = 60
-                    log.debug("hit secondary rate limit, now waiting %d seconds...", seconds)
-                    sleep(seconds)
-                    continue  # restart loop
-                raise FetcherError(
-                    f"failed to fetch projects from GitHub (HTTP Response: {response.status_code}): {response.text}")
-            elif response.status_code != 200:
-                raise FetcherError(
-                    f"failed to fetch projects from GitHub (HTTP Response: {response.status_code}): {response.text}")
+            match response.status_code:
+                case 403:
+                    message = response.json().get("message", "")
+                    if "rate limit" in message:
+                        seconds = 60
+                        log.debug("hit secondary rate limit, now waiting %d seconds...", seconds)
+                        sleep(seconds)
+                        continue  # restart loop
+                    raise FetcherError(
+                        f"failed to fetch projects from GitHub (HTTP Response: {response.status_code}): {response.text}"
+                    )
+                case 200:
+                    pass
+                case _:
+                    raise FetcherError(
+                        f"failed to fetch projects from GitHub (HTTP Response: {response.status_code}): {response.text}"
+                    )
 
             # parse response data
             response_data = response.json()
@@ -468,10 +476,13 @@ class GitHubFetcher(Fetcher):
         log.debug("downloading manifest file %s", url)
         response = self._session.get(url)
         self._file_rate_limit.update()
-        if response.status_code == 404:
-            raise NotFound(f"Manifest doesn't exist on default branch ({url})")
-        elif response.status_code != 200:
-            raise FetcherError(f"Failed to download manifest file ({url}): {response.text}")
+        match response.status_code:
+            case 404:
+                raise NotFound(f"Manifest doesn't exist on default branch ({url})")
+            case 200:
+                pass
+            case _:
+                raise FetcherError(f"Failed to download manifest file ({url}): {response.text}")
 
         return response.content
 

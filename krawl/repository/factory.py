@@ -58,9 +58,8 @@ class ProjectRepositoryFactory:
             raise RepositoryError(f"repository '{name}' is not enabled")
         return self._repositories[name]
 
-    def get_all(self) -> Generator[ProjectRepository, None, None]:
-        for repository in self._repositories.values():
-            yield repository
+    def get_all(self) -> Generator[ProjectRepository]:
+        yield from self._repositories.values()
 
     def store(self, project: Project) -> None:
         # TODO: should be parallelized

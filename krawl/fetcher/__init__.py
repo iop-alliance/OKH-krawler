@@ -22,7 +22,7 @@ class Fetcher:
         """
         raise NotImplementedError()
 
-    def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
+    def fetch_all(self, start_over=True) -> Generator[Project]:
         """Find and fetch metadata of all projects on the platform.
 
         Args:

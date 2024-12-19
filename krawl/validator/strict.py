@@ -41,7 +41,7 @@ class StrictValidator(Validator):
         if not is_non_zero_length_string(project.version):
             reasons.append("missing version")
         # FIXME: version validation is deactivated for now
-        # elif not version(project.version):
+        # elif not is_version(project.version):
         #     reasons.append("invalid version")
 
         if not project.license:

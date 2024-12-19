@@ -120,7 +120,7 @@ class ThingiverseNormalizer(Normalizer):
         if raw_license in invalid_licenses:
             return None
 
-        if raw_license == "None" or raw_license == "Other":
+        if raw_license in ('None', 'Other'):
             return None
 
         return licenses.get_by_id_or_name(LICENSE_MAPPING.get(raw_license))

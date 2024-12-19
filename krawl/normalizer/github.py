@@ -66,10 +66,9 @@ class GitHubFileHandler(FileHandler):
 
     def _is_dev_branch(self, proj_info: dict, version: str) -> bool:
         extracted_dev_branch = proj_info['dev_branch']
-        if extracted_dev_branch is not None:
-            return version == extracted_dev_branch
-        else:
+        if extracted_dev_branch is None:
             return version in DEFAULT_DEV_BRANCHES
+        return version == extracted_dev_branch
 
     def is_frozen_url(self, proj_info: dict, url: str) -> bool:
         version = self._extract_version(proj_info, url)
@@ -82,7 +81,7 @@ class GitHubFileHandler(FileHandler):
                                                            version=proj_info['version'],
                                                            path=relative_path)
 
-    def extract_path(self, proj_info: dict, url: str) -> bostrol:
+    def extract_path(self, proj_info: dict, url: str) -> str:
         url_path = extract_path(url)
         path_parts = Path(url_path).relative_to("/").parts
         return '/'.join(path_parts[self.pre_vers_path_parts:])

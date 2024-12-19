@@ -261,8 +261,7 @@ class Config(MutableMapping):
                     raise KeyError(p)
                 branch = branch[p]
             return branch[key]
-        else:
-            return self._mapping[key]
+        return self._mapping[key]
 
     def __getattr__(self, key):
         try:
@@ -357,7 +356,7 @@ class ConfigValidator(Validator):
         return mapping
 
     def _normalize_coerce(self, mapping, schema):
-        """
+        """\
         {'oneof': [
             {'type': 'callable'},
             {'type': 'list',

@@ -260,7 +260,7 @@ class WikifactoryFetcher(Fetcher):
 
         return project
 
-    def fetch_all(self, start_over=True) -> Generator[Project, None, None]:
+    def fetch_all(self, start_over=True) -> Generator[Project]:
         has_next_page = True
         cursor = ""
         num_fetched = 0
