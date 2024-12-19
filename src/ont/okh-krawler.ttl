@@ -1,19 +1,23 @@
-@base             <https://w3id.org/oseg/ont/okh-krawler> .
-@prefix osegprof: <#> .
+@base             <http://w3id.org/oseg/ont/okh-krawler> .
+@prefix okhkrawl: <#> .
+@prefix dcat:     <http://www.w3.org/ns/dcat#> .
 @prefix dcterms:  <http://purl.org/dc/terms/> .
 @prefix foaf:     <http://xmlns.com/foaf/0.1/> .
-@prefix orcid:    <https://orcid.org/> .
+@prefix orcid:    <http://orcid.org/> .
+@prefix osegprof: <http://w3id.org/oseg/ont/oseg-profiles#> .
 @prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix schema:   <http://schema.org/> .
+@prefix spdx:     <http://spdx.org/rdf/terms#> .
+@prefix spdxl:    <http://spdx.org/licenses/> .
 @prefix vaem:     <http://www.linkedmodel.org/schema/vaem#> .
 
-:okhKrawlerDataset
-  a okh:Dataset ;
+okhkrawl:okhKrawlerDataset
+  a dcat:Dataset ;
   rdfs:label "OKH Krawler Dataset" ;
   okh:dataProvider <> ;
   void:sparqlEndpoint <http://okh.dev.opensourceecology.de/sparql>;
-  spdxt:licenseDeclared spdxl:ODbL-1.0 ;
+  spdx:licenseDeclared spdxl:ODbL-1.0 ;
   schema:comment '''
 # SPDX-FileCopyrightText: Robin Vobruba <hoijui.quaero@gmail.com>
 # SPDX-License-Identifier: ODbL-1.0
@@ -22,10 +26,10 @@
   okh:organization osegprof:osegAssociation ;
   dcterms:description "The OKH triples specific to crawling OHS projects with the Krawler software"@en ;
   dcterms:identifier <> ;
-  dcat:distribution :okhKrawlerDataset-ttl ;
+  dcat:distribution okhkrawl:okhKrawlerDataset-ttl ;
   .
 
-:okhKrawlerDataset-ttl
+okhkrawl:okhKrawlerDataset-ttl
   a dcat:Distribution ;
   rdfs:label "OKH Krawler Dataset Distribution" ;
   dcat:downloadURL <> ;
