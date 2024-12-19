@@ -162,7 +162,7 @@ def _flat_name(*args: str | list, separator="_", uppercase=False) -> str:
 
 def iterate_schema(schema: Mapping,
                    key_path: list[str] = None,
-                   long_name_list: list[str] = None) -> tuple[list[str], Mapping]:
+                   _long_name_list: list[str] = None) -> tuple[list[str], Mapping]:
     """Iterate over a schema.
 
     Args:
@@ -173,7 +173,7 @@ def iterate_schema(schema: Mapping,
         Tuple: Tuple of key path and the associate rule.
     """
     key_path = key_path or []
-    long_name_list = long_name_list or []
+    long_name_list = _long_name_list or []
     for key, rules in schema.items():
         long_name = rules.get("meta", {}).get("long_name")
         if rules["type"] == "dict" and "schema" in rules:
@@ -581,12 +581,9 @@ class KrawlerConfigLoader(ConfigLoader):
 
         # add user_agent to each fetcher and repository config (after validation)
         fetchers_config = validated.fetchers
-        for name in fetchers_config:
-            if name != "defaults":
-                fetchers_config[name]["user_agent"] = validated.user_agent
-        repository_config = validated.repositories
-        for name in repository_config:
-            if name != "defaults":
-                repository_config[name]["user_agent"] = validated.user_agent
+        for config_set in [validated.fetchers, validated.repositories]:
+            for name in config_set:
+                if name != "defaults":
+                    config_set[name]["user_agent"] = validated.user_agent
 
         return Config(validated)
