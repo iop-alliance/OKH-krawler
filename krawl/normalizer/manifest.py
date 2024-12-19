@@ -203,7 +203,7 @@ class ManifestNormalizer(Normalizer):
         """Figures out whether the argument is a URL (or a relative path).
 
         Args:
-            file_reference (str): Should represent either a URL or a relative path
+            url (str): Should represent a hosting platforms URL
         """
         try:
             parsed_url = PlatformURL.from_url(url)

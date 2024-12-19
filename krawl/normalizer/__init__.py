@@ -135,6 +135,7 @@ class FileHandler:
         to a file in the project.
 
         Args:
+            proj_info (dict): The info about the containing OKH project
             url (str): Should represent either a frozen or non-frozen URL to a file within the project/repo
         """
         raise NotImplementedError()
@@ -147,6 +148,7 @@ class FileHandler:
         or a frozen one otherwise.
 
         Args:
+            proj_info (dict): The info about the containing OKH project
             relative_path (str): Should represent either a frozen or non-frozen URL to a file
             # version (str): Should be None or a repo-/project-version specifier (e.g. a git tag or commit ID)
             frozen (bool): Whether the result should be a frozen or a non-frozen URL
@@ -157,6 +159,7 @@ class FileHandler:
         """Extracts a project-/repo-relative path from a file reference URL.
 
         Args:
+            proj_info (dict): The info about the containing OKH project
             url (str): Should represent either a frozen or non-frozen URL to a file
         """
         raise NotImplementedError()
