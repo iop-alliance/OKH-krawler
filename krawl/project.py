@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
@@ -16,6 +17,7 @@ class UploadMethods(StrEnum):
     MANUAL = "manual"  # TODO Document
 
 
+@dataclass(slots=True)
 class ProjectID:
     """ProjectID serves as an identifier for projects, that can be used by the
     appropriate fetcher to fetch the projects metadata.
@@ -27,18 +29,10 @@ class ProjectID:
         path (str): Canonical path of the manifest file inside the repository, if any.
     """
 
-    __slots__ = [
-        "platform",
-        "owner",
-        "repo",
-        "path"
-        ]
-
-    def __init__(self, platform: str, owner: str, repo: str, path: str = None) -> None:
-        self.platform: str = platform
-        self.owner: str = owner
-        self.repo: str = repo
-        self.path: str = path
+    platform: str
+    owner: str
+    repo: str
+    path: str = None
 
     def __str__(self) -> str:
         if self.path:
@@ -63,79 +57,43 @@ class ProjectID:
         return cls(pu.platform, pu.owner, pu.repo)
 
 
-class Project:
+@dataclass(slots=True)
+class Project:  # pylint: disable=too-many-instance-attributes
     """Project data model based on
     https://github.com/iop-alliance/OpenKnowHow/blob/master/res/sample_data/okh-TEMPLATE.toml.
     """
 
-    __slots__ = [  # TODO Revise this list
-        "meta",
-        "okhv",
-        "name",
-        "repo",
-        "version",
-        "release",
-        "license",
-        "licensor",
-        "organization",
-        "readme",
-        "contribution_guide",
-        "image",
-        "documentation_language",
-        "technology_readiness_level",
-        "documentation_readiness_level",
-        "attestation",
-        "publication",
-        "function",
-        "standard_compliance",
-        "cpc_patent_class",
-        "tsdc",
-        "bom",
-        "manufacturing_instructions",
-        "user_manual",
-        "part",
-        "software",
-        "specific_api_data",
-        "source",
-        "export",
-        "upload_method"
-    ]
-
-    def __init__(self) -> None:
-        # for internal use
-        self.meta = Meta()
-
-        # from the specification
-        self.okhv: str = "OKH-LOSHv1.0"
-        self.name: str = None
-        self.repo: str = None
-        self.version: str = None
-        self.release: str = None
-        self.license: License = None
-        self.licensor: str = None
-        self.organization: str = None
-        self.readme: File = None
-        self.contribution_guide: File = None
-        self.image: File = None
-        self.documentation_language: str = None
-        self.technology_readiness_level: str = None
-        self.documentation_readiness_level: str = None
-        self.attestation: str = None
-        self.publication: str = None
-        self.function: str = None
-        self.standard_compliance: str = None
-        self.cpc_patent_class: str = None
-        self.tsdc: str = None
-        self.bom: File = None
-        self.manufacturing_instructions: File = None
-        self.user_manual: File = None
-        self.part: list[Part] = []
-        self.software: list[Software] = []
-        self.upload_method = None
-        self.source = []
-        self.export = []
-
-        self.specific_api_data = {}
+    # for internal use
+    meta: Meta = field(default_factory=Meta, init=False, repr=False)
+    okhv: str = "OKH-LOSHv1.0"
+    name: str = None
+    repo: str = None
+    version: str = None
+    release: str = None
+    license: License = None
+    licensor: str = None
+    organization: str = None
+    readme: File = None
+    contribution_guide: File = None
+    image: File = None
+    documentation_language: str = None
+    technology_readiness_level: str = None
+    documentation_readiness_level: str = None
+    attestation: str = None
+    publication: str = None
+    function: str = None
+    standard_compliance: str = None
+    cpc_patent_class: str = None
+    tsdc: str = None
+    bom: File = None
+    manufacturing_instructions: File = None
+    user_manual: File = None
+    part: list[Part] = []
+    software: list[Software] = []
+    upload_method = None
+    source = []
+    export = []
+    specific_api_data = {}
 
     @classmethod
     def from_dict(cls, data: dict) -> Project | None:
@@ -173,6 +131,7 @@ class Project:
         return project
 
     def as_dict(self) -> dict:
+        # return asdict(self)
         return {
             "__meta": self.meta.as_dict(),
             "okhv": self.okhv,
@@ -207,38 +166,25 @@ class Project:
 
     @property
     def id(self) -> ProjectID:
-        """Generates an ID in form of 'platform/owner/name'"""
+        """Generates an ID in form of 'platform/owner/repo/path'"""
         return ProjectID(self.meta.source, self.meta.owner, self.meta.repo, self.meta.path)
 
 
-class Meta:
+@dataclass(slots=True)
+class Meta:  # pylint: disable=too-many-instance-attributes
     """Metadata for internal use."""
 
-    __slots__ = [
-        "source",
-        "owner",
-        "repo",
-        "path",
-        "branch",
-        "created_at",
-        "last_visited",
-        "last_changed",
-        "history",
-        "score"
-    ]
-
-    def __init__(self) -> None:
-        self.source: str = None  # where the project/manifest was found
-        self.owner: str = None  # owner of the repository
-        self.repo: str = None  # domain name of the repository
-        self.path: str = None  # path of project/manifest inside the repository
-        self.branch: str = None  # branch, in which the project/manifest was found
-        self.created_at: datetime = None
-        self.last_visited: datetime = None
-        self.last_changed: datetime = None
-        self.history = None
-        # internally calculated score for project importance to decide re-visit schedule
-        self.score = None
+    source: str = None  # where the project/manifest was found
+    owner: str = None  # owner of the repository
+    repo: str = None  # domain name of the repository
+    path: str = None  # path of project/manifest inside the repository
+    branch: str = None  # branch, in which the project/manifest was found
+    created_at: datetime = None
+    last_visited: datetime = None
+    last_changed: datetime = None
+    history = None
+    # # internally calculated score for project importance to decide re-visit schedule
+    # score: Meta = field(default=None, init=False)
 
     @classmethod
     def from_dict(cls, data: dict) -> Meta:
@@ -254,7 +200,7 @@ class Meta:
         meta.last_visited = _parse_date(data.get("last-visited"))
         meta.last_changed = _parse_date(data.get("last-changed"))
         meta.history = data.get("history", None)
-        meta.score = data.get("score", None)
+        # meta.score = data.get("score", None)
         return meta
 
     def as_dict(self) -> dict:
@@ -268,45 +214,28 @@ class Meta:
             "last-visited": self.last_visited.isoformat() if self.last_visited is not None else None,
             "last-changed": self.last_changed.isoformat() if self.last_changed is not None else None,
             "history": self.history,
-            "score": self.score,
+            # "score": self.score,
         }
 
 
-class Part:
+@dataclass(slots=True)
+class Part:  # pylint: disable=too-many-instance-attributes
     """Part data model."""
 
-    __slots__ = [
-        "name",
-        "name_clean",
-        "image",
-        "source",
-        "export",
-        "auxiliary",
-        "documentation_language",
-        "material",
-        "manufacturing_process",
-        "mass",
-        "outer_dimensions",
-        "tsdc",
-        "license",
-        "licensor"
-    ]
-
-    def __init__(self) -> None:
-        self.name: str = None
-        self.name_clean: str = None
-        self.image: File = None
-        self.source: File = None
-        self.export: list[File] = []
-        self.auxiliary: list[File] = []
-        self.license: License = None
-        self.licensor: str = None
-        self.documentation_language: str = None
-        self.material: str = None
-        self.manufacturing_process: str = None
-        self.mass: float = None
-        self.outer_dimensions: OuterDimensions = None
-        self.tsdc: str = None
+    name: str = None
+    name_clean: str = None
+    image: File = None
+    source: File = None
+    export: list[File] = []
+    auxiliary: list[File] = []
+    license: License = None
+    licensor: str = None
+    documentation_language: str = None
+    material: str = None
+    manufacturing_process: str = None
+    mass: float = None
+    outer_dimensions: OuterDimensions = None
+    tsdc: str = None
 
     @classmethod
     def from_dict(cls, data: dict) -> Part:
@@ -347,19 +276,15 @@ class Part:
             "license": str(self.license),
             "licensor": self.licensor,
         }
+        # return asdict(self)
 
 
+@dataclass(slots=True)
 class Mass:
     """Mass data model."""
 
-    __slots__ = [
-        "value",
-        "unit"
-        ]
-
-    def __init__(self) -> None:
-        self.value: float = None
-        self.unit: str = None
+    value: float = None
+    unit: str = None
 
     @classmethod
     def from_dict(cls, data: dict) -> Mass:
@@ -369,32 +294,23 @@ class Mass:
         mass.value = data.get("value", None)
         mass.unit = data.get("unit", None)
         if not mass.is_valid():
-            raise ParserError(f"Not all required fields for {cls} are present: {self.__slots__.join(", ")}")
+            raise ParserError(f"Not all required fields for {cls} are present: {data}")
         return mass
 
     def as_dict(self) -> dict:
-        return {
-            "value": self.value,
-            "unit": self.unit,
-        }
+        return asdict(self)
 
     def is_valid(self) -> bool:
-        not (self.value is None or self.unit is None)
+        return not (self.value is None or self.unit is None)
 
 
+@dataclass(slots=True)
 # DEPRECATED See OuterDimensions below
 class OuterDimensionsOpenScad:
     """OuterDimensions data model, using the deprecated OpenSCAD model."""
 
-    __slots__ = [
-        "openscad",
-        "unit"
-        ]
-
-    def __init__(self) -> None:
-
-        self.openscad: str = None
-        self.unit: str = None
+    openscad: str = None
+    unit: str = None
 
     @classmethod
     def from_dict(cls, data: dict) -> OuterDimensions:
@@ -404,33 +320,24 @@ class OuterDimensionsOpenScad:
         outer_dimensions.openscad = data.get("openscad", None)
         outer_dimensions.unit = data.get("unit", None)
         if not outer_dimensions.is_valid():
-            raise ParserError(f"Not all required fields for {cls} are present: {self.__slots__.join(", ")}")
+            raise ParserError(f"Not all required fields for {cls} are present: {data}")
         return outer_dimensions
 
     def as_dict(self) -> dict:
-        return {
-            "openscad": self.openscad,
-            "unit": self.unit,
-        }
+        return asdict(self)
 
     def is_valid(self) -> bool:
         return not (self.openscad is None or self.unit is None)
 
 
+@dataclass(slots=True)
 class OuterDimensions:
     """OuterDimensions data model.
     All dimensions are measured in [mm] (mili-meter)."""
 
-    __slots__ = [
-        "width",
-        "height",
-        "depth"
-        ]
-
-    def __init__(self) -> None:
-        self.width: float = None
-        self.height: float = None
-        self.depth: float = None
+    width: float = None
+    height: float = None
+    depth: float = None
 
     @classmethod
     def from_dict(cls, data: dict) -> OuterDimensions:
@@ -441,7 +348,7 @@ class OuterDimensions:
         outer_dimensions.height = cls._float(data.get("height", None))
         outer_dimensions.depth = cls._float(data.get("depth", None))
         if not outer_dimensions.is_valid():
-            raise ParserError(f"Not all required fields for {cls} are present: {self.__slots__.join(", ")}")
+            raise ParserError(f"Not all required fields for {cls} are present: {data}")
         return outer_dimensions
 
     @classmethod
@@ -449,33 +356,21 @@ class OuterDimensions:
         raise NotImplementedError()  # TODO
 
     def as_dict(self) -> dict:
-        return {
-            "width": self.width,
-            "height": self.height,
-            "depth": self.depth,
-        }
+        return asdict(self)
 
     def is_valid(self) -> bool:
         return not (self.width is None or self.height is None or self.depth is None)
 
 
+@dataclass(slots=True)
 class Software:
     """Software data model."""
 
-    __slots__ = [
-        "release",
-        "installation_guide",
-        "documentation_language",
-        "license",
-        "licensor"
-    ]
-
-    def __init__(self) -> None:
-        self.release: str = None
-        self.installation_guide: File = None
-        self.documentation_language: str = None
-        self.license: License = None
-        self.licensor: str = None
+    release: str = None
+    installation_guide: File = None
+    documentation_language: str = None
+    license: License = None
+    licensor: str = None
 
     @classmethod
     def from_dict(cls, data: dict) -> Software:
@@ -490,42 +385,23 @@ class Software:
         return software
 
     def as_dict(self) -> dict:
-        return {
-            "release": self.release,
-            "installation-guide": self.installation_guide.as_dict() if self.installation_guide is not None else None,
-            "documentation-language": self.documentation_language,
-            "license": str(self.license),
-            "licensor": self.licensor,
-        }
+        return asdict(self)
 
 
-class File:
+@dataclass(slots=True)
+class File:  # pylint: disable=too-many-instance-attributes
     """File data model."""
 
-    __slots__ = [
-        "name",
-        "path",
-        "mime_type",
-        "url",
-        "frozen_url",
-        "created_at",
-        "last_visited",
-        "last_changed",
-        "license",
-        "licensor"
-    ]
-
-    def __init__(self) -> None:
-        self.name: str = None
-        self.path: Path = None
-        self.mime_type: str = None
-        self.url: str = None
-        self.frozen_url: str = None  # frozen URL is bound to a specific version of the file, e.g. a git commit
-        self.created_at: datetime = None
-        self.last_visited: datetime = None
-        self.last_changed: datetime = None
-        self.license: License = None
-        self.licensor: str = None
+    name: str = None
+    path: Path = None
+    mime_type: str = None
+    url: str = None
+    frozen_url: str = None  # frozen URL is bound to a specific version of the file, e.g. a git commit
+    created_at: datetime = None
+    last_visited: datetime = None
+    last_changed: datetime = None
+    license: License = None
+    licensor: str = None
 
     @property
     def extension(self):
@@ -563,21 +439,14 @@ class File:
         }
 
 
+@dataclass(slots=True)
 class User:
     """User data model."""
 
-    __slots__ = [
-        "name",
-        "email",
-        "username",
-        "language"
-    ]
-
-    def __init__(self) -> None:
-        self.name: str = None
-        self.email: str = None
-        self.username: str = None
-        self.language: str = None
+    name: str = None
+    email: str = None
+    username: str = None
+    language: str = None
 
 
 def _parse_date(value):
