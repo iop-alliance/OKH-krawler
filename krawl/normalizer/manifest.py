@@ -265,6 +265,9 @@ class ManifestNormalizer(Normalizer):
                 return None
         if isinstance(raw_file, dict):
             file_dict = raw_file
+        else:
+            log.error(f"Unsupported type for file: {type(raw_file)}")
+            return None
 
         file = File()
         file.path = dict_utils.to_path(file_dict.get("path"))
