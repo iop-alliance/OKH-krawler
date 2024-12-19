@@ -259,7 +259,7 @@ class ManifestNormalizer(Normalizer):
             return None
         if isinstance(raw_file, str):
             try:
-                file_dict = cls._pre_parse_file(cls, file_handler, fh_proj_info, raw_file, manifest_path, download_url)
+                file_dict = cls._pre_parse_file(file_handler, fh_proj_info, raw_file, manifest_path, download_url)
             except ValueError:
                 log.error("Failed pre-parsing raw file: {err}")
                 return None
