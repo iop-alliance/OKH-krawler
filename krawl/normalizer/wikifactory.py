@@ -66,7 +66,8 @@ class WikifactoryNormalizer(Normalizer):
         project.name = self._string(raw.get("name"))
         project.repo = f"https://wikifactory.com/{raw['parentSlug']}/{raw['slug']}"
         project.version = self._get_key(raw, "contribution", "version")
-        project.release = f"https://wikifactory.com/{raw['parentSlug']}/{raw['slug']}/v/{project.version[:7] if project.version else ''}"
+        version = project.version[:7] if project.version else ''
+        project.release = f"https://wikifactory.com/{raw['parentSlug']}/{raw['slug']}/v/{version}"
         project.license = self._license(raw)
         project.licensor = self._get_key(raw, "creator", "profile", "fullName")
         project.organization = self._organization(raw)

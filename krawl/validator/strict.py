@@ -108,9 +108,14 @@ def _validate_relative_path(title: str, path: Path, missing_ok=False) -> list[st
     dot_slash_start_pat = re.compile("^\\.\\.?/")
     slash_dot_slash_pat = re.compile("/\\.\\.?/")
     path_str = str(path)
-    if abs_path_pat.match(path_str) or dot_slash_start_pat.match(path_str) or slash_dot_slash_pat.match(path_str):
+    if abs_path_pat.match(path_str) \
+            or dot_slash_start_pat.match(path_str) \
+            or slash_dot_slash_pat.match(path_str):
         return [
-            f"{title} must be a valid, relative path: not starting with '/', './' or '../', and not containing '/../' or '/./'; it is '{path_str}'."
+            f"{title} must be a valid, relative path:"
+            " not starting with '/', './' or '../',"
+            " and not containing '/../' or '/./';"
+            f" it is '{path_str}'."
         ]
     return []
 

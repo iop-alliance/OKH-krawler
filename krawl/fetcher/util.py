@@ -63,8 +63,10 @@ def sanitize_okh_v1_yaml(manifest_file: Path):
         subprocess.check_output(conv_cmd, stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as err:
         raise ConversionError(
-            f"Failed to sanitize OKH v1 manifest, exitcode: {err.returncode}, stderr: {err.stderr.decode(sys.getfilesystemencoding())}, stdout: {err.output.decode(sys.getfilesystemencoding())}",
-            []) from err
+            "Failed to sanitize OKH v1 manifest,"
+            f" exitcode: {err.returncode},"
+            f" stderr: {err.stderr.decode(sys.getfilesystemencoding())},"
+            f" stdout: {err.output.decode(sys.getfilesystemencoding())}", []) from err
 
 
 def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes | None:
@@ -86,8 +88,10 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes | None:
         subprocess.check_output(conv_cmd, stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as err:
         raise ConversionError(
-            f"Failed to convert OKH v1 manifest to OKH LOSH, exitcode: {err.returncode}, stderr: {err.stderr.decode(sys.getfilesystemencoding())}, stdout: {err.output.decode(sys.getfilesystemencoding())}",
-            []) from err
+            "Failed to convert OKH v1 manifest to OKH LOSH,"
+            f" exitcode: {err.returncode},"
+            f" stderr: {err.stderr.decode(sys.getfilesystemencoding())},"
+            f" stdout: {err.output.decode(sys.getfilesystemencoding())}", []) from err
 
     # res.check_returncode()
     with open(fn_losh, "rb") as binary_file:

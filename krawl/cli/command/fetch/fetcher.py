@@ -29,8 +29,8 @@ class FetcherXCommand(KrawlCommand):
             short_name="r",
             default=["file"],
             flags=Option.MULTI_VALUED,
-            description=
-            f"Repository to save the projects to (available: {', '.join(ProjectRepositoryFactory.list_available_repositories())})",
+            description="Repository to save the projects to"
+            f" (available: {', '.join(ProjectRepositoryFactory.list_available_repositories())})",
         )
         self._config.add_option(
             long_name="start-over",
