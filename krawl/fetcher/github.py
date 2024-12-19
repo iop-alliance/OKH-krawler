@@ -374,6 +374,10 @@ class GitHubFetcher(Fetcher):
             }
             query = {
                 "q": "filename:okh extension:toml extension:yaml extension:yml",
+                # "q": "path:/(^|\\/)okh(-[0-9a-zA-Z._-]+)\\.(ya?ml|toml|json(ld)?|ttl)$/",
+                # "q": "path:/okh.*yml/",
+                # "q": "path:okh.yml",
+                # "q": "path:okh.toml",
                 "per_page": self.BATCH_SIZE,
                 "page": page,
             }
@@ -418,6 +422,10 @@ class GitHubFetcher(Fetcher):
             # class for an explanation why.
             total_count = response_data.get("total_count", 0)
             raw_found_files = response_data.get("items", [])
+            log.debug(f"found files: {total_count}")
+            for raw_found_file in raw_found_files:
+                raw_url = urlparse(raw_found_file["html_url"])
+                log.debug(f"    found file: '{raw_url}'")
             is_last_page = page * self.BATCH_SIZE >= total_count
             expected_num_results = self.BATCH_SIZE if not is_last_page else total_count % self.BATCH_SIZE
             if len(raw_found_files) < expected_num_results:
