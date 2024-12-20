@@ -26,7 +26,12 @@ class ProjectID:
         path (str): Canonical path of the manifest file inside the repository, if any.
     """
 
-    __slots__ = ["platform", "owner", "repo", "path"]
+    __slots__ = [
+        "platform",
+        "owner",
+        "repo",
+        "path"
+        ]
 
     def __init__(self, platform: str, owner: str, repo: str, path: str = None) -> None:
         self.platform: str = platform
@@ -63,11 +68,36 @@ class Project:
     """
 
     __slots__ = [  # TODO Revise this list
-        "meta", "okhv", "name", "repo", "version", "release", "license", "licensor", "organization", "readme",
-        "contribution_guide", "image", "documentation_language", "technology_readiness_level",
-        "documentation_readiness_level", "attestation", "publication", "function", "standard_compliance",
-        "cpc_patent_class", "tsdc", "bom", "manufacturing_instructions", "user_manual", "part", "software",
-        "specific_api_data", "source", "export", "upload_method"
+        "meta",
+        "okhv",
+        "name",
+        "repo",
+        "version",
+        "release",
+        "license",
+        "licensor",
+        "organization",
+        "readme",
+        "contribution_guide",
+        "image",
+        "documentation_language",
+        "technology_readiness_level",
+        "documentation_readiness_level",
+        "attestation",
+        "publication",
+        "function",
+        "standard_compliance",
+        "cpc_patent_class",
+        "tsdc",
+        "bom",
+        "manufacturing_instructions",
+        "user_manual",
+        "part",
+        "software",
+        "specific_api_data",
+        "source",
+        "export",
+        "upload_method"
     ]
 
     def __init__(self) -> None:
@@ -184,7 +214,16 @@ class Meta:
     """Metadata for internal use."""
 
     __slots__ = [
-        "source", "owner", "repo", "path", "branch", "created_at", "last_visited", "last_changed", "history", "score"
+        "source",
+        "owner",
+        "repo",
+        "path",
+        "branch",
+        "created_at",
+        "last_visited",
+        "last_changed",
+        "history",
+        "score"
     ]
 
     def __init__(self) -> None:
@@ -236,8 +275,20 @@ class Part:
     """Part data model."""
 
     __slots__ = [
-        "name", "name_clean", "image", "source", "export", "auxiliary", "documentation_language", "material",
-        "manufacturing_process", "mass", "outer_dimensions", "tsdc", "license", "licensor"
+        "name",
+        "name_clean",
+        "image",
+        "source",
+        "export",
+        "auxiliary",
+        "documentation_language",
+        "material",
+        "manufacturing_process",
+        "mass",
+        "outer_dimensions",
+        "tsdc",
+        "license",
+        "licensor"
     ]
 
     def __init__(self) -> None:
@@ -299,7 +350,10 @@ class Part:
 class Mass:
     """Mass data model."""
 
-    __slots__ = ["value", "unit"]
+    __slots__ = [
+        "value",
+        "unit"
+        ]
 
     def __init__(self) -> None:
         self.value: float = None
@@ -324,7 +378,10 @@ class Mass:
 class OuterDimensions:
     """OuterDimensions data model."""
 
-    __slots__ = ["openscad", "unit"]
+    __slots__ = [
+        "openscad",
+        "unit"
+        ]
 
     def __init__(self) -> None:
         self.openscad: str = None
@@ -349,7 +406,13 @@ class OuterDimensions:
 class Software:
     """Software data model."""
 
-    __slots__ = ["release", "installation_guide", "documentation_language", "license", "licensor"]
+    __slots__ = [
+        "release",
+        "installation_guide",
+        "documentation_language",
+        "license",
+        "licensor"
+    ]
 
     def __init__(self) -> None:
         self.release: str = None
@@ -384,7 +447,15 @@ class File:
     """File data model."""
 
     __slots__ = [
-        "name", "path", "mime_type", "url", "frozen_url", "created_at", "last_visited", "last_changed", "license",
+        "name",
+        "path",
+        "mime_type",
+        "url",
+        "frozen_url",
+        "created_at",
+        "last_visited",
+        "last_changed",
+        "license",
         "licensor"
     ]
 
@@ -439,7 +510,12 @@ class File:
 class User:
     """User data model."""
 
-    __slots__ = ["name", "email", "username", "language"]
+    __slots__ = [
+        "name",
+        "email",
+        "username",
+        "language"
+    ]
 
     def __init__(self) -> None:
         self.name: str = None
