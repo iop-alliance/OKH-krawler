@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2024 Robin Vobruba <hoijui.quaero@gmail.com>
+#
+# SPDX-License-Identifier: Unlicense
+
+name: Run Tests
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  release:
+    types: [ published ]
+
+jobs:
+  testing:
+    name: Run different kinds of tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          submodules: true
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+
+      - name: Setup a local virtual environment (if no poetry.toml file)
+        run: |
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
+
+      - uses: actions/cache@v3
+        name: Define a cache for the virtual environment based on the dependencies lock file
+        with:
+          path: ./.venv
+          key: venv-${{ hashFiles('poetry.lock') }}
+
+      - name: Install the project dependencies
+        run: poetry install
+
+      - name: Run Python unit-tests
+        run: poetry run poe test
+
+      - name: Checks Python code formatting
+        run: poetry run poe check_format
+
+      - name: Run the Python linter
+        run: poetry run poe lint
