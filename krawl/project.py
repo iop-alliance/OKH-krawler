@@ -134,7 +134,7 @@ class Project:
         self.source = []
         self.export = []
 
-        self.specific_api_data = dict()
+        self.specific_api_data = {}
 
     @classmethod
     def from_dict(cls, data: dict) -> Project | None:
