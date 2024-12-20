@@ -12,8 +12,8 @@ DEV_BRANCH='master'
 VERSION='v1.1.0'
 FILE_WEB_URL=BASE_URL + '/' + SLUG + '/blob/master/.gitignore'
 FILE_DL_URL=BASE_URL + '/' + SLUG + '/raw/master/.gitignore'
-FILE_FROZEN_WEB_URL=BASE_URL + '/' + SLUG + '/blob/v1.1.0/.gitignore'
-FILE_FROZEN_DL_URL=BASE_URL + '/' + SLUG + '/raw/v1.1.0/.gitignore'
+FILE_FROZEN_WEB_URL=BASE_URL + '/' + SLUG + '/blob/' + VERSION + '/.gitignore'
+FILE_FROZEN_DL_URL=BASE_URL + '/' + SLUG + '/raw/' + VERSION + '/.gitignore'
 
 import unittest
 
