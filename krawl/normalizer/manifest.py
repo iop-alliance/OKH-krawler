@@ -7,11 +7,13 @@ from urllib.parse import urlparse
 
 import validators
 
+from krawl.errors import ParserError
 from krawl.licenses import get_by_id_or_name as get_license
 from krawl.log import get_child_logger
 from krawl.normalizer import FileHandler, Normalizer
 from krawl.platform_url import PlatformURL
-from krawl.project import File, Mass, Meta, OuterDimensions, Part, Project, Software, UploadMethods
+from krawl.project import (File, Mass, Meta, OuterDimensions, OuterDimensionsOpenScad, Part, Project, Software,
+                           UploadMethods)
 from krawl.util import extract_path as krawl_util_extract_path
 from krawl.util import is_url
 
@@ -156,7 +158,7 @@ class ManifestNormalizer(Normalizer):
             part.documentation_language = cls._string(raw_part.get("documentation-language"))
             part.material = cls._string(raw_part.get("material"))
             part.manufacturing_process = cls._string(raw_part.get("manufacturing-process"))
-            part.mass = cls._mass(raw_part.get("mass"))
+            part.mass = cls._float(raw_part.get("mass"))
             part.outer_dimensions = cls._outer_dimensions(raw_part.get("outer-dimensions"))
             part.tsdc = cls._string(raw_part.get("tsdc"))
             parts.append(part)
@@ -275,19 +277,13 @@ class ManifestNormalizer(Normalizer):
         return file
 
     @classmethod
-    def _mass(cls, raw_mass: Any) -> Mass | None:
-        if not isinstance(raw_mass, dict):
-            return None
-        m = Mass()
-        m.value = cls._float(raw_mass.get("value"))
-        m.unit = cls._string(raw_mass.get("unit"))
-        return m
-
-    @classmethod
     def _outer_dimensions(cls, raw_outer_dimensions: Any) -> OuterDimensions | None:
         if not isinstance(raw_outer_dimensions, dict):
             return None
-        od = OuterDimensions()
-        od.openscad = cls._string(raw_outer_dimensions.get("openSCAD"))
-        od.unit = cls._string(raw_outer_dimensions.get("unit"))
-        return od
+        try:
+            return OuterDimensions.from_dict(raw_outer_dimensions)
+        except ParserError as err:
+            try:
+                return OuterDimensions.from_openscad(OuterDimensionsOpenScad.from_dict(raw_outer_dimensions))
+            except ParserError:
+                raise err

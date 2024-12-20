@@ -4,6 +4,7 @@ from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
 
+from krawl.errors import ParserError
 from krawl.licenses import License, get_by_id_or_name
 from krawl.platform_url import PlatformURL
 
@@ -303,7 +304,7 @@ class Part:
         self.documentation_language: str = None
         self.material: str = None
         self.manufacturing_process: str = None
-        self.mass: Mass = None
+        self.mass: float = None
         self.outer_dimensions: OuterDimensions = None
         self.tsdc: str = None
 
@@ -321,8 +322,9 @@ class Part:
         part.documentation_language = data.get("documentation-language", None)
         part.material = data.get("material", None)
         part.manufacturing_process = data.get("manufacturing-process", None)
-        part.mass = Mass.from_dict(data.get("mass"))
-        part.outer_dimensions = OuterDimensions.from_dict(data.get("outer-dimensions"))
+        part.mass = cls._float(data.get("mass"))
+        outer_dimensions_raw = data.get("outer-dimensions")
+        part.outer_dimensions = OuterDimensions.from_dict(outer_dimensions_raw)
         part.tsdc = data.get("tsdc", None)
         part.license = get_by_id_or_name(data.get("license", None))
         part.licensor = data.get("licensor", None)
@@ -339,7 +341,7 @@ class Part:
             "documentation-language": self.documentation_language,
             "material": self.material,
             "manufacturing-process": self.manufacturing_process,
-            "mass": self.mass.as_dict() if self.mass is not None else None,
+            "mass": self.mass,
             "outer-dimensions": self.outer_dimensions.as_dict() if self.outer_dimensions is not None else None,
             "tsdc": self.tsdc,
             "license": str(self.license),
@@ -366,6 +368,8 @@ class Mass:
         mass = cls()
         mass.value = data.get("value", None)
         mass.unit = data.get("unit", None)
+        if not mass.is_valid():
+            raise ParserError(f"Not all required fields for {cls} are present: {self.__slots__.join(", ")}")
         return mass
 
     def as_dict(self) -> dict:
@@ -374,9 +378,13 @@ class Mass:
             "unit": self.unit,
         }
 
+    def is_valid(self) -> bool:
+        not (self.value is None or self.unit is None)
 
-class OuterDimensions:
-    """OuterDimensions data model."""
+
+# DEPRECATED See OuterDimensions below
+class OuterDimensionsOpenScad:
+    """OuterDimensions data model, using the deprecated OpenSCAD model."""
 
     __slots__ = [
         "openscad",
@@ -384,6 +392,7 @@ class OuterDimensions:
         ]
 
     def __init__(self) -> None:
+
         self.openscad: str = None
         self.unit: str = None
 
@@ -394,6 +403,8 @@ class OuterDimensions:
         outer_dimensions = cls()
         outer_dimensions.openscad = data.get("openscad", None)
         outer_dimensions.unit = data.get("unit", None)
+        if not outer_dimensions.is_valid():
+            raise ParserError(f"Not all required fields for {cls} are present: {self.__slots__.join(", ")}")
         return outer_dimensions
 
     def as_dict(self) -> dict:
@@ -401,6 +412,51 @@ class OuterDimensions:
             "openscad": self.openscad,
             "unit": self.unit,
         }
+
+    def is_valid(self) -> bool:
+        return not (self.openscad is None or self.unit is None)
+
+
+class OuterDimensions:
+    """OuterDimensions data model.
+    All dimensions are measured in [mm] (mili-meter)."""
+
+    __slots__ = [
+        "width",
+        "height",
+        "depth"
+        ]
+
+    def __init__(self) -> None:
+        self.width: float = None
+        self.height: float = None
+        self.depth: float = None
+
+    @classmethod
+    def from_dict(cls, data: dict) -> OuterDimensions:
+        if data is None:
+            return None
+        outer_dimensions = cls()
+        outer_dimensions.width = cls._float(data.get("width", None))
+        outer_dimensions.height = cls._float(data.get("height", None))
+        outer_dimensions.depth = cls._float(data.get("depth", None))
+        if not outer_dimensions.is_valid():
+            raise ParserError(f"Not all required fields for {cls} are present: {self.__slots__.join(", ")}")
+        return outer_dimensions
+
+    @classmethod
+    def from_openscad(cls, old: OuterDimensionsOpenScad) -> OuterDimensions:
+        raise NotImplementedError()  # TODO
+
+    def as_dict(self) -> dict:
+        return {
+            "width": self.width,
+            "height": self.height,
+            "depth": self.depth,
+        }
+
+    def is_valid(self) -> bool:
+        return not (self.width is None or self.height is None or self.depth is None)
 
 
 class Software:

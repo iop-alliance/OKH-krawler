@@ -97,7 +97,7 @@ class RDFProjectSerializer(ProjectSerializer):
         if file.url is not None:
             cls.add(
                 graph, subject, OKH.url, file.url
-            )  # TODO Maybe use file.permaURL instead here, because according to the spec/Ontology as of Dec. 2022), this is supposed ot be a permanent/frozen URL -> NO, change the spec! We removed permaURL, and rather want to have a frozen and a separate, unfrozen version of the whole manifest.
+            )  # TODO Maybe use file.permaURL instead here, because according to the spec/Ontology as of Dec. 2022), this is supposed to be a permanent/frozen URL -> NO, change the spec! We removed permaURL, and rather want to have a frozen and a separate, unfrozen version of the whole manifest.
         # NOTE This is not part of the spec (as of December 2022), and fileURL is mentioned in the spec to contain the permanent URL; related issue: https://github.com/iop-alliance/OpenKnowHow/issues/132
         # cls.add(graph, subject, OKH.permaURL, file.perma_url)
         cls.add(graph, subject, OKH.fileFormat,
@@ -114,8 +114,9 @@ class RDFProjectSerializer(ProjectSerializer):
 
     @classmethod
     def add_outer_dimensions(cls, graph, subject, outer_dimensions):
-        cls.add(graph, subject, OKH.openSCAD, outer_dimensions.openscad)
-        cls.add(graph, subject, OKH.unit, outer_dimensions.unit)
+        cls.add(graph, subject, OKH.width, outer_dimensions.width)
+        cls.add(graph, subject, OKH.height, outer_dimensions.height)
+        cls.add(graph, subject, OKH.depth, outer_dimensions.depth)
 
     @classmethod
     def _add_part(cls, graph, namespace, project) -> rdflib.URIRef:
