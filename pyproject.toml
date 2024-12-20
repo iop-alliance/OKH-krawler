@@ -53,7 +53,7 @@ check_format = {shell = "isort --check-only krawl && yapf -i -r -vv -p krawl", h
 lint = {cmd = "pylint ./krawl", help = "Use PyLint to evaluate the code quality"}
 _publish = {cmd = "poetry publish"}
 release = {sequence = ["format", "test", "build", "_publish"], help = "Create a release of the application and publish it on PyPi"}
-test = {cmd = "pytest --cov=jintaro tests", help = "Run the test suits"}
+test = {cmd = "python -m unittest tests/**/*.py", help = "Run the test suits"}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
