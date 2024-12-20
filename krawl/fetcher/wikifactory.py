@@ -175,33 +175,7 @@ class WikifactoryFetcher(Fetcher):
 
     NAME = "wikifactory.com"
     BATCH_SIZE = 30
-    CONFIG_SCHEMA = {
-        "type": "dict",
-        "default": {},
-        "meta": {
-            "long_name": "wikifactory",
-        },
-        "schema": {
-            "timeout": {
-                "type": "integer",
-                "default": 15,
-                "min": 1,
-                "meta": {
-                    "long_name": "timeout",
-                    "description": "Max seconds to wait for a not responding service"
-                }
-            },
-            "retries": {
-                "type": "integer",
-                "default": 3,
-                "min": 0,
-                "meta": {
-                    "long_name": "retries",
-                    "description": "Number of retries of requests in cases of network errors"
-                }
-            },
-        },
-    }
+    CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name="wikifactory", default_timeout=15, access_token=False)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         self._state_repository = state_repository

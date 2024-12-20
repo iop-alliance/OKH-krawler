@@ -205,43 +205,7 @@ class GitHubFetcher(Fetcher):
     NAME = "github.com"
     RETRY_CODES = [429, 500, 502, 503, 504]
     BATCH_SIZE = 10
-    CONFIG_SCHEMA = {
-        "type": "dict",
-        "default": {},
-        "meta": {
-            "long_name": "github",
-        },
-        "schema": {
-            "timeout": {
-                "type": "integer",
-                "default": 15,
-                "min": 1,
-                "meta": {
-                    "long_name": "timeout",
-                    "description": "Max seconds to wait for a not responding service"
-                }
-            },
-            "retries": {
-                "type": "integer",
-                "default": 3,
-                "min": 0,
-                "meta": {
-                    "long_name": "retries",
-                    "description": "Number of retries of requests in cases of network errors"
-                }
-            },
-            "access_token": {
-                "type": "string",
-                "coerce": "strip_str",
-                "required": True,
-                "nullable": False,
-                "meta": {
-                    "long_name": "access-token",
-                    "description": "Personal access token for using the GitHub API"
-                }
-            },
-        },
-    }
+    CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name="github", default_timeout=15, access_token=True)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         self._state_repository = state_repository

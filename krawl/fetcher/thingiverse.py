@@ -22,43 +22,7 @@ log = get_child_logger("thingiverse")
 class ThingiverseFetcher(Fetcher):
     NAME = "thingiverse.com"
     RETRY_CODES = [429, 500, 502, 503, 504]
-    CONFIG_SCHEMA = {
-        "type": "dict",
-        "default": {},
-        "meta": {
-            "long_name": "thingiverse",
-        },
-        "schema": {
-            "timeout": {
-                "type": "integer",
-                "default": 15,
-                "min": 1,
-                "meta": {
-                    "long_name": "timeout",
-                    "description": "Max seconds to wait for a not responding service"
-                }
-            },
-            "retries": {
-                "type": "integer",
-                "default": 3,
-                "min": 0,
-                "meta": {
-                    "long_name": "retries",
-                    "description": "Number of retries of requests in cases of network errors"
-                }
-            },
-            "access_token": {
-                "type": "string",
-                "coerce": "strip_str",
-                "required": True,
-                "nullable": False,
-                "meta": {
-                    "long_name": "access-token",
-                    "description": "Personal access token for using the thingiverse API"
-                }
-            },
-        },
-    }
+    CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name="thingiverse", default_timeout=10, access_token=True)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         self._state_repository = state_repository
