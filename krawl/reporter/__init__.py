@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from enum import StrEnum
 
+from krawl.fetcher import FailedFetch, FetchListener, FetchResult
+from krawl.model.hosting_unit import HostingUnitId
 from krawl.model.project import Project
-from krawl.model.project_id import ProjectId
 
 
 class Status(StrEnum):
@@ -15,10 +16,14 @@ class Status(StrEnum):
         return self.name
 
 
-class Reporter:
+class Reporter(FetchListener):
     """Interface for creating a fetching report."""
 
-    def add(self, project_id: ProjectId, status: Status, reasons: list[str] = None, project: Project = None) -> None:
+    def add(self,
+            hosting_unit_id: HostingUnitId,
+            status: Status,
+            reasons: list[str] = None,
+            project: Project = None) -> None:
         """Add an entry to the report."""
         raise NotImplementedError()
 
@@ -28,3 +33,9 @@ class Reporter:
 
     def __del__(self):
         self.close()
+
+    def fetched(self, fetch_result: FetchResult) -> None:
+        self.add(fetch_result.data_set.hosting_unit_id, Status.OK)
+
+    def failed_fetch(self, failed_fetch: FailedFetch) -> None:
+        self.add(failed_fetch.data_set.hosting_unit_id, Status.FAILED, str(failed_fetch.error))

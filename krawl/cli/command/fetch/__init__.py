@@ -11,7 +11,7 @@ def _dynamic_fetcher_commands() -> list[KrawlCommand]:
 
 
 class FetchCommand(KrawlCommand):
-    """Fetch a project from a platform.
+    """Fetches a single or many project from a hosting system (e.g. GitHub or IPFS).
 
     fetch
     """

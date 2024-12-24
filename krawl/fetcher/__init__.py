@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from krawl.errors import NotOverriddenError
 from krawl.model.data_set import DataSet
 from krawl.model.hosting_id import HostingId
+from krawl.model.hosting_unit import HostingUnitId
 from krawl.model.manifest import Manifest
-from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
 from krawl.repository import FetcherStateRepository
 
@@ -25,6 +25,7 @@ class FetchResult:
 @dataclass(slots=True, frozen=True)
 class FailedFetch:
     """The result of a failed fetch of an OSH projects meta-data."""
+    hosting_unit_id: HostingUnitId = None
     error: Exception = None
 
 
@@ -36,6 +37,24 @@ class FetchListener:
 
     def failed_fetch(self, failed_fetch: FailedFetch) -> None:
         pass
+
+
+class CountingFetchListener:
+    """Counts successes and failures"""
+    _successes: int = 0
+    _failures: int = 0
+
+    def successes(self) -> int:
+        return self._successes
+
+    def failures(self) -> int:
+        return self._failures
+
+    def fetched(self, _fetch_result: FetchResult) -> None:
+        self._successes += 1
+
+    def failed_fetch(self, _failed_fetch: FailedFetch) -> None:
+        self._failures += 1
 
 
 class Fetcher:
@@ -106,11 +125,11 @@ class Fetcher:
             }
         return schema
 
-    def fetch(self, id: ProjectId) -> FetchResult:
+    def fetch(self, project_id: ProjectId) -> FetchResult:
         """Fetch metadata of a single project.
 
         Args:
-            id (ProjectId): The project to be fetched.
+            project_id (ProjectId): The project to be fetched.
         """
         raise NotOverriddenError()
 
@@ -123,6 +142,6 @@ class Fetcher:
                 Defaults to True.
 
         Yields:
-            Generator[Project, None, None]: The next project found and fetched.
+            Generator[FetchResult]: The next project found and fetched.
         """
         raise NotOverriddenError()

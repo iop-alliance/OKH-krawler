@@ -6,9 +6,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from krawl.dict_utils import DictUtils
+from krawl.fetcher import FetchResult
 from krawl.file_formats import get_type_from_extension
 from krawl.log import get_child_logger
 from krawl.model import licenses
+from krawl.model.data_set import DataSet
 from krawl.model.file import File
 from krawl.model.project import Project
 from krawl.model.sourcing_procedure import SourcingProcedure
@@ -38,6 +40,8 @@ LICENSE_MAPPING = {
     "BSD License": ("bsd", "BSD-4-Clause"),
     "Nokia": ("nokia", None),
     "All Rights Reserved": ("none", None),
+    "Other": (None, None),
+    "None": (None, None),
 }
 BROKEN_IMAGE_URL = 'https://cdn.thingiverse.com/'
 
@@ -47,18 +51,25 @@ class ThingiverseNormalizer(Normalizer):
     def __init__(self):
         mimetypes.init()
 
-    def normalize(self, raw: dict) -> Project:
+    def normalize(self, fetch_result: FetchResult) -> Project:
         project = Project()
-        project.meta.source = raw["fetcher"]
-        project.meta.owner = self._creator(raw)
-        project.meta.repo = raw['public_url']
-        project.meta.created_at = datetime.fromisoformat(raw['added'])
-        project.meta.last_visited = raw["lastVisited"]
+        raw: dict = fetch_result.data.content
+        data_set: DataSet = fetch_result.data_set
+
+        data_set.hosting_unit_id = data_set.hosting_unit_id.derive(
+            owner=self._creator(raw),
+            repo=raw['public_url'],
+        )
+        fetch_result.data_set = data_set
+
+        fetch_result.data_set.crawling_meta.created_at = datetime.fromisoformat(raw['added'])
+        fetch_result.data_set.crawling_meta.last_visited = raw[
+            "lastVisited"]  # TODO Maybe not a good idea to set this like that?
         project.name = raw['name']
         project.repo = raw['public_url']
         project.version = raw['modified']
         project.license = self._license(raw)
-        project.licensor = project.meta.owner
+        project.licensor = data_set.hosting_unit_id.owner
         project.function = self._function(raw)
         project.documentation_language = self._language(project.function)
         project.technology_readiness_level = "OTRL-4"
@@ -113,11 +124,8 @@ class ThingiverseNormalizer(Normalizer):
         if not mapped_license:
             return None
 
-        spdx_id = mapped_license[1]
-        if spdx_id is None:
-            return None
-
-        return licenses.get_by_id_or_name(spdx_id)
+        maybe_spdx_id = mapped_license[1]
+        return licenses.get_by_id_or_name(maybe_spdx_id)
 
     @classmethod
     def _function(cls, raw: dict) -> str | None:
@@ -127,15 +135,12 @@ class ThingiverseNormalizer(Normalizer):
         return None
 
     @classmethod
-    def _images(cls, project: Project, raw: dict) -> list[File]:
-        images = []
-
-        thumbnail_url = raw.get("thumbnail", None)
-        if thumbnail_url and not thumbnail_url == BROKEN_IMAGE_URL:
+    def _image(cls, project: Project, images: list[File], url: str, raw: dict) -> None:
+        if url and not url == BROKEN_IMAGE_URL:
             file = File()
-            file.path = Path(thumbnail_url)
-            file.name = file.path.stem if file.path else None
-            file.url = thumbnail_url
+            file.path = Path(url)
+            file.name = raw.get("name", None)
+            file.url = url
             file.frozen_url = None
             added_raw = raw.get("added", None)
             if added_raw:
@@ -147,24 +152,17 @@ class ThingiverseNormalizer(Normalizer):
             file.licensor = project.licensor
             images.append(file)
 
+    @classmethod
+    def _images(cls, project: Project, raw: dict) -> list[File]:
+        images = []
+
+        thumbnail_url = raw.get("thumbnail", None)
+        cls._image(project, images, thumbnail_url, raw)
+
         default_image_raw = raw.get("default_image", None)
         if default_image_raw:
             url = default_image_raw.get("url", None)
-            if url and not url == BROKEN_IMAGE_URL:
-                file = File()
-                file.path = Path(url)
-                file.name = default_image_raw.get("name", None)
-                file.url = url
-                file.frozen_url = None
-                added_raw = default_image_raw.get("added", None)
-                if added_raw:
-                    added_fmtd = datetime.strptime(added_raw, "%Y-%m-%dT%H:%M:%S%z")
-                    file.created_at = added_fmtd
-                    file.last_changed = added_fmtd
-                file.last_visited = datetime.now(timezone.utc)
-                file.license = project.license
-                file.licensor = project.licensor
-                images.append(file)
+            cls._image(project, images, url, default_image_raw)
 
         return images
 
@@ -178,7 +176,8 @@ class ThingiverseNormalizer(Normalizer):
         file = File()
         file.path = raw_file.get("direct_url")
         file.name = raw_file.get("name")
-        file.mime_type = type[0] if type[0] is not None else "text/plain"
+        # file.mime_type = type[0] if type[0] is not None else "text/plain"
+        file.mime_type = type[0]  # might be None
         file.url = raw_file.get("public_url")
         file.frozen_url = None
         file.created_at = datetime.strptime(raw_file.get("date"), "%Y-%m-%d %H:%M:%S")

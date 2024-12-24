@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import re
 from html.parser import HTMLParser
 from io import StringIO
-from pathlib import Path
-from typing import Any
 
 from langdetect import LangDetectException
 from langdetect import detect as detect_language
 
+from krawl.fetcher import FetchResult
 from krawl.model.project import Project
 
 
@@ -84,15 +82,15 @@ class FileHandler:
 
 
 class Normalizer:
-    """Interface for normalizing metadata fields according to the OKH-LOSH
-specification."""
+    """Interface for normalizing metadata fields
+    according to the OKH specification."""
 
-    def normalize(self, raw: dict) -> Project:
-        """Turns projects metadata into a normalized form that can be easily
-        processed by the program.
+    def normalize(self, fetch_result: FetchResult) -> Project:
+        """Turns raw, fetched data into a normalized form,
+        valid under the latest OKH standard.
 
         Args:
-            raw (dict): Raw project metadata to be normalized
+            fetch_result (dict): Fetched data (plus crawling meta data) be normalized
         """
         raise NotImplementedError()
 

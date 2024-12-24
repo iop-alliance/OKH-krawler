@@ -47,7 +47,6 @@ class GitHubFileHandler(FileHandler):
 
     def gen_proj_info(self, manifest_raw: dict) -> dict:
         repo_url = manifest_raw.get("repo")
-        log.debug('XXX repo_url type: "%s"', type(repo_url))
         if repo_url is None:
             slug = None
         else:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from collections.abc import Generator
 from datetime import datetime, timezone
 
@@ -9,8 +8,8 @@ from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
 from krawl.config import Config
-from krawl.errors import FetcherError, NormalizerError, ParserError
-from krawl.fetcher import Fetcher, FetchResult
+from krawl.errors import FetcherError, ParserError
+from krawl.fetcher import FailedFetch, Fetcher, FetchResult
 from krawl.log import get_child_logger
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
@@ -56,44 +55,47 @@ class OshwaFetcher(Fetcher):
 
     def __fetch_one(self, hosting_unit_id: HostingUnitIdWebById, raw_project: dict,
                     last_visited: datetime) -> FetchResult:
-        # id = ProjectId(self.HOSTING_ID, slugify(raw_project["responsibleParty"]), raw_project["oshwaUid"].lower())
+        try:
+            # hosting_unit_id = hosting_unit_id.derive(
+            #     project_id = slugify(
+            #         raw_project["responsibleParty"]),
+            #         raw_project["oshwaUid"].lower()
+            #     )
 
-        data_set = DataSet(
-            crawling_meta=CrawlingMeta(
-                # created_at: datetime = None
-                last_visited=last_visited,
-                # manifest=path,
-                # last_changed: datetime = None
-                # history = None,
-            ),
-            hosting_unit_id=hosting_unit_id,
-        )
-        # {
-        #     "id": hosting_unit_id,
-        #     "last_visited": last_visited,
-        # }
+            data_set = DataSet(
+                crawling_meta=CrawlingMeta(
+                    # created_at: datetime = None
+                    last_visited=last_visited,
+                    # manifest=path,
+                    # last_changed: datetime = None
+                    # history = None,
+                ),
+                hosting_unit_id=hosting_unit_id,
+            )
 
-        fetch_result = FetchResult(data_set=data_set,
-                                   data=Manifest(content=json.dumps(raw_project, indent=2), format=ManifestFormat.JSON))
-        # try normalizing it
-        # try:
-        #     raw_project.update(unfiltered_output)
-        #     project = self._normalizer.normalize(raw_project)
-        # except NormalizerError as err:
-        #     raise FetcherError(f"Normalization failed, that should not happen: {err}") from err
-        self._fetched(fetch_result)
-        return fetch_result
+            fetch_result = FetchResult(data_set=data_set,
+                                       data=Manifest(content=raw_project, format=ManifestFormat.JSON))
+            # try normalizing it
+            # try:
+            #     raw_project.update(unfiltered_output)
+            #     project = self._normalizer.normalize(raw_project)
+            # except NormalizerError as err:
+            #     raise FetcherError(f"Normalization failed, that should not happen: {err}") from err
+            self._fetched(fetch_result)
+            return fetch_result
+        except FetcherError as err:
+            self._failed_fetch(FailedFetch(hosting_unit_id=hosting_unit_id, error=err))
+            raise err
 
-    def fetch(self, id: ProjectId) -> FetchResult:
+    def fetch(self, project_id: ProjectId) -> FetchResult:
+        log.debug('Start fetching project %s', project_id)
 
-        log.debug('Start fetching project %s', id)
-
-        hosting_unit_id = HostingUnitIdWebById.from_url_no_path(id.uri)
+        hosting_unit_id = HostingUnitIdWebById.from_url_no_path(project_id.uri)
 
         try:
-            hosting_unit_id = HostingUnitIdWebById.from_url_no_path(id.uri)
+            hosting_unit_id = HostingUnitIdWebById.from_url_no_path(project_id.uri)
         except ParserError as err:
-            raise FetcherError(f"Invalid OSHWA project URL: '{id.uri}'") from err
+            raise FetcherError(f"Invalid OSHWA project URL: '{project_id.uri}'") from err
 
         oshwa_id = hosting_unit_id.project_id
 

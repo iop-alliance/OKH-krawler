@@ -9,6 +9,7 @@ import validators
 
 from krawl.dict_utils import DictUtils
 from krawl.errors import ParserError
+from krawl.fetcher import FetchResult
 from krawl.fetcher.util import convert_okh_v1_dict_to_losh
 from krawl.log import get_child_logger
 from krawl.model.data_set import DataSet
@@ -35,36 +36,21 @@ class ManifestNormalizer(Normalizer):
         self.manifest_path: str = None
         self.file_dl_base_url: str = None
 
-    def normalize(self, raw: dict) -> Project:
+    def normalize(self, fetch_result: FetchResult) -> Project:
         project = Project()
+        raw: dict = fetch_result.data.content
+        data_set: DataSet = fetch_result.data_set
 
         okhv = raw.get("okhv", None)
         if okhv is None:
             # We assume it is OKH v1
             raw = convert_okh_v1_dict_to_losh(raw)
 
-        data_set = raw.get("data-set")
-        # if meta is None:
-        #     meta = raw.get("__meta")
+        hosting_unit_id, path = self._evaluate_hosting_id(raw, data_set)
 
-        hosting_id, path = self._evaluate_hosting_id(raw, data_set)
+        log.debug("normalizing manifest of '%s'", hosting_unit_id)
 
-        # if isinstance(meta, dict):
-        #     project.meta.source = DictUtils.to_string(meta.get("fetcher"))
-        #     if project.meta.source is None:
-        #         project.meta.source = DictUtils.to_string(meta.get("source"))
-        #     project.meta.owner = DictUtils.to_string(meta.get("owner"))
-        #     project.meta.repo = DictUtils.to_string(meta.get("repo"))
-        #     project.meta.crawling_meta.manifest = DictUtils.to_string(meta.get("path"))
-        #     project.meta.branch = DictUtils.to_string(meta.get("branch"))
-        #     # project.meta.created_at = ??? # TODO
-        #     project.meta.last_visited = DictUtils.to_string(meta.get("last_visited"))
-        #     # project.meta.last_changed = ??? # TODO
-        #     log.debug("normalizing manifest of '%s'", project.id)
-        # else:
-        #     log.debug("normalizing manifest")
-
-        self.file_dl_base_url = hosting_id.create_download_url(path)
+        self.file_dl_base_url = hosting_unit_id.create_download_url(path)
         self.manifest_path = data_set.crawling_meta.manifest
 
         if self.file_handler is not None:
@@ -92,6 +78,7 @@ class ManifestNormalizer(Normalizer):
         project.bom = self._file(raw.get("bom"))
         project.manufacturing_instructions = self._file(raw.get("manufacturing-instructions"))
         project.user_manual = self._file(raw.get("user-manual"))
+        project.outer_dimensions = self._outer_dimensions(raw.get("outer-dimensions"))
         project.part = self._parts(raw.get("part"))
         project.software = self._software(raw.get("software"))
         project.sourcing_procedure = raw.get("data-sourcing-procedure", SourcingProcedure.MANIFEST)

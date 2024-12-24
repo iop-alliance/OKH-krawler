@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from krawl.model.hosting_unit import HostingUnitId
 from krawl.model.project import Project
-from krawl.model.project_id import ProjectId
 from krawl.reporter import Reporter, Status
 
 
@@ -15,19 +15,21 @@ class FileReporter(Reporter):
         self._file = None
         self._open(path)
 
-    def add(self, project_id: ProjectId, status: Status, reasons: list[str] = None, project: Project = None) -> None:
-        """Add an entry to the report."""
+    def add(self,
+            hosting_unit_id: HostingUnitId,
+            status: Status,
+            reasons: list[str] = None,
+            project: Project = None) -> None:
         match status:
             case Status.OK | Status.UNKNOWN:
-                line = f"{str(status):<8}: {str(project_id)}\n"
+                line = f"{str(status):<8}: {str(hosting_unit_id)}\n"
             case Status.FAILED:
-                line = f"{str(status):<8}: {str(project_id)} : {', '.join(reasons)}\n"
+                line = f"{str(status):<8}: {str(hosting_unit_id)} : {', '.join(reasons)}\n"
             case _:
                 raise ValueError(f"unknown status: {status}")
         self._file.write(line)
 
     def close(self) -> None:
-        """Closes the underlying resources."""
         if self._file:
             self._file.close()
 

@@ -5,16 +5,18 @@ from pathlib import Path
 from clikit.api.args.format import Option
 
 from krawl.cli.command import KrawlCommand
+from krawl.fetcher import CountingFetchListener
 from krawl.fetcher.factory import FetcherFactory
 from krawl.log import get_child_logger
-from krawl.model.hosting_unit import HostingUnitId, HostingUnitIdFactory
+from krawl.model.hosting_unit import HostingUnitIdFactory
 from krawl.model.project_id import ProjectId
-from krawl.reporter import Status
+# from krawl.reporter import Status
 from krawl.reporter.dummy import DummyReporter
 from krawl.reporter.file import FileReporter
 from krawl.repository.factory import ProjectRepositoryFactory
 from krawl.repository.fetcher_state import FetcherStateRepositoryFile
-from krawl.validator.strict import StrictValidator
+
+# from krawl.validator.strict import StrictValidator
 
 log = get_child_logger("fetch")
 
@@ -70,32 +72,36 @@ class FetchURLCommand(KrawlCommand):
             raise ValueError(f"Unknown database type: {config.database.type}")
         fetcher_factory = FetcherFactory(config.repositories, fetcher_state_repository, config.fetchers,
                                          required_fetchers)
-        repository_factory = ProjectRepositoryFactory(config.repositories, enabled_repositories)
-        validator = StrictValidator()
+        # repository_factory = ProjectRepositoryFactory(config.repositories, enabled_repositories)
+        # validator = StrictValidator()
 
         # create a reporter
         if report_path:
             reporter = FileReporter(report_path)
         else:
             reporter = DummyReporter()
+        fetcher_factory.add_fetch_listener(reporter)
+
+        counter = CountingFetchListener()
+        fetcher_factory.add_fetch_listener(counter)
 
         # perform the deed
-        failures = 0
         for project_id, _hosting_unit_id, _path in ids:
-            project = fetcher_factory.fetch(project_id)
-            ok, reason = validator.validate(project)
-            if ok:
-                reporter.add(project.id, Status.OK)
-            else:
-                reporter.add(project.id, Status.FAILED, reason)
-                log.info("Skipping project '%s' because: %s", project.id, reason[0])
-                failures = failures + 1
-                continue
-            log.debug("Project: %s", project)
-            repository_factory.store(project)
-            log.info("Saved project '%s'", project.id)
+            _fetch_result = fetcher_factory.fetch(project_id)
+            # ok, reason = validator.validate(project)
+            # if ok:
+            #     reporter.add(project.id, Status.OK)
+            # else:
+            #     reporter.add(project.id, Status.FAILED, reason)
+            #     log.info("Skipping project '%s' because: %s", project.id, reason[0])
+            #     failures = failures + 1
+            #     continue
+            # log.debug("Project: %s", project)
+            # repository_factory.store(project)
+            # log.info("Saved project '%s'", project.id)
 
         reporter.close()
 
+        failures: int = counter.failures()
         if failures > 0:
             raise SystemExit(min(failures, 255))

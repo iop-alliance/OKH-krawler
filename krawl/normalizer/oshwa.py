@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from krawl.dict_utils import DictUtils
+from krawl.fetcher import FetchResult
 from krawl.log import get_child_logger
 from krawl.model import licenses
-from krawl.model.data_set import CrawlingMeta, DataSet
+from krawl.model.data_set import DataSet
 from krawl.model.project import Project
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.normalizer import Normalizer, strip_html
@@ -40,9 +39,10 @@ CATEGORIES_CPC_MAPPING = {
 
 class OshwaNormalizer(Normalizer):
 
-    def normalize(self, raw: dict) -> Project:
+    def normalize(self, fetch_result: FetchResult) -> Project:
         project = Project()
-        data_set: DataSet = raw.get("data-set")
+        raw: dict = fetch_result.data.content
+        data_set: DataSet = fetch_result.data_set
         # project.meta.source = meta["id"].hosting_id
         # # project.meta.owner = meta["id"].owner
         # project.meta.repo = meta["id"].repo
@@ -62,16 +62,16 @@ class OshwaNormalizer(Normalizer):
         project.cpc_patent_class = self._classification(raw)
         project.sourcing_procedure = SourcingProcedure.API
 
-        project.specific_api_data["primaryType"] = DictUtils.get_key(raw, "primaryType")
-        project.specific_api_data["additionalType"] = DictUtils.get_key(raw, "additionalType")
-        project.specific_api_data["hardwareLicense"] = DictUtils.get_key(raw, "hardwareLicense")
-        project.specific_api_data["softwareLicense"] = DictUtils.get_key(raw, "softwareLicense")
-        project.specific_api_data["documentationLicense"] = DictUtils.get_key(raw, "documentationLicense")
-        project.specific_api_data["country"] = DictUtils.get_key(raw, "country")
+        # project.specific_api_data["primaryType"] = DictUtils.get_key(raw, "primaryType")
+        # project.specific_api_data["additionalType"] = DictUtils.get_key(raw, "additionalType")
+        # project.specific_api_data["hardwareLicense"] = DictUtils.get_key(raw, "hardwareLicense")
+        # project.specific_api_data["softwareLicense"] = DictUtils.get_key(raw, "softwareLicense")
+        # project.specific_api_data["documentationLicense"] = DictUtils.get_key(raw, "documentationLicense")
+        # project.specific_api_data["country"] = DictUtils.get_key(raw, "country")
+        # certification_date = DictUtils.get_key(raw, "certificationDate")
+        # if certification_date:
+        #     project.specific_api_data["certificationDate"] = datetime.strptime(certification_date, "%Y-%m-%dT%H:%M%z")
 
-        certification_date = DictUtils.get_key(raw, "certificationDate")
-        if certification_date:
-            project.specific_api_data["certificationDate"] = datetime.strptime(certification_date, "%Y-%m-%dT%H:%M%z")
         return project
 
     @classmethod

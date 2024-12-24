@@ -69,7 +69,7 @@ class ProjectRepositoryFile(ProjectRepository):
     #     project = self._serializer.deserialize(serialized)
     #     return project
 
-    # def load_all(self, id) -> Generator[Project, None, None]:
+    # def load_all(self, id) -> Generator[Project]:
     #     paths = self._workdir.glob("**/*." + self._extension)
     #     for p in paths:
     #         id = str(p.relative_to(self._workdir).with_suffix(""))
@@ -91,7 +91,7 @@ class ProjectRepositoryFile(ProjectRepository):
     # def search(self,
     #            platform: str | None = None,
     #            owner: str | None = None,
-    #            name: str | None = None) -> Generator[Project, None, None]:
+    #            name: str | None = None) -> Generator[Project]:
     #     raise NotImplementedError()
 
     # def delete(self, id: str) -> None:

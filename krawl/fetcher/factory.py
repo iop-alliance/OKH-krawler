@@ -4,7 +4,7 @@ from collections.abc import Generator
 
 from krawl.config import Config
 from krawl.errors import FetcherError
-from krawl.fetcher import Fetcher, FetchResult
+from krawl.fetcher import Fetcher, FetchListener, FetchResult
 from krawl.fetcher.github import GitHubFetcher
 from krawl.fetcher.oshwa import OshwaFetcher
 from krawl.fetcher.thingiverse import ThingiverseFetcher
@@ -88,6 +88,10 @@ class FetcherFactory:
         # TODO: should be parallelized
         for fetcher in self._fetchers.values():
             yield from fetcher.fetch_all(start_over=start_over)
+
+    def add_fetch_listener(self, listener: FetchListener) -> None:
+        for fetcher in self._fetchers:
+            fetcher.add_fetch_listener(listener)
 
     def _init_fetchers(self, repository_config: Config, state_repository, fetchers_config: Config,
                        enabled: list[HostingId]):

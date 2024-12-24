@@ -8,12 +8,13 @@ from krawl.cli.command import KrawlCommand
 from krawl.fetcher.factory import FetcherFactory
 from krawl.log import get_child_logger
 from krawl.model.hosting_id import HostingId
-from krawl.reporter import Status
+# from krawl.reporter import Status
 from krawl.reporter.dummy import DummyReporter
 from krawl.reporter.file import FileReporter
 from krawl.repository.factory import ProjectRepositoryFactory
 from krawl.repository.fetcher_state import FetcherStateRepositoryFile
-from krawl.validator.strict import StrictValidator
+
+# from krawl.validator.strict import StrictValidator
 
 log = get_child_logger("fetch")
 
@@ -63,8 +64,8 @@ class FetcherXCommand(KrawlCommand):
             raise ValueError(f"Unknown database type: {config.database.type}")
         fetcher_factory = FetcherFactory(config.repositories, fetcher_state_repository, config.fetchers,
                                          required_fetchers)
-        repository_factory = ProjectRepositoryFactory(config.repositories, enabled_repositories)
-        validator = StrictValidator()
+        # repository_factory = ProjectRepositoryFactory(config.repositories, enabled_repositories)
+        # validator = StrictValidator()
 
         # create a reporter
         if report_path:
@@ -73,9 +74,10 @@ class FetcherXCommand(KrawlCommand):
             reporter = DummyReporter()
 
         # perform the deed
+        fetcher_factory.add_fetch_listener(reporter)
         fetcher = fetcher_factory.get(self._hosting_id)
         log.info("fetching all projects from %s", self._hosting_id)
-        for fetch_result in fetcher.fetch_all(start_over=start_over):
+        for _fetch_result in fetcher.fetch_all(start_over=start_over):
             # NOTE Storing the fetch_result already happens inside the fetcher
             pass
             # ok, reason = validator.validate(project)

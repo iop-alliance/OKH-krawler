@@ -23,7 +23,6 @@ from cerberus import TypeDefinition, Validator
 from cerberus.errors import REQUIRED_FIELD, BasicErrorHandler, ValidationError
 from str_to_bool import str_to_bool
 
-from krawl.dict_utils import DictUtils
 from krawl.errors import ConfigError
 
 # schema for normalization/validation

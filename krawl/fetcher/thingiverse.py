@@ -12,7 +12,7 @@ from urllib3 import Retry
 
 from krawl.config import Config
 from krawl.errors import FetcherError, ParserError
-from krawl.fetcher import Fetcher, FetchResult
+from krawl.fetcher import FailedFetch, Fetcher, FetchResult
 from krawl.log import get_child_logger
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
@@ -20,7 +20,6 @@ from krawl.model.hosting_unit import HostingUnitIdWebById
 from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
-from krawl.normalizer.thingiverse import ThingiverseNormalizer
 from krawl.repository import FetcherStateRepository
 
 log = get_child_logger("thingiverse")
@@ -66,54 +65,59 @@ class ThingiverseFetcher(Fetcher):
         })
 
     def __fetch_one(self, hosting_unit_id: HostingUnitIdWebById, last_visited: datetime) -> FetchResult:
-        thing_id = hosting_unit_id.project_id
-        log.info("Try to fetch thing with id %d", thing_id)
-        # Documentation for this call:
-        # <https://www.thingiverse.com/developers/swagger#/Thing/get_things__thing_id_>
-        raw_project = self._do_request(f"https://api.thingiverse.com/things/{thing_id}")
-
-        log.info("Convert thing %s...", raw_project.get('name'))
-
-        # Documentation for this call:
-        # <https://www.thingiverse.com/developers/swagger#/Thing/get_things__thing_id__files>
-        thing_files = self._do_request(f"https://api.thingiverse.com/things/{thing_id}/files")
-
-        raw_project["files"] = thing_files
-
-        data_set = DataSet(
-            crawling_meta=CrawlingMeta(
-                # created_at: datetime = None
-                last_visited=last_visited,
-                # manifest=path,
-                # last_changed: datetime = None
-                # history = None,
-            ),
-            hosting_unit_id=hosting_unit_id,
-        )
-
-        fetch_result = FetchResult(data_set=data_set,
-                                   data=Manifest(content=json.dumps(raw_project, indent=2), format=ManifestFormat.JSON))
-
-        # project = self._normalizer.normalize(raw_project)
-        # if not project:
-        #     raise FetcherError(f"project with name {raw_project['name']} could not be normalized")
-
-        log.info("%d requests triggered", self._request_counter)
-
-        self._fetched(fetch_result)
-
-        # save current progress
-        next_total_hit_index, fetched_things_ids = self._get_state()
-        next_total_hit_index += 1
-        fetched_things_ids.append(thing_id)
-        self._set_state(next_total_hit_index, fetched_things_ids)
-        return fetch_result
-
-    def fetch(self, id: ProjectId) -> Project:
         try:
-            hosting_unit_id = HostingUnitIdWebById.from_url_no_path(id.uri)
+            thing_id = hosting_unit_id.project_id
+            log.info("Try to fetch thing with id %d", thing_id)
+            # Documentation for this call:
+            # <https://www.thingiverse.com/developers/swagger#/Thing/get_things__thing_id_>
+            raw_project = self._do_request(f"https://api.thingiverse.com/things/{thing_id}")
+
+            log.info("Convert thing %s...", raw_project.get('name'))
+
+            # Documentation for this call:
+            # <https://www.thingiverse.com/developers/swagger#/Thing/get_things__thing_id__files>
+            thing_files = self._do_request(f"https://api.thingiverse.com/things/{thing_id}/files")
+
+            raw_project["files"] = thing_files
+
+            data_set = DataSet(
+                crawling_meta=CrawlingMeta(
+                    # created_at: datetime = None
+                    last_visited=last_visited,
+                    # manifest=path,
+                    # last_changed: datetime = None
+                    # history = None,
+                ),
+                hosting_unit_id=hosting_unit_id,
+            )
+
+            fetch_result = FetchResult(data_set=data_set,
+                                       data=Manifest(content=json.dumps(raw_project, indent=2),
+                                                     format=ManifestFormat.JSON))
+
+            # project = self._normalizer.normalize(raw_project)
+            # if not project:
+            #     raise FetcherError(f"project with name {raw_project['name']} could not be normalized")
+
+            log.info("%d requests triggered", self._request_counter)
+
+            self._fetched(fetch_result)
+
+            # save current progress
+            next_total_hit_index, fetched_things_ids = self._get_state()
+            next_total_hit_index += 1
+            fetched_things_ids.append(thing_id)
+            self._set_state(next_total_hit_index, fetched_things_ids)
+            return fetch_result
+        except FetcherError as err:
+            self._failed_fetch(FailedFetch(hosting_unit_id=hosting_unit_id, error=err))
+            raise err
+
+    def fetch(self, project_id: ProjectId) -> FetchResult:
+        try:
+            hosting_unit_id = HostingUnitIdWebById.from_url_no_path(project_id.uri)
         except ParserError as err:
-            raise FetcherError(f"Invalid Thingiverse thing URL: '{id.uri}'") from err
+            raise FetcherError(f"Invalid Thingiverse thing URL: '{project_id.uri}'") from err
         last_visited = datetime.now(timezone.utc)
         return self.__fetch_one(hosting_unit_id, last_visited)
 

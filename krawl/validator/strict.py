@@ -12,7 +12,9 @@ from krawl.model.project import Project
 from krawl.validator import Validator, is_bcp_47_language_tag, is_non_zero_length_string, is_okh_version
 
 
-class StrictValidator(Validator):
+class StrictValidator(
+        Validator
+):  # TODO Remove this. Validation should be derived automatically from the OKH ontology, and be done as much as possible through OS and standardized tools nad formats. This is the goal of e.g. owl2shacl.
 
     def validate(self, project: Project) -> tuple[bool, list[str]]:
         reasons = []

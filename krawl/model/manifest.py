@@ -33,7 +33,7 @@ class ManifestFormat(StrEnum):
 class Manifest:
     """The content and basic meta info of an OKH manifest file."""
 
-    content: str | bytes = None
+    content: str | bytes | dict = None
     format: ManifestFormat = None
 
     def is_valid(self) -> bool:

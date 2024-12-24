@@ -4,7 +4,6 @@ from collections.abc import Generator
 from datetime import datetime, timezone
 from pathlib import Path
 from time import sleep
-from urllib.parse import urlparse
 
 import requests
 from gql import Client as GQLClient
@@ -14,9 +13,9 @@ from gql.transport.requests import RequestsHTTPTransport
 from requests.adapters import HTTPAdapter, Retry
 
 from krawl.config import Config
-from krawl.errors import ConversionError, DeserializerError, FetcherError, NormalizerError, NotFound, ParserError
-from krawl.fetcher import Fetcher, FetchResult
-from krawl.fetcher.util import convert_okh_v1_to_losh, is_accepted_manifest_file_name, is_binary, is_empty
+from krawl.errors import FetcherError, NotFound, ParserError
+from krawl.fetcher import FailedFetch, Fetcher, FetchResult
+from krawl.fetcher.util import is_accepted_manifest_file_name, is_empty
 from krawl.log import get_child_logger
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
@@ -28,7 +27,6 @@ from krawl.model.project_id import ProjectId
 # from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.repository import FetcherStateRepository
 from krawl.request.rate_limit import RateLimitFixedTimedelta, RateLimitNumRequests
-from krawl.serializer.factory import DeserializerFactory
 
 log = get_child_logger("github")
 
@@ -260,86 +258,82 @@ class GitHubFetcher(Fetcher):
         })
 
     def __fetch_one(self, hosting_unit_id: HostingUnitIdForge, path: Path) -> FetchResult:
-        log.debug("fetching project '%s' path '%s' ...", hosting_unit_id, str(path))
-
-        # check file name
-        if not is_accepted_manifest_file_name(path):
-            raise FetcherError(f"Not an accepted manifest file name: '{path.name}'")
-
-        # download the file
-        # hosting_unit_id = self._edit_hosting_unit_id(hosting_unit_id)
-        # NOTE For some reason, Andre once decided to only download from the default branch,
-        #      as documented inside `self._edit_hosting_unit_id()`.
-        #      The reason why though, is not given,
-        #      so I decided not to update the `hosting_unit_id` here.
-        #      Yet, I still call the function, to do magic with the rate limits,
-        #      even though I am not sure that is necessary.
-        _hosting_unit_id = self._edit_hosting_unit_id(hosting_unit_id)
-        manifest_dl_url = hosting_unit_id.create_download_url(path)
-        last_visited = datetime.now(timezone.utc)
-        manifest_contents = self._download_manifest(manifest_dl_url)
-
-        # check file contents
-        if is_empty(manifest_contents):
-            raise FetcherError(f"Manifest file is empty: '{manifest_dl_url}'")
-        # if is_binary(manifest_contents):
-        #     raise FetcherError(f"Manifest file is binary (should be text): '{manifest_dl_url}'")
-
-        format_suffix = path.suffix.lower().lstrip('.')
-        manifest_format: ManifestFormat = ManifestFormat.from_ext(format_suffix)
-        manifest = Manifest(content=manifest_contents, format=manifest_format)
-
-        # is_yaml = format_suffix in ['yml', 'yaml']
-        # log.debug(f"Checking if manifest '{format_suffix}' is YAML ...")
-        # if is_yaml:
-        #     log.debug("Manifest is YAML!")
-        #     try:
-        #         manifest_contents = convert_okh_v1_to_losh(manifest_contents)
-        #     except ConversionError as err:
-        #         raise FetcherError(f"Failed to convert YAML (v1) Manifest to TOML (LOSH): {err}") from err
-        #     format_suffix = ".toml"
-        #     log.debug("YAML (v1) Manifest converted to TOML (LOSH)!")
-
-        # create fetcher meta data
-        # meta = {
-        #     "meta": {
-        #         "hosting-id": hosting_unit_id,
-        #         "path": path,
-        #         "last_visited": last_visited,
-        #     }
-        # }
-        data_set = DataSet(
-            crawling_meta=CrawlingMeta(
-                # created_at: datetime = None
-                last_visited=last_visited,
-                manifest=path,
-                # last_changed: datetime = None
-                # history = None,
-            ),
-            hosting_unit_id=hosting_unit_id,
-        )
-        # log.info(f"manifest_contents: {manifest_contents}")
-
-        # # try deserialize
-        # try:
-        #     project = self._deserializer_factory.deserialize(format_suffix, manifest_contents, self._normalizer,
-        #                                                      unfiltered_output)
-        # except DeserializerError as err:
-        #     raise FetcherError(f"deserialization failed (invalid content/format for its file-type): {err}") from err
-        # except NormalizerError as err:
-        #     raise FetcherError(f"normalization failed: {err}") from err
-
-        log.debug("fetched project %s", hosting_unit_id)
-        fetch_result = FetchResult(data=manifest, data_set=data_set)
-
-        self._fetched(fetch_result)
-        return fetch_result
-
-    def fetch(self, id: ProjectId) -> FetchResult:
         try:
-            hosting_unit_id, path_raw = HostingUnitIdForge.from_url(id.uri)
+            log.debug("fetching project '%s' path '%s' ...", hosting_unit_id, str(path))
+
+            # check file name
+            if not is_accepted_manifest_file_name(path):
+                raise FetcherError(f"Not an accepted manifest file name: '{path.name}'")
+
+            # download the file
+            # hosting_unit_id = self._edit_hosting_unit_id(hosting_unit_id)
+            # NOTE For some reason, Andre once decided to only download from the default branch,
+            #      as documented inside `self._edit_hosting_unit_id()`.
+            #      The reason why though, is not given,
+            #      so I decided not to update the `hosting_unit_id` here.
+            #      Yet, I still call the function, to do magic with the rate limits,
+            #      even though I am not sure that is necessary.
+            _hosting_unit_id = self._edit_hosting_unit_id(hosting_unit_id)
+            manifest_dl_url = hosting_unit_id.create_download_url(path)
+            last_visited = datetime.now(timezone.utc)
+            manifest_contents = self._download_manifest(manifest_dl_url)
+
+            # check file contents
+            if is_empty(manifest_contents):
+                raise FetcherError(f"Manifest file is empty: '{manifest_dl_url}'")
+            # if is_binary(manifest_contents):
+            #     raise FetcherError(f"Manifest file is binary (should be text): '{manifest_dl_url}'")
+
+            format_suffix = path.suffix.lower().lstrip('.')
+            manifest_format: ManifestFormat = ManifestFormat.from_ext(format_suffix)
+            manifest = Manifest(content=manifest_contents, format=manifest_format)
+
+            # is_yaml = format_suffix in ['yml', 'yaml']
+            # log.debug(f"Checking if manifest '{format_suffix}' is YAML ...")
+            # if is_yaml:
+            #     log.debug("Manifest is YAML!")
+            #     try:
+            #         manifest_contents = convert_okh_v1_to_losh(manifest_contents)
+            #     except ConversionError as err:
+            #         raise FetcherError(f"Failed to convert YAML (v1) Manifest to TOML (LOSH): {err}") from err
+            #     format_suffix = ".toml"
+            #     log.debug("YAML (v1) Manifest converted to TOML (LOSH)!")
+
+            data_set = DataSet(
+                crawling_meta=CrawlingMeta(
+                    # created_at: datetime = None
+                    last_visited=last_visited,
+                    manifest=path,
+                    # last_changed: datetime = None
+                    # history = None,
+                ),
+                hosting_unit_id=hosting_unit_id,
+            )
+            # log.info(f"manifest_contents: {manifest_contents}")
+
+            # # try deserialize
+            # try:
+            #     project = self._deserializer_factory.deserialize(format_suffix, manifest_contents, self._normalizer,
+            #                                                      unfiltered_output)
+            # except DeserializerError as err:
+            #     raise FetcherError(f"deserialization failed (invalid content/format for its file-type): {err}") from err
+            # except NormalizerError as err:
+            #     raise FetcherError(f"normalization failed: {err}") from err
+
+            log.debug("fetched project %s", hosting_unit_id)
+            fetch_result = FetchResult(data=manifest, data_set=data_set)
+
+            self._fetched(fetch_result)
+            return fetch_result
+        except FetcherError as err:
+            self._failed_fetch(FailedFetch(hosting_unit_id=hosting_unit_id, error=err))
+            raise err
+
+    def fetch(self, project_id: ProjectId) -> FetchResult:
+        try:
+            hosting_unit_id, path_raw = HostingUnitIdForge.from_url(project_id.uri)
         except ParserError as err:
-            raise FetcherError(f"Invalid GitHub manifest file URL: '{id.uri}'") from err
+            raise FetcherError(f"Invalid GitHub manifest file URL: '{project_id.uri}'") from err
 
         if path_raw:
             path = Path(path_raw)
@@ -352,7 +346,7 @@ class GitHubFetcher(Fetcher):
             except FetcherError:
                 continue
         raise FetcherError("Non direct path to a manifest file given,"
-                           f" and no known manifest file found at: '{id.uri}'")
+                           f" and no known manifest file found at: '{project_id.uri}'")
 
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
         num_fetched_projects = 0
