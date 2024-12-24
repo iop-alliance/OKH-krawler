@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from krawl.model.project import Project
 from krawl.normalizer import Normalizer
-from krawl.project import Project
+from krawl.serializer.json_serializer import JsonProjectSerializer
 from krawl.serializer.rdf_deserializer import RDFProjectDeserializer
 from krawl.serializer.rdf_serializer import RDFProjectSerializer
 from krawl.serializer.toml_deserializer import TOMLProjectDeserializer
@@ -23,32 +24,35 @@ class SerializerFactory():
 
     def _init_serializers(self):
 
-        toml_serializer = TOMLProjectSerializer()
-        self._serializers[".toml"] = toml_serializer
-
-        rdf_serializer = RDFProjectSerializer()
-        self._serializers[".ttl"] = rdf_serializer
+        tmp_serializers = [
+            JsonProjectSerializer(),
+            TOMLProjectSerializer(),
+            RDFProjectSerializer(),
+        ]
+        for serializer in tmp_serializers:
+            for ext in serializer.extensions():
+                self._serializers[ext] = serializer
 
 
 class DeserializerFactory():
 
     def __init__(self, **kwargs) -> None:
-        self._deserializer = {}
+        self._deserializers = {}
         self._init_deserializer(**kwargs)
 
     def deserialize(self, suffix: str, serialized: str | bytes, normalizer: Normalizer, enrich: dict = None) -> Project:
-        deserializer = self._deserializer.get(suffix.lower())
+        deserializer = self._deserializers.get(suffix.lower())
         if not deserializer:
             raise ValueError(f"Unknown deserializer type: '{suffix}'")
         return deserializer.deserialize(serialized, normalizer, enrich)
 
     def _init_deserializer(self):
-        yaml_deserializer = YAMLProjectDeserializer()
-        self._deserializer[".yml"] = yaml_deserializer
-        self._deserializer[".yaml"] = yaml_deserializer
 
-        toml_deserializer = TOMLProjectDeserializer()
-        self._deserializer[".toml"] = toml_deserializer
-
-        rdf_deserializer = RDFProjectDeserializer()
-        self._deserializer[".ttl"] = rdf_deserializer
+        tmp_deserializers = [
+            YAMLProjectDeserializer(),
+            TOMLProjectDeserializer(),
+            RDFProjectDeserializer(),
+        ]
+        for deserializer in tmp_deserializers:
+            for ext in deserializer.extensions():
+                self._deserializers[ext] = deserializer

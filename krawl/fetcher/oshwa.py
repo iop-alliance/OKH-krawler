@@ -8,20 +8,25 @@ from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
 from krawl.config import Config
-from krawl.errors import FetcherError, NormalizerError
+from krawl.errors import FetcherError, NormalizerError, ParserError
 from krawl.fetcher import Fetcher
 from krawl.log import get_child_logger
+from krawl.model.data_set import CrawlingMeta, DataSet
+from krawl.model.hosting_id import HostingId
+from krawl.model.hosting_unit import HostingUnitIdWebById
+from krawl.model.project import Project
+from krawl.model.project_id import ProjectID
 from krawl.normalizer.oshwa import OshwaNormalizer
-from krawl.project import Project, ProjectID
 from krawl.repository import FetcherStateRepository
 from krawl.request.rate_limit import RateLimitFixedTimedelta
-from krawl.util import slugify
+
+# from krawl.util import slugify
 
 log = get_child_logger("oshwa")
 
 
 class OshwaFetcher(Fetcher):
-    NAME = "oshwa.org"
+    HOSTING_ID: HostingId = HostingId.OSHWA_ORG
     RETRY_CODES = [429, 500, 502, 503, 504]
     BATCH_SIZE = 50
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name="oshwa", default_timeout=10, access_token=True)
@@ -47,23 +52,32 @@ class OshwaFetcher(Fetcher):
             "Authorization": f"Bearer {config.access_token}",
         })
 
-    def __fetch_one(self, raw_project: dict, last_visited: datetime) -> Project:
-        id = ProjectID(self.NAME, slugify(raw_project["responsibleParty"]), raw_project["oshwaUid"].lower())
+    def __fetch_one(self, hosting_unit_id: HostingUnitIdWebById, raw_project: dict, last_visited: datetime) -> Project:
+        # id = ProjectID(self.HOSTING_ID, slugify(raw_project["responsibleParty"]), raw_project["oshwaUid"].lower())
 
-        meta = {
-            "meta": {
-                "id": id,
-                "fetcher": self.NAME,
-                "last_visited": last_visited,
-            }
+        unfiltered_output = {
+            "data-set": DataSet(
+                crawling_meta=CrawlingMeta(
+                    # created_at: datetime = None
+                    last_visited=last_visited,
+                    # manifest=path,
+                    # last_changed: datetime = None
+                    # history = None,
+                ),
+                hosting_unit_id=hosting_unit_id,
+            )
+            # {
+            #     "id": hosting_unit_id,
+            #     "last_visited": last_visited,
+            # }
         }
 
         # try normalizing it
         try:
-            raw_project.update(meta)
+            raw_project.update(unfiltered_output)
             project = self._normalizer.normalize(raw_project)
         except NormalizerError as err:
-            raise FetcherError(f"normalization failed, that should not happen: {err}") from err
+            raise FetcherError(f"Normalization failed, that should not happen: {err}") from err
 
         return project
 
@@ -71,7 +85,14 @@ class OshwaFetcher(Fetcher):
 
         log.debug('Start fetching project %s', id)
 
-        oshwa_id = id.path.split(".")[0]
+        hosting_unit_id = HostingUnitIdWebById.from_url_no_path(id.uri)
+
+        try:
+            hosting_unit_id = HostingUnitIdWebById.from_url_no_path(id.uri)
+        except ParserError as err:
+            raise FetcherError(f"Invalid OSHWA project URL: '{id.uri}'") from err
+
+        oshwa_id = hosting_unit_id.project_id
 
         response = self._session.get(url=f"https://certificationapi.oshwa.org/api/projects/{oshwa_id}",)
 
@@ -82,7 +103,7 @@ class OshwaFetcher(Fetcher):
 
         last_visited = datetime.now(timezone.utc)
 
-        project = self.__fetch_one(raw_project, last_visited)
+        project = self.__fetch_one(hosting_unit_id, raw_project, last_visited)
 
         log.debug(f"yield project {project.id}")
 
@@ -93,9 +114,9 @@ class OshwaFetcher(Fetcher):
         num_fetched = 0
         batch_size = self.BATCH_SIZE
         if start_over:
-            self._state_repository.delete(self.NAME)
+            self._state_repository.delete(self.HOSTING_ID)
         else:
-            state = self._state_repository.load(self.NAME)
+            state = self._state_repository.load(self.HOSTING_ID)
             if state:
                 last_offset = state.get("last_offset", 0)
                 num_fetched = state.get("num_fetched", 0)
@@ -118,7 +139,8 @@ class OshwaFetcher(Fetcher):
             data = response.json()
             last_visited = datetime.now(timezone.utc)
             for raw_project in data["items"]:
-                project = self.__fetch_one(raw_project, last_visited)
+                hosting_unit_id = HostingUnitIdWebById(_hosting_id=self.HOSTING_ID, project_id=raw_project['oshwaUid'])
+                project = self.__fetch_one(hosting_unit_id, raw_project, last_visited)
                 log.debug("yield project %s", project.id)
                 yield project
 
@@ -129,10 +151,10 @@ class OshwaFetcher(Fetcher):
             if last_offset > data["total"]:
                 break
 
-            self._state_repository.store(self.NAME, {
+            self._state_repository.store(self.HOSTING_ID, {
                 "last_offset": last_offset,
                 "num_fetched": num_fetched,
             })
 
-        self._state_repository.delete(self.NAME)
+        self._state_repository.delete(self.HOSTING_ID)
         log.debug("fetched %d projects from OSHWA", num_fetched)

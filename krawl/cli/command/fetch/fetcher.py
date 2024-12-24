@@ -50,18 +50,18 @@ class FetcherXCommand(KrawlCommand):
         start_over = self.option("start-over")
         enabled_repositories = self.option("repository")
         report_path = Path(self.option("report")) if self.option("report") else None
+        required_fetchers = [self.name]
 
         # load, normalize and validate config
-        config = self._load_config(enabled_repositories=enabled_repositories, enabled_fetchers=[self.name])
+        config = self._load_config(enabled_repositories=enabled_repositories, enabled_fetchers=required_fetchers)
 
         # initialize fetchers and repositories
         if config.database.type == "file":
             fetcher_state_repository = FetcherStateRepositoryFile(config.database.path)
         else:
             raise ValueError(f"Unknown database type: {config.database.type}")
-        fetcher_factory = FetcherFactory(fetcher_state_repository, config.fetchers, [self.name])
+        fetcher_factory = FetcherFactory(fetcher_state_repository, config.fetchers, required_fetchers)
         repository_factory = ProjectRepositoryFactory(config.repositories, enabled_repositories)
-        fetcher = fetcher_factory.get(self.name)
         validator = StrictValidator()
 
         # create a reporter
@@ -71,6 +71,7 @@ class FetcherXCommand(KrawlCommand):
             reporter = DummyReporter()
 
         # perform the deed
+        fetcher = fetcher_factory.get(self.name)
         log.info("fetching all projects from %s", self.name)
         for project in fetcher.fetch_all(start_over=start_over):
             ok, reason = validator.validate(project)

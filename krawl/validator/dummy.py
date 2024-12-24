@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from krawl.project import Project
+from krawl.model.project import Project
 from krawl.validator import Validator
 
 

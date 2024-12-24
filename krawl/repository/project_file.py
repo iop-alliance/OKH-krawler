@@ -6,8 +6,10 @@ from pathvalidate import sanitize_filename
 
 from krawl.config import Config
 from krawl.log import get_child_logger
-from krawl.project import Project, ProjectID
-from krawl.repository import ProjectRepository
+from krawl.model.project import Project
+from krawl.model.project_id import ProjectID
+from krawl.repository import ProjectRepository, ProjectRepositoryType
+from krawl.serializer.json_serializer import JsonProjectSerializer
 from krawl.serializer.rdf_serializer import RDFProjectSerializer
 from krawl.serializer.toml_serializer import TOMLProjectSerializer
 
@@ -17,7 +19,7 @@ log = get_child_logger("repo_file")
 class ProjectRepositoryFile(ProjectRepository):
     """Storing and loading projects metadata."""
 
-    NAME = "file"
+    TYPE: ProjectRepositoryType = ProjectRepositoryType.FILE
     CONFIG_SCHEMA = {
         "type": "dict",
         "default": {},
@@ -37,8 +39,9 @@ class ProjectRepositoryFile(ProjectRepository):
             },
             "format": {
                 "type": "set",
-                "default": {"toml", "rdf"},
-                "allowed": {"toml", "rdf"},
+                # "default": {"toml", "rdf"},
+                "default": {"toml", "json"},
+                "allowed": {"toml", "json", "rdf"},
                 "meta": {
                     "description": "File formats for storing projects (available: yaml, toml, rdf)"
                 },
@@ -47,6 +50,7 @@ class ProjectRepositoryFile(ProjectRepository):
     }
     FORMATS = {
         "toml": (TOMLProjectSerializer(), "toml"),
+        "json": (JsonProjectSerializer(), "json"),
         "rdf": (RDFProjectSerializer(), "ttl"),
     }
 

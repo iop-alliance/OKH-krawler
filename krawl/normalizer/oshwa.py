@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from krawl import dict_utils, licenses
+from krawl.dict_utils import DictUtils
 from krawl.log import get_child_logger
+from krawl.model import licenses
+from krawl.model.data_set import CrawlingMeta, DataSet
+from krawl.model.project import Project
+from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.normalizer import Normalizer, strip_html
-from krawl.project import Project, UploadMethods
 
 log = get_child_logger("oshwa")
 
@@ -39,33 +42,34 @@ class OshwaNormalizer(Normalizer):
 
     def normalize(self, raw: dict) -> Project:
         project = Project()
-        meta = raw.get("meta")
-        project.meta.source = meta["id"].platform
-        project.meta.owner = meta["id"].owner
-        project.meta.repo = meta["id"].repo
-        project.meta.last_visited = meta.get("last_visited")
+        data_set: DataSet = raw.get("data-set")
+        # project.meta.source = meta["id"].hosting_id
+        # # project.meta.owner = meta["id"].owner
+        # project.meta.repo = meta["id"].repo
+        # project.meta.last_visited = meta.get("last_visited")
 
-        log.debug("normalizing project metadata '%s'", project.id)
-        project.name = dict_utils.get_key(raw, "projectName")
+        log.debug("normalizing project metadata '%s'", data_set.hosting_unit_id)
+        log.debug("project metadata '%s'", raw)
+        project.name = DictUtils.get_key(raw, "projectName")
         project.repo = self._repo(raw)
-        project.version = dict_utils.get_key(raw, "projectVersion", default="1.0.0")
+        project.version = DictUtils.get_key(raw, "projectVersion", default="1.0.0")
         project.license = self._license(raw)
-        project.licensor = dict_utils.get_key(raw, "responsibleParty")
+        project.licensor = DictUtils.get_key(raw, "responsibleParty")
 
         project.function = self._function(raw)
         project.documentation_language = self._language(project.function)
         project.documentation_readiness_level = "ODRL-3*"
         project.cpc_patent_class = self._classification(raw)
-        project.upload_method = UploadMethods.AUTO
+        project.sourcing_procedure = SourcingProcedure.API
 
-        project.specific_api_data["primaryType"] = dict_utils.get_key(raw, "primaryType")
-        project.specific_api_data["additionalType"] = dict_utils.get_key(raw, "additionalType")
-        project.specific_api_data["hardwareLicense"] = dict_utils.get_key(raw, "hardwareLicense")
-        project.specific_api_data["softwareLicense"] = dict_utils.get_key(raw, "softwareLicense")
-        project.specific_api_data["documentationLicense"] = dict_utils.get_key(raw, "documentationLicense")
-        project.specific_api_data["country"] = dict_utils.get_key(raw, "country")
+        project.specific_api_data["primaryType"] = DictUtils.get_key(raw, "primaryType")
+        project.specific_api_data["additionalType"] = DictUtils.get_key(raw, "additionalType")
+        project.specific_api_data["hardwareLicense"] = DictUtils.get_key(raw, "hardwareLicense")
+        project.specific_api_data["softwareLicense"] = DictUtils.get_key(raw, "softwareLicense")
+        project.specific_api_data["documentationLicense"] = DictUtils.get_key(raw, "documentationLicense")
+        project.specific_api_data["country"] = DictUtils.get_key(raw, "country")
 
-        certification_date = dict_utils.get_key(raw, "certificationDate")
+        certification_date = DictUtils.get_key(raw, "certificationDate")
         if certification_date:
             project.specific_api_data["certificationDate"] = datetime.strptime(certification_date, "%Y-%m-%dT%H:%M%z")
         return project
@@ -96,18 +100,18 @@ class OshwaNormalizer(Normalizer):
 
     @classmethod
     def _license(cls, raw: dict):
-        raw_license = dict_utils.get_key(raw, "hardwareLicense")
+        raw_license = DictUtils.get_key(raw, "hardwareLicense")
 
         if not raw_license:
             return None
 
         if raw_license == "Other":
-            raw_license = dict_utils.get_key(raw, "documentationLicense")
+            raw_license = DictUtils.get_key(raw, "documentationLicense")
 
         if not raw_license or raw_license in ["None", "Other"]:
             return None
 
-        return licenses.get_by_id_or_name(LICENSE_MAPPING.get(raw_license))
+        return licenses.get_by_id_or_name(LICENSE_MAPPING.get(raw_license, raw_license))
 
     @classmethod
     def _function(cls, raw: dict):

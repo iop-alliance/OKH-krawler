@@ -9,7 +9,7 @@ from typing import Any
 from langdetect import LangDetectException
 from langdetect import detect as detect_language
 
-from krawl.project import Project
+from krawl.model.project import Project
 
 
 def strip_html(html):
@@ -97,13 +97,13 @@ specification."""
         raise NotImplementedError()
 
     @classmethod
-    def _language(cls, description: str | None):
+    def _language(cls, description: str | None) -> str | None:
         if not description:
-            return "en"
+            return None
         try:
             lang = detect_language(description)
         except LangDetectException:
-            return "en"
+            return None
         if lang == "unknown":
-            return "en"
+            return None
         return lang

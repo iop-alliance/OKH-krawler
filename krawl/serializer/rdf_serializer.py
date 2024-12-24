@@ -9,7 +9,7 @@ import validators
 from rdflib import URIRef
 
 from krawl.errors import SerializerError
-from krawl.project import Project
+from krawl.model.project import Project
 from krawl.serializer import ProjectSerializer
 
 # Useful info about RDF:
@@ -27,6 +27,10 @@ TSDC = rdflib.Namespace(f"{BASE_IRI_TSDC}#")
 
 
 class RDFProjectSerializer(ProjectSerializer):
+
+    @classmethod
+    def extensions(cls) -> list[str]:
+        return ["ttl"]
 
     def serialize(self, project: Project) -> str:
         try:
@@ -70,7 +74,7 @@ class RDFProjectSerializer(ProjectSerializer):
     def _title_case(s):
         parts = s.split(" ")
         capitalized = "".join([p.capitalize() for p in parts])
-        alpha_num = "".join([l for l in capitalized if l.isalnum()])
+        alpha_num = "".join([cap for cap in capitalized if cap.isalnum()])
         return alpha_num
 
     @staticmethod
@@ -392,8 +396,3 @@ class RDFProjectSerializer(ProjectSerializer):
             cls.add(graph, module_subject, OKH.hasComponent, part_subject)
 
         return graph
-
-    @staticmethod
-    def _extend(l, v):
-        if v is not None:
-            l.extend(v)

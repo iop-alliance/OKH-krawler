@@ -45,10 +45,23 @@ jobs:
         run: poetry install
 
       - name: Run Python unit-tests
+        # run: poetry run pytest -v
         run: poetry run poe test
+
+      # - name: Run YAPF to test if python code is correctly formatted
+      #   uses: AlexanderMelde/yapf-action@v2.0
+      #   with:
+      #     args: --verbose
+
+      # - name: Run isort to test if python imports are correctly sorted
+      #   uses: isort/isort-action@master
+      #   with:
+      #     sortPaths: krawl
 
       - name: Checks Python code formatting
         run: poetry run poe check_format
 
-      - name: Run the Python linter
+      - name: Run Python linter
         run: poetry run poe lint
+      - name: Run Python linter (fast & modern)
+        uses: astral-sh/ruff-action@v1

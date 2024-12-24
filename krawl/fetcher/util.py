@@ -4,6 +4,8 @@ import os
 import re
 import subprocess
 import sys
+import yaml
+import toml
 import tempfile
 from pathlib import Path
 
@@ -12,12 +14,14 @@ from krawl.log import get_child_logger
 
 log = get_child_logger("util")
 
-_manifest_name_pattern = r"^okh([_\-\t ].+)*$"
+# _manifest_name_pattern = r"^okh([_\-\t ].+)*$"
+_manifest_name_pattern = r"^okh([_\-:.][0-9a-zA-Z:._\-]+)?$"
 
 
 def is_accepted_manifest_file_name(path: Path) -> bool:
     """Return true if the given file name matches an accepted manifest name."""
-    return bool(re.match(_manifest_name_pattern, path.with_suffix("").stem))
+    # return bool(re.match(_manifest_name_pattern, path.with_suffix("").stem))
+    return bool(re.match(_manifest_name_pattern, path.stem))
 
 
 def is_empty(content: str | bytes) -> bool:
@@ -70,7 +74,8 @@ def sanitize_okh_v1_yaml(manifest_file: Path):
 
 
 def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes | None:
-    """Converts OKH v1 (YAMl) manifest contents to OKH LOSH (TOML) manifest contents,
+    """Converts serialized (bytes) OKH v1 (YAMl) manifest contents
+    to serialized (bytes) OKH LOSH (TOML) manifest contents,
     using the external software 'okh-tool'."""
 
     manifest_contents = _recuperate_invalid_yaml_manifest(manifest_contents)
@@ -103,3 +108,19 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes | None:
         os.remove(fn_losh)
 
     return manifest_contents
+
+def convert_okh_v1_dict_to_losh(manifest_contents: dict) -> dict:
+    """Converts deserialized OKH v1 (YAMl) manifest contents
+    to deserialized OKH LOSH (TOML) manifest contents,
+    using the external software 'okh-tool'."""
+
+    manifest_contents_yaml: str = yaml.dump(data=manifest_contents, stream=None)
+    # tst_yaml_file = 'tst.yml'
+    # yaml.dump(data=manifest_contents, stream=tst_yaml_file)
+    manifest_contents_toml: bytes = convert_okh_v1_to_losh(manifest_contents_yaml.encode('utf-8'))
+    # print(manifest_contents_toml.decode('utf-8'))
+    # tst_toml_file = 'tst.toml'
+    # manifest_contents_losh: dict = toml.load(tst_toml_file)
+    manifest_contents_losh: dict = toml.loads(manifest_contents_toml.decode('utf-8'))
+
+    return manifest_contents_losh

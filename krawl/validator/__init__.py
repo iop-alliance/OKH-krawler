@@ -5,7 +5,7 @@ import re
 import validators
 from langcodes import tag_is_valid
 
-from krawl.project import Project
+from krawl.model.project import Project
 
 # see https://semver.org
 _semver_pattern = re.compile(r"^(0|[1-9][0-9]*)"

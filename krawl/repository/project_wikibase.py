@@ -7,8 +7,8 @@ from rdflib.graph import Graph
 import krawl.wikibase.core
 from krawl.config import Config
 from krawl.log import get_child_logger
-from krawl.project import Project
-from krawl.repository import ProjectRepository
+from krawl.model.project import Project
+from krawl.repository import ProjectRepository, ProjectRepositoryType
 from krawl.serializer.rdf_serializer import RDFProjectSerializer
 from krawl.wikibase.api import API
 
@@ -17,7 +17,7 @@ log = get_child_logger("wikibase")
 
 class ProjectRepositoryWikibase(ProjectRepository):
 
-    NAME = "wikibase"
+    TYPE: ProjectRepositoryType = ProjectRepositoryType.TRIPLE_STORE
     CONFIG_SCHEMA = {
         "type": "dict",
         "default": {},

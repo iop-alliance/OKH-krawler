@@ -9,14 +9,16 @@ from krawl.fetcher.github import GitHubFetcher
 from krawl.fetcher.oshwa import OshwaFetcher
 from krawl.fetcher.thingiverse import ThingiverseFetcher
 from krawl.fetcher.wikifactory import WikifactoryFetcher
-from krawl.project import Project, ProjectID
+from krawl.model.hosting_unit import HostingUnitId, HostingUnitIdFactory
+from krawl.model.project import Project
+from krawl.model.project_id import ProjectID
 from krawl.repository import FetcherStateRepository
 
 _fetcher_classes = {
-    WikifactoryFetcher.NAME: WikifactoryFetcher,
-    GitHubFetcher.NAME: GitHubFetcher,
-    OshwaFetcher.NAME: OshwaFetcher,
-    ThingiverseFetcher.NAME: ThingiverseFetcher,
+    WikifactoryFetcher.HOSTING_ID: WikifactoryFetcher,
+    GitHubFetcher.HOSTING_ID: GitHubFetcher,
+    OshwaFetcher.HOSTING_ID: OshwaFetcher,
+    ThingiverseFetcher.HOSTING_ID: ThingiverseFetcher,
 }
 
 
@@ -74,13 +76,13 @@ class FetcherFactory:
 
     def fetch(self, id: ProjectID) -> Project:
         """Call `fetch` function on fitting fetcher."""
-        if id.platform not in self._fetchers:
-            name = id.platform
+        # TODO PRIORITY:LOW We parse the URI here, but then parse it again within the individual fetcher. Maybe try to parse only once
+        hosting_unit_id, _path = HostingUnitIdFactory.from_url(id.uri)
+        if hosting_unit_id.hosting_id() not in self._fetchers:
             raise FetcherError(
-                f"no fetcher available for '{name}', available are: {', '.join(_fetcher_classes.keys())}")
-        if id.platform not in self._fetchers:
-            raise FetcherError(f"fetcher '{id.platform}' is not enabled")
-        return self._fetchers[id.platform].fetch(id)
+                f"No fetcher available for '{hosting_unit_id.hosting_id()}', available are: {', '.join(_fetcher_classes.keys())}"
+            )
+        return self._fetchers[hosting_unit_id.hosting_id()].fetch(id)
 
     def fetch_all(self, start_over=True) -> Generator[Project]:
         """Call `fetch_all` function on all enabled fetchers."""

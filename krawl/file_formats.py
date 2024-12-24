@@ -55,7 +55,7 @@ def _init_file_formats():
 
 
 def get_formats(type_):
-    if not type_ in _formats:
+    if type_ not in _formats:
         raise ValueError(f"no such file format: '{type_}'")
     return _formats[type_]
 

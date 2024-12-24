@@ -36,7 +36,7 @@ class LicenseType(str, Enum):
                 return cls.UNKNOWN
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class License:  # pylint: disable=too-many-instance-attributes
     _id: str
     name: str
@@ -47,6 +47,15 @@ class License:  # pylint: disable=too-many-instance-attributes
     is_osi_approved: bool = False
     is_fsf_libre: bool = False
     is_blocked: bool = True
+
+    def id(self) -> str:
+        return self._id
+
+    def __str__(self) -> str:
+        return self.id()
+
+    def __repr__(self) -> str:
+        return self.id()
 
 
 def _normalize_name(name: str) -> str:
@@ -60,36 +69,36 @@ def _init_licenses():
         spdx-licenses.json: https://raw.githubusercontent.com/spdx/license-list-data/master/json/licenses.json
         spdx-blocklist.json: https://raw.githubusercontent.com/OPEN-NEXT/LOSH-Licenses/main/SPDX-blocklist.json
     """
-    assets_path = Path(__file__).parent / "assets"
+    assets_path = Path(__file__).parent.parent / "assets"
 
     licenses_file = assets_path / "spdx-licenses.json"
     with licenses_file.open("r") as f:
         raw_license_info = json.load(f)
-        license_info = {_normalize_name(l["licenseId"]): l for l in raw_license_info["licenses"]}
+        license_info = {_normalize_name(lic["licenseId"]): lic for lic in raw_license_info["licenses"]}
     licenses_extra_file = assets_path / "spdx-licenses-extra.json"
     with licenses_extra_file.open("r") as f:
         raw_license_extra_info = json.load(f)
-        license_extra_info = {_normalize_name(l["licenseId"]): l for l in raw_license_extra_info["licenses"]}
+        license_extra_info = {_normalize_name(lic["licenseId"]): lic for lic in raw_license_extra_info["licenses"]}
     for name in license_extra_info:
         if name in license_info:
             license_info[name] = _merge_dicts(license_info[name], license_extra_info[name])
 
     licenses = {
         n: License(
-            _id=l["licenseId"],
-            name=l["name"],
-            type_=LicenseType.from_string(l.get("type")),
-            reference_url=l["reference"],
-            details_url=l["detailsUrl"],
+            _id=lic_inf["licenseId"],
+            name=lic_inf["name"],
+            type_=LicenseType.from_string(lic_inf.get("type")),
+            reference_url=lic_inf["reference"],
+            details_url=lic_inf["detailsUrl"],
             is_spdx=True,
-            is_osi_approved=l["isOsiApproved"],
-            is_fsf_libre=l.get("isFsfLibre", False),
-            is_blocked=l.get("isBlocked", False),
-        ) for n, l in license_info.items()
+            is_osi_approved=lic_inf["isOsiApproved"],
+            is_fsf_libre=lic_inf.get("isFsfLibre", False),
+            is_blocked=lic_inf.get("isBlocked", False),
+        ) for n, lic_inf in license_info.items()
     }
 
     # create mapping between license name and id (performance wise)
-    name_to_id = {_normalize_name(l.name): k for k, l in licenses.items()}
+    name_to_id = {_normalize_name(lic.name): key for key, lic in licenses.items()}
 
     return licenses, name_to_id
 
@@ -121,7 +130,7 @@ def get_licenses() -> list:
 
 
 def get_blocked():
-    return [l for l in _licenses.values() if not l.is_blocked]
+    return filter(lambda lic: lic.is_blocked, _licenses.values())
 
 
 def get_by_id(id: str) -> License:
@@ -145,6 +154,14 @@ def get_by_id_or_name(id_or_name: str) -> License:
         _id=f'LicenseRef-{id_or_name}',
         name=id_or_name,
     )
+
+
+def get_spdx_by_id_or_name(id_or_name: str) -> str | None:
+    spdx_id = None
+    license = get_by_id_or_name(id_or_name)
+    if license:
+        spdx_id = license.id()
+    return spdx_id
 
 
 # preload the license on import

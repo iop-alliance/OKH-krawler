@@ -2,14 +2,18 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-from krawl.project import Project, ProjectID
+from krawl.model.hosting_id import HostingId
+from krawl.model.project import Project
+from krawl.model.project_id import ProjectID
 
 
 class Fetcher:
-    """Interface for fetching projects."""
+    """Interface for fetching projects
+    from a specific hosting technology
+    (e.g. GitHub or IPFS)."""
 
-    # Domain name of the platform
-    NAME = None
+    # The platform the fetcher can fetch projects from
+    HOSTING_ID: HostingId = None
     # configuration validation schema, see Cerberus for more information:
     # https://docs.python-cerberus.org/en/stable/validation-rules.html
     CONFIG_SCHEMA = None

@@ -23,7 +23,7 @@ from cerberus import TypeDefinition, Validator
 from cerberus.errors import REQUIRED_FIELD, BasicErrorHandler, ValidationError
 from str_to_bool import str_to_bool
 
-from krawl import dict_utils
+from krawl.dict_utils import DictUtils
 from krawl.errors import ConfigError
 
 # schema for normalization/validation
@@ -369,7 +369,7 @@ class ConfigValidator(Validator):
         if self.auto_coerce:
             for field, value in mapping.items():
                 if field in schema \
-                    and not "coerce" in schema[field] \
+                    and "coerce" not in schema[field] \
                     and "type" in schema[field] \
                     and schema[field]["type"] != "string":
                     if not isinstance(value, str):
@@ -514,14 +514,14 @@ class YamlFileConfigLoader(ConfigLoader):
 
     def __init__(self, schema: Mapping, path: str | Path | None) -> None:
         self._schema = schema
-        dict_utils.to_path = path if isinstance(path, Path) else Path(path) if path is not None else None
+        self._path = path if isinstance(path, Path) else Path(path) if path is not None else None
 
     def load(self) -> Config:
-        if not dict_utils.to_path:
+        if not self._path:
             return Config()
         try:
             # get YAML file content
-            with dict_utils.to_path.open("r") as f:
+            with self._path.open("r") as f:
                 raw = yaml.safe_load(f) or {}
         except OSError as e:
             raise ConfigError(f"Failed to load YAML config: {e}", reasons=str(e)) from e
@@ -531,7 +531,7 @@ class YamlFileConfigLoader(ConfigLoader):
         if reasons:
             raise ConfigError(
                 "There is one or more errors in the configuration file '{}':\n    {}".format(
-                    dict_utils.to_path, "\n    ".join(reasons)),
+                    self._path, "\n    ".join(reasons)),
                 reasons,
             )
         return Config(validated)
@@ -551,7 +551,7 @@ class KrawlerConfigLoader(ConfigLoader):
 
     def load(self) -> Config:
         # load the configs using the specified loaders
-        configs = [l.load() for l in self._loaders]
+        configs = [ldrs.load() for ldrs in self._loaders]
 
         # merge the configs
         merged = Config()

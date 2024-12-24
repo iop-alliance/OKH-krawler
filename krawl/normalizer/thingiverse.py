@@ -5,23 +5,39 @@ import pathlib
 from datetime import datetime, timezone
 from pathlib import Path
 
-from krawl import dict_utils, licenses
+from krawl.dict_utils import DictUtils
 from krawl.file_formats import get_type_from_extension
 from krawl.log import get_child_logger
+from krawl.model import licenses
+from krawl.model.file import File
+from krawl.model.project import Project
+from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.normalizer import Normalizer, strip_html
-from krawl.project import File, Project, UploadMethods
 
 log = get_child_logger("thingiverse")
 
+# Maps Thingiverse license names to (search_id, SPDX-Id).
+# If SPDX-Id is None, the license is not Open Source.
 LICENSE_MAPPING = {
-    "Creative Commons - Attribution": "CC-BY-4.0",
-    "Creative Commons - Public Domain Dedication": "CC0-1.0",
-    "Public Domain": "CC0-1.0",
-    "Creative Commons - Attribution - Share Alike": "CC-BY-SA-4.0",
-    "GNU - GPL": "GPL-3.0-or-later",
-    "GNU - LGPL": "LGPL-3.0-or-later",
-    "BSD": "BSD-4-Clause",
-    "BSD License": "BSD-4-Clause"
+    "Creative Commons - Attribution": ("cc", "CC-BY-4.0"),
+    "Creative Commons - Attribution - Share Alike": ("cc-sa", "CC-BY-SA-4.0"),
+    "Creative Commons - Attribution - No Derivatives": ("cc-nd", None),
+    "Creative Commons - Attribution - Non-Commercial": ("cc-nc", None),
+    "Creative Commons - Attribution - Non-Commercial - Share Alike": ("cc-nc-sa", None),
+    "Creative Commons - Attribution - Non-Commercial - No Derivatives": ("cc-nc-nd", None),
+    "Creative Commons - Share Alike": ("cc-sa", "CC-BY-SA-4.0"),
+    "Creative Commons - No Derivatives": ("cc-nd", None),
+    "Creative Commons - Non-Commercial": ("cc-nc", None),
+    "Creative Commons - Non Commercial - Share alike": ("cc-nc-sa", None),
+    "Creative Commons - Non Commercial - No Derivatives": ("cc-nc-nd", None),
+    "Creative Commons - Public Domain Dedication": ("pd0", "CC0-1.0"),
+    "Public Domain": ("public", "CC0-1.0"),
+    "GNU - GPL": ("gpl", "GPL-3.0-or-later"),
+    "GNU - LGPL": ("lgpl", "LGPL-3.0-or-later"),
+    "BSD": ("bsd", "BSD-4-Clause"),
+    "BSD License": ("bsd", "BSD-4-Clause"),
+    "Nokia": ("nokia", None),
+    "All Rights Reserved": ("none", None),
 }
 BROKEN_IMAGE_URL = 'https://cdn.thingiverse.com/'
 
@@ -40,16 +56,16 @@ class ThingiverseNormalizer(Normalizer):
         project.meta.last_visited = raw["lastVisited"]
         project.name = raw['name']
         project.repo = raw['public_url']
-        project.version = "1.0.0"
+        project.version = raw['modified']
         project.license = self._license(raw)
-        project.licensor = self._creator(raw)
+        project.licensor = project.meta.owner
         project.function = self._function(raw)
         project.documentation_language = self._language(project.function)
         project.technology_readiness_level = "OTRL-4"
         project.documentation_readiness_level = "ODRL-3"
-        project.upload_method = UploadMethods.AUTO
+        project.sourcing_procedure = SourcingProcedure.API
 
-        project.image = self._image(project, raw)
+        project.image = self._images(project, raw)
         project.export = [self._file(project, file) for file in self._filter_files_by_category(raw["files"], "export")]
         project.source = [self._file(project, file) for file in self._filter_files_by_category(raw["files"], "source")]
         return project
@@ -57,8 +73,15 @@ class ThingiverseNormalizer(Normalizer):
     @classmethod
     def _creator(cls, raw):
         if raw['creator']:
-            return raw["creator"]["name"]
-
+            raw_creator = raw["creator"]
+            creator = {}
+            if raw_creator["name"]:
+                creator["name"] = raw_creator["name"]
+            if raw_creator["public_url"]:
+                creator["url"] = raw_creator["public_url"]
+            if not creator:
+                creator = None
+            return creator
         return None
 
     @classmethod
@@ -77,53 +100,73 @@ class ThingiverseNormalizer(Normalizer):
 
     @classmethod
     def _license(cls, raw: dict):
-        raw_license = dict_utils.get_key(raw, "license")
+        raw_license = DictUtils.get_key(raw, "license")
 
         if not raw_license:
-            return None
-
-        ## map those license to blocked licenses
-        invalid_licenses = [
-            "Creative Commons - Attribution - Non-Commercial - Share Alike",
-            "Creative Commons - Attribution - Non-Commercial - No Derivatives",
-            "Creative Commons - Attribution - No Derivatives",
-            "Creative Commons - Attribution - Non-Commercial",
-            "All Rights Reserved",
-        ]
-
-        if raw_license in invalid_licenses:
             return None
 
         if raw_license in ('None', 'Other'):
             return None
 
-        return licenses.get_by_id_or_name(LICENSE_MAPPING.get(raw_license))
+        mapped_license = LICENSE_MAPPING.get(raw_license)
 
-    @classmethod
-    def _function(cls, raw: dict):
-        raw_description = raw.get("description")
-        if not raw_description:
-            return ""
-        description = strip_html(raw_description).strip()
-        return description
-
-    @classmethod
-    def _image(cls, project: Project, raw: dict) -> File | None:
-        image_raw = raw.get("thumbnail", None)
-        if not image_raw or image_raw == BROKEN_IMAGE_URL:
+        if not mapped_license:
             return None
 
-        file = File()
-        file.path = Path(image_raw)
-        file.name = file.path.stem if file.path else None
-        file.url = image_raw
-        file.frozen_url = None
-        file.created_at = datetime.strptime(raw["added"], "%Y-%m-%dT%H:%M:%S%z")
-        file.last_changed = datetime.strptime(raw["added"], "%Y-%m-%dT%H:%M:%S%z")
-        file.last_visited = datetime.now(timezone.utc)
-        file.license = project.license
-        file.licensor = project.licensor
-        return file
+        spdx_id = mapped_license[1]
+        if spdx_id is None:
+            return None
+
+        return licenses.get_by_id_or_name(spdx_id)
+
+    @classmethod
+    def _function(cls, raw: dict) -> str | None:
+        raw_description = raw.get("description")
+        if raw_description:
+            return strip_html(raw_description).strip()
+        return None
+
+    @classmethod
+    def _images(cls, project: Project, raw: dict) -> list[File]:
+        images = []
+
+        thumbnail_url = raw.get("thumbnail", None)
+        if thumbnail_url and not thumbnail_url == BROKEN_IMAGE_URL:
+            file = File()
+            file.path = Path(thumbnail_url)
+            file.name = file.path.stem if file.path else None
+            file.url = thumbnail_url
+            file.frozen_url = None
+            added_raw = raw.get("added", None)
+            if added_raw:
+                added_fmtd = datetime.strptime(added_raw, "%Y-%m-%dT%H:%M:%S%z")
+                file.created_at = added_fmtd
+                file.last_changed = added_fmtd
+            file.last_visited = datetime.now(timezone.utc)
+            file.license = project.license
+            file.licensor = project.licensor
+            images.append(file)
+
+        default_image_raw = raw.get("default_image", None)
+        if default_image_raw:
+            url = default_image_raw.get("url", None)
+            if url and not url == BROKEN_IMAGE_URL:
+                file = File()
+                file.path = Path(url)
+                file.name = default_image_raw.get("name", None)
+                file.url = url
+                file.frozen_url = None
+                added_raw = default_image_raw.get("added", None)
+                if added_raw:
+                    added_fmtd = datetime.strptime(added_raw, "%Y-%m-%dT%H:%M:%S%z")
+                    file.created_at = added_fmtd
+                    file.last_changed = added_fmtd
+                file.last_visited = datetime.now(timezone.utc)
+                file.license = project.license
+                file.licensor = project.licensor
+                images.append(file)
+
+        return images
 
     @classmethod
     def _file(cls, project: Project, raw_file: dict) -> File | None:

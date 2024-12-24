@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
-from krawl.project import Project, ProjectID
+from krawl.model.project import Project
+from krawl.model.project_id import ProjectID
 
 
-class Status(str, Enum):
+class Status(StrEnum):
     UNKNOWN = "unknown"
     OK = "ok"
     FAILED = "failed"

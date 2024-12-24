@@ -7,8 +7,9 @@ from typing import Any
 
 import validators
 
-from krawl.project import File, Project
-from krawl.validator import Validator, is_bcp_47_language_tag, is_non_zero_length_string, is_okh_version, is_version
+from krawl.model.file import File
+from krawl.model.project import Project
+from krawl.validator import Validator, is_bcp_47_language_tag, is_non_zero_length_string, is_okh_version
 
 
 class StrictValidator(Validator):
@@ -22,8 +23,8 @@ class StrictValidator(Validator):
             reasons.append(f"invalid okhv '{project.okhv}'")
         reasons.extend(_validate_string("name", project.name, min=1, max=256))
         reasons.extend(_validate_url("repo", project.repo))
-        reasons.extend(_validate_file("image", project.image, missing_ok=True))
-        reasons.extend(_validate_string("functional description", project.function, min=1, max=100000))
+        # reasons.extend(_validate_file("image", project.image, missing_ok=True))
+        reasons.extend(_validate_string("function", project.function, min=1, max=100000))
         reasons.extend(_validate_string("licensor", project.licensor, min=1, max=256))
         reasons.extend(_validate_string("organization", project.organization, min=1, max=256, missing_ok=True))
         reasons.extend(_validate_file("readme", project.readme, missing_ok=True))
@@ -64,7 +65,7 @@ def _validate_in_list(title: str, value: Any, in_: Iterable, missing_ok=False) -
         if missing_ok:
             return []
         return [f"missing {title}"]
-    if not value in in_:
+    if value not in in_:
         return [f"{title} '{value}' is unknown"]
     return []
 

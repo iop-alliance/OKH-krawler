@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from krawl.project import Project, ProjectID
+from krawl.model.project import Project
+from krawl.model.project_id import ProjectID
 from krawl.reporter import Reporter, Status
 
 

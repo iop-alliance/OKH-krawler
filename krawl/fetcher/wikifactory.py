@@ -8,11 +8,15 @@ from gql import gql
 from gql.transport.requests import RequestsHTTPTransport
 
 from krawl.config import Config
-from krawl.errors import FetcherError, NormalizerError
+from krawl.errors import FetcherError, NormalizerError, ParserError
 from krawl.fetcher import Fetcher
 from krawl.log import get_child_logger
+from krawl.model.data_set import CrawlingMeta, DataSet
+from krawl.model.hosting_id import HostingId
+from krawl.model.hosting_unit import HostingUnitIdForge
+from krawl.model.project import Project
+from krawl.model.project_id import ProjectID
 from krawl.normalizer.wikifactory import WikifactoryNormalizer
-from krawl.project import Project, ProjectID
 from krawl.repository import FetcherStateRepository
 
 log = get_child_logger("wikifactory")
@@ -154,7 +158,7 @@ class WikifactoryFetcher(Fetcher):
             "cursor": ""
         }
 
-    To get all available fields the following query might be handy:
+    To get all available fields, the following query might be handy:
 
         {
             __schema {
@@ -170,10 +174,9 @@ class WikifactoryFetcher(Fetcher):
                 }
             }
         }
-
     """
 
-    NAME = "wikifactory.com"
+    HOSTING_ID: HostingId = HostingId.WIKI_FACTORY_COM
     BATCH_SIZE = 30
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name="wikifactory", default_timeout=15, access_token=False)
 
@@ -194,21 +197,33 @@ class WikifactoryFetcher(Fetcher):
             fetch_schema_from_transport=False,
         )
 
-    def __fetch_one(self, raw_project: dict, last_visited: datetime) -> Project:
-        id = ProjectID(self.NAME, raw_project["parentSlug"], raw_project["slug"])
-        meta = {
-            "meta": {
-                "owner": id.owner,
-                "repo": id.repo,
-                "path": id.path,
-                "fetcher": self.NAME,
-                "last_visited": last_visited,
-            }
+    def __fetch_one(self, hosting_unit_id: HostingUnitIdForge, raw_project: dict, last_visited: datetime) -> Project:
+        # id = ProjectID(self.HOSTING_ID, raw_project["parentSlug"], raw_project["slug"])
+        # meta = {
+        #     "meta": {
+        #         "owner": id.owner,
+        #         "repo": id.repo,
+        #         "path": id.path,
+        #         "fetcher": self.HOSTING_ID,
+        #         "last_visited": last_visited,
+        #     }
+        # }
+        unfiltered_output = {
+            "data-set": DataSet(
+                crawling_meta=CrawlingMeta(
+                    # created_at: datetime = None
+                    last_visited=last_visited,
+                    # manifest=path,
+                    # last_changed: datetime = None
+                    # history = None,
+                ),
+                hosting_unit_id=hosting_unit_id,
+            )
         }
 
         # try normalizing it
         try:
-            raw_project.update(meta)
+            raw_project.update(unfiltered_output)
             project = self._normalizer.normalize(raw_project)
         except NormalizerError as err:
             raise FetcherError(f"normalization failed, that should not happen: {err}") from err
@@ -218,19 +233,24 @@ class WikifactoryFetcher(Fetcher):
     def fetch(self, id: ProjectID) -> Project:
         log.debug("fetching project %s", id)
 
+        try:
+            hosting_id = HostingUnitIdForge.from_url_no_path(id.uri)
+        except ParserError as err:
+            raise FetcherError(f"Invalid WikiFactory project URL: '{id.uri}'") from err
+
         # download metadata
-        params = {"space": id.owner, "slug": id.repo}
+        params = {"space": hosting_id.owner, "slug": hosting_id.repo}
         try:
             result = self._client.execute(QUERY_PROJECT_BY_SLUG, variable_values=params)
-        except Exception as e:
-            raise FetcherError(f"failed to fetch project '{id}'") from e
+        except Exception as err:
+            raise FetcherError(f"failed to fetch project '{hosting_id}': {err}") from err
         if not result:
-            raise FetcherError(f"project '{id}' not found")
+            raise FetcherError(f"project '{hosting_id}' not found")
 
         last_visited = datetime.now(timezone.utc)
 
         raw_project = result["project"]["result"]
-        project = self.__fetch_one(raw_project, last_visited)
+        project = self.__fetch_one(hosting_id, raw_project, last_visited)
 
         return project
 
@@ -239,9 +259,9 @@ class WikifactoryFetcher(Fetcher):
         cursor = ""
         num_fetched = 0
         if start_over:
-            self._state_repository.delete(self.NAME)
+            self._state_repository.delete(self.HOSTING_ID)
         else:
-            state = self._state_repository.load(self.NAME)
+            state = self._state_repository.load(self.HOSTING_ID)
             if state:
                 cursor = state.get("cursor", "")
                 num_fetched = state.get("num_fetched", 0)
@@ -265,15 +285,18 @@ class WikifactoryFetcher(Fetcher):
             last_visited = datetime.now(timezone.utc)
             for edge in raw["edges"]:
                 raw_project = edge["node"]
-                project = self.__fetch_one(raw_project, last_visited)
+                hosting_id = HostingUnitIdForge(_hosting_id=self.HOSTING_ID,
+                                                owner=raw_project["space"]["slug"],
+                                                repo=raw_project["slug"])
+                project = self.__fetch_one(hosting_id, raw_project, last_visited)
                 log.debug("yield project %s", project.id)
                 yield project
 
             # save current progress
-            self._state_repository.store(self.NAME, {
+            self._state_repository.store(self.HOSTING_ID, {
                 "cursor": cursor,
                 "num_fetched": num_fetched,
             })
 
-        self._state_repository.delete(self.NAME)
+        self._state_repository.delete(self.HOSTING_ID)
         log.debug("fetched %d projects from Wikifactory", num_fetched)

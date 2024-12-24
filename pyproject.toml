@@ -19,6 +19,7 @@ pathvalidate = "^2.3.2"
 langdetect = "^1.0.8"
 PyYAML = "^6.0"
 requests-oauthlib = "^1.3.0"
+orjson = "^3.10"
 python-strtobool = "^1.0.3"
 requests = "^2.26.0"
 python-dateutil = "^2.8.2"
@@ -36,6 +37,7 @@ isort = "^5.13.2"
 pylint = "^3.3.2"
 pytest-cov = "^6.0.0"
 pytest-icdiff = "^0.9"
+ruff = "^0.8.4"
 
 [tool.poe.tasks]
 bump = {cmd = "bump2version --allow-dirty", help = "Bump the app version"}
@@ -51,6 +53,7 @@ build = {cmd = "poetry build"}
 format = {shell = "isort krawl && yapf -i -r -vv -p krawl", help = "Format the code using YAPF"}
 check_format = {shell = "isort --check-only krawl && yapf -i -r -vv -p krawl", help = "Check whether the formatting is correct. Exits with 0 if it is"}
 lint = {cmd = "pylint --fail-under 5 --fail-on E krawl", help = "Use PyLint to evaluate the code quality"}
+fast_lint = {cmd = "ruff check krawl", help = "Use Ruff to evaluate the code quality"}
 _publish = {cmd = "poetry publish"}
 release = {sequence = ["format", "test", "build", "_publish"], help = "Create a release of the application and publish it on PyPi"}
 test = {cmd = "python -m unittest tests/**/*.py", help = "Run the test suits"}

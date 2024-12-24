@@ -4,14 +4,14 @@ from collections.abc import Generator
 
 from krawl.config import Config
 from krawl.errors import RepositoryError
-from krawl.project import Project
+from krawl.model.project import Project
 from krawl.repository import ProjectRepository
 from krawl.repository.project_file import ProjectRepositoryFile
 from krawl.repository.project_wikibase import ProjectRepositoryWikibase
 
 _repositories_schemas = {
-    ProjectRepositoryFile.NAME: ProjectRepositoryFile.CONFIG_SCHEMA,
-    ProjectRepositoryWikibase.NAME: ProjectRepositoryWikibase.CONFIG_SCHEMA,
+    ProjectRepositoryFile.TYPE: ProjectRepositoryFile.CONFIG_SCHEMA,
+    ProjectRepositoryWikibase.TYPE: ProjectRepositoryWikibase.CONFIG_SCHEMA,
 }
 
 

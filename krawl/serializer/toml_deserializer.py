@@ -5,12 +5,16 @@ from collections.abc import Mapping
 import toml
 
 from krawl.errors import DeserializerError
+from krawl.model.project import Project
 from krawl.normalizer import Normalizer
-from krawl.project import Project
 from krawl.serializer import ProjectDeserializer
 
 
 class TOMLProjectDeserializer(ProjectDeserializer):
+
+    @classmethod
+    def extensions(cls) -> list[str]:
+        return ["toml"]
 
     def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict = None) -> Project:
         try:

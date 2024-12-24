@@ -4,11 +4,16 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from krawl import dict_utils, licenses
+from krawl.dict_utils import DictUtils
 from krawl.file_formats import get_formats
 from krawl.log import get_child_logger
+from krawl.model import licenses
+from krawl.model.data_set import CrawlingMeta, DataSet
+from krawl.model.file import File
+from krawl.model.part import Part
+from krawl.model.project import Project
+from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.normalizer import Normalizer, strip_html
-from krawl.project import File, Part, Project, UploadMethods
 
 log = get_child_logger("wikifactory")
 
@@ -49,26 +54,26 @@ class WikifactoryNormalizer(Normalizer):
 
     def normalize(self, raw: dict) -> Project:
         project = Project()
-        meta = raw.get("meta")
-        project.meta.source = dict_utils.to_string(meta.get("fetcher"))
-        project.meta.owner = dict_utils.to_string(meta.get("owner"))
-        project.meta.repo = dict_utils.to_string(meta.get("repo"))
-        project.meta.path = dict_utils.to_string(meta.get("path"))
-        project.meta.branch = dict_utils.to_string(meta.get("branch"))
-        project.meta.created_at = datetime.fromisoformat(raw["dateCreated"])
-        project.meta.last_visited = meta.get("last_visited")
-        project.meta.last_changed = datetime.fromisoformat(raw["lastUpdated"])
-        project.upload_method = UploadMethods.AUTO
+        data_set: DataSet = raw.get("data-set")
+        # project.meta.source = DictUtils.to_string(meta.get("fetcher"))
+        # project.meta.owner = DictUtils.to_string(meta.get("owner"))
+        # project.meta.repo = DictUtils.to_string(meta.get("repo"))
+        # project.meta.path = DictUtils.to_string(meta.get("path"))
+        # project.meta.branch = DictUtils.to_string(meta.get("branch"))
+        data_set.created_at = datetime.fromisoformat(raw["dateCreated"])
+        # project.meta.last_visited = meta.get("last_visited")
+        data_set.last_changed = datetime.fromisoformat(raw["lastUpdated"])
+        project.sourcing_procedure = SourcingProcedure.API
 
         log.debug("normalizing project metadata '%s'", project.id)
         files = self._get_files(raw)
-        project.name = dict_utils.to_string(raw.get("name"))
+        project.name = DictUtils.to_string(raw.get("name"))
         project.repo = f"https://wikifactory.com/{raw['parentSlug']}/{raw['slug']}"
-        project.version = dict_utils.get_key(raw, "contribution", "version")
+        project.version = DictUtils.get_key(raw, "contribution", "version")
         version = project.version[:7] if project.version else ''
         project.release = f"https://wikifactory.com/{raw['parentSlug']}/{raw['slug']}/v/{version}"
         project.license = self._license(raw)
-        project.licensor = dict_utils.get_key(raw, "creator", "profile", "fullName")
+        project.licensor = DictUtils.get_key(raw, "creator", "profile", "fullName")
         project.organization = self._organization(raw)
         project.readme = self._get_info_file(["README"], files)
         project.contribution_guide = self._get_info_file(["CONTRIBUTING"], files)
@@ -99,8 +104,8 @@ class WikifactoryNormalizer(Normalizer):
 
     @classmethod
     def _license(cls, raw: dict):
-        raw_license = dict_utils.get_key(raw, "license",
-                                         "abreviation")  # must be spelled wrong, because it is in the schema
+        raw_license = DictUtils.get_key(raw, "license",
+                                        "abreviation")  # must be spelled wrong, because it is in the schema
         if not raw_license:
             return None
         license = licenses.get_by_id_or_name(LICENSE_MAPPING.get(raw_license))
@@ -129,12 +134,12 @@ class WikifactoryNormalizer(Normalizer):
         file.last_changed = datetime.strptime(file_raw["lastUpdated"], "%Y-%m-%dT%H:%M:%S.%f%z")
         file.last_visited = datetime.now(timezone.utc)
         file.license = file_raw["license"]
-        file.licensor = dict_utils.get_key(file_raw, "creator", "profile", "fullName")
+        file.licensor = DictUtils.get_key(file_raw, "creator", "profile", "fullName")
         return file
 
     @classmethod
     def _get_files(cls, raw: dict) -> list[File]:
-        raw_files = dict_utils.get_key(raw, "contribution", "files", default=[])
+        raw_files = DictUtils.get_key(raw, "contribution", "files", default=[])
         files = []
         license = cls._license(raw)
         for meta in raw_files:
