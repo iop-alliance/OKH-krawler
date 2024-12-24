@@ -15,7 +15,7 @@ from krawl.log import get_child_logger
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdWebById
 from krawl.model.project import Project
-from krawl.model.project_id import ProjectID
+from krawl.model.project_id import ProjectId
 from krawl.normalizer.thingiverse import ThingiverseNormalizer
 from krawl.repository import FetcherStateRepository
 
@@ -87,7 +87,7 @@ class ThingiverseFetcher(Fetcher):
 
         return project
 
-    def fetch(self, id: ProjectID) -> Project:
+    def fetch(self, id: ProjectId) -> Project:
         try:
             hosting_unit_id = HostingUnitIdWebById.from_url_no_path(id.uri)
         except ParserError as err:

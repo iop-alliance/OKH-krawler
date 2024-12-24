@@ -15,7 +15,7 @@ from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdWebById
 from krawl.model.project import Project
-from krawl.model.project_id import ProjectID
+from krawl.model.project_id import ProjectId
 from krawl.normalizer.oshwa import OshwaNormalizer
 from krawl.repository import FetcherStateRepository
 from krawl.request.rate_limit import RateLimitFixedTimedelta
@@ -53,7 +53,7 @@ class OshwaFetcher(Fetcher):
         })
 
     def __fetch_one(self, hosting_unit_id: HostingUnitIdWebById, raw_project: dict, last_visited: datetime) -> Project:
-        # id = ProjectID(self.HOSTING_ID, slugify(raw_project["responsibleParty"]), raw_project["oshwaUid"].lower())
+        # id = ProjectId(self.HOSTING_ID, slugify(raw_project["responsibleParty"]), raw_project["oshwaUid"].lower())
 
         unfiltered_output = {
             "data-set": DataSet(
@@ -81,7 +81,7 @@ class OshwaFetcher(Fetcher):
 
         return project
 
-    def fetch(self, id: ProjectID) -> Project:
+    def fetch(self, id: ProjectId) -> Project:
 
         log.debug('Start fetching project %s', id)
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from krawl.model.project import Project
-from krawl.model.project_id import ProjectID
+from krawl.model.project_id import ProjectId
 from krawl.reporter import Reporter, Status
 
 
@@ -15,7 +15,7 @@ class FileReporter(Reporter):
         self._file = None
         self._open(path)
 
-    def add(self, project_id: ProjectID, status: Status, reasons: list[str] = None, project: Project = None) -> None:
+    def add(self, project_id: ProjectId, status: Status, reasons: list[str] = None, project: Project = None) -> None:
         """Add an entry to the report."""
         match status:
             case Status.OK | Status.UNKNOWN:

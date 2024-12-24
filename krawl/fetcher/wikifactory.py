@@ -15,7 +15,7 @@ from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdForge
 from krawl.model.project import Project
-from krawl.model.project_id import ProjectID
+from krawl.model.project_id import ProjectId
 from krawl.normalizer.wikifactory import WikifactoryNormalizer
 from krawl.repository import FetcherStateRepository
 
@@ -198,7 +198,7 @@ class WikifactoryFetcher(Fetcher):
         )
 
     def __fetch_one(self, hosting_unit_id: HostingUnitIdForge, raw_project: dict, last_visited: datetime) -> Project:
-        # id = ProjectID(self.HOSTING_ID, raw_project["parentSlug"], raw_project["slug"])
+        # id = ProjectId(self.HOSTING_ID, raw_project["parentSlug"], raw_project["slug"])
         # meta = {
         #     "meta": {
         #         "owner": id.owner,
@@ -230,7 +230,7 @@ class WikifactoryFetcher(Fetcher):
 
         return project
 
-    def fetch(self, id: ProjectID) -> Project:
+    def fetch(self, id: ProjectId) -> Project:
         log.debug("fetching project %s", id)
 
         try:

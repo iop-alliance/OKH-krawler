@@ -8,7 +8,7 @@ from krawl.cli.command import KrawlCommand
 from krawl.fetcher.factory import FetcherFactory
 from krawl.log import get_child_logger
 from krawl.model.hosting_unit import HostingUnitId, HostingUnitIdFactory
-from krawl.model.project_id import ProjectID
+from krawl.model.project_id import ProjectId
 from krawl.reporter import Status
 from krawl.reporter.dummy import DummyReporter
 from krawl.reporter.file import FileReporter
@@ -56,7 +56,7 @@ class FetchURLCommand(KrawlCommand):
             hosting_unit_id, path = HostingUnitIdFactory.from_url(url)
             log.debug(f"Parsed hosting_unit_id: {hosting_unit_id}")
             required_fetchers_set.add(hosting_unit_id.hosting_id())
-            project_id = ProjectID(uri=url)
+            project_id = ProjectId(uri=url)
             ids.append((project_id, hosting_unit_id, path))
         required_fetchers = list(required_fetchers_set)
 

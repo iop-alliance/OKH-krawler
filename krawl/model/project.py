@@ -7,7 +7,7 @@ from krawl.model.file import File
 from krawl.model.licenses import License
 from krawl.model.licenses import get_by_id_or_name as get_license
 from krawl.model.part import Part
-from krawl.model.project_id import ProjectID
+from krawl.model.project_id import ProjectId
 from krawl.model.software import Software
 from krawl.model.sourcing_procedure import SourcingProcedure
 
@@ -122,7 +122,7 @@ class Project:  # pylint: disable=too-many-instance-attributes
     #     }
 
     @property
-    def id(self) -> ProjectID:
+    def id(self) -> ProjectId:
         """Generates an ID in form of 'platform/owner/repo/path'"""
-        # return ProjectID(self.meta.source, self.meta.owner, self.meta.repo, self.meta.path)
-        return ProjectID.from_url(self.repo)
+        # return ProjectId(self.meta.source, self.meta.owner, self.meta.repo, self.meta.path)
+        return ProjectId.from_url(self.repo)

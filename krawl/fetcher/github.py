@@ -22,7 +22,7 @@ from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdForge
 from krawl.model.project import Project
-from krawl.model.project_id import ProjectID
+from krawl.model.project_id import ProjectId
 from krawl.normalizer.github import GitHubFileHandler
 from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.repository import FetcherStateRepository
@@ -330,7 +330,7 @@ class GitHubFetcher(Fetcher):
         log.debug("fetched project %s", project.id)
         return project
 
-    def fetch(self, id: ProjectID) -> Project:
+    def fetch(self, id: ProjectId) -> Project:
         try:
             hosting_unit_id, path_raw = HostingUnitIdForge.from_url(id.uri)
         except ParserError as err:
@@ -446,7 +446,7 @@ class GitHubFetcher(Fetcher):
                 # owner = path_parts[1]
                 # repo = path_parts[2]
                 # ref = str(Path(*path_parts[5:]))
-                # id = ProjectID(self.HOSTING_ID, path_parts[1], path_parts[2], str(Path(*path_parts[5:])))
+                # id = ProjectId(self.HOSTING_ID, path_parts[1], path_parts[2], str(Path(*path_parts[5:])))
                 # hosting_id = HostingUnitIdForge(
                 #     _hosting_id=self.HOSTING_ID,
                 #     owner=owner,

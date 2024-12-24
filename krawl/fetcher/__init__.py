@@ -4,7 +4,7 @@ from collections.abc import Generator
 
 from krawl.model.hosting_id import HostingId
 from krawl.model.project import Project
-from krawl.model.project_id import ProjectID
+from krawl.model.project_id import ProjectId
 
 
 class Fetcher:
@@ -60,11 +60,11 @@ class Fetcher:
             }
         return schema
 
-    def fetch(self, id: ProjectID) -> Project:
+    def fetch(self, id: ProjectId) -> Project:
         """Fetch metadata of a single project.
 
         Args:
-            id (ProjectID): The project to be fetched.
+            id (ProjectId): The project to be fetched.
         """
         raise NotImplementedError()
 

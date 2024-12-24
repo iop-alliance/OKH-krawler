@@ -11,7 +11,7 @@ from krawl.fetcher.thingiverse import ThingiverseFetcher
 from krawl.fetcher.wikifactory import WikifactoryFetcher
 from krawl.model.hosting_unit import HostingUnitId, HostingUnitIdFactory
 from krawl.model.project import Project
-from krawl.model.project_id import ProjectID
+from krawl.model.project_id import ProjectId
 from krawl.repository import FetcherStateRepository
 
 _fetcher_classes = {
@@ -74,7 +74,7 @@ class FetcherFactory:
     def get_all(self) -> Generator[Fetcher]:
         yield from self._fetchers.values()
 
-    def fetch(self, id: ProjectID) -> Project:
+    def fetch(self, id: ProjectId) -> Project:
         """Call `fetch` function on fitting fetcher."""
         # TODO PRIORITY:LOW We parse the URI here, but then parse it again within the individual fetcher. Maybe try to parse only once
         hosting_unit_id, _path = HostingUnitIdFactory.from_url(id.uri)

@@ -7,7 +7,7 @@ from pathvalidate import sanitize_filename
 from krawl.config import Config
 from krawl.log import get_child_logger
 from krawl.model.project import Project
-from krawl.model.project_id import ProjectID
+from krawl.model.project_id import ProjectId
 from krawl.repository import ProjectRepository, ProjectRepositoryType
 from krawl.serializer.json_serializer import JsonProjectSerializer
 from krawl.serializer.rdf_serializer import RDFProjectSerializer
@@ -58,11 +58,11 @@ class ProjectRepositoryFile(ProjectRepository):
         self._workdir = repository_config.workdir
         self._formats = repository_config.format
 
-    def path_for_id(self, id: ProjectID, extension: str) -> Path:
+    def path_for_id(self, id: ProjectId, extension: str) -> Path:
         sanitized_id = [sanitize_filename(f) for f in str(id).split("/")]
         return (self._workdir / Path(*sanitized_id)) / ("project." + extension)
 
-    # def load(self, id: ProjectID) -> Project:
+    # def load(self, id: ProjectId) -> Project:
     #     file_path = self.path_for_id(id)
     #     log.debug("Loading '%s' from '%s'", id, str(file_path))
     #     serialized = file_path.read_text()

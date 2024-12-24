@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import StrEnum
 
 from krawl.model.project import Project
-from krawl.model.project_id import ProjectID
+from krawl.model.project_id import ProjectId
 
 
 class Status(StrEnum):
@@ -18,7 +18,7 @@ class Status(StrEnum):
 class Reporter:
     """Interface for creating a fetching report."""
 
-    def add(self, project_id: ProjectID, status: Status, reasons: list[str] = None, project: Project = None) -> None:
+    def add(self, project_id: ProjectId, status: Status, reasons: list[str] = None, project: Project = None) -> None:
         """Add an entry to the report."""
         raise NotImplementedError()
 

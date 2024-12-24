@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 
 @dataclass(slots=True, frozen=True)
-class ProjectID:
-    """ProjectID serves as an identifier for projects, that can be used by the
+class ProjectId:
+    """ProjectId serves as an identifier for projects, that can be used by the
     appropriate fetcher to fetch the projects metadata.
 
     Args:
@@ -28,7 +28,7 @@ class ProjectID:
         return self.uri
 
     @classmethod
-    def from_url(cls, url: str) -> ProjectID:
+    def from_url(cls, url: str) -> ProjectId:
         # pu = PlatformURL.from_url(url)
 
         # # if pu.platform == "oshwa.org":
