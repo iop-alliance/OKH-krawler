@@ -9,7 +9,7 @@ import validators
 
 from krawl.dict_utils import DictUtils
 from krawl.errors import ParserError
-from krawl.fetcher import FetchResult
+from krawl.fetcher.result import FetchResult
 from krawl.fetcher.util import convert_okh_v1_dict_to_losh
 from krawl.log import get_child_logger
 from krawl.model.data_set import DataSet
@@ -21,7 +21,8 @@ from krawl.model.part import Part
 from krawl.model.project import Project
 from krawl.model.software import Software
 from krawl.model.sourcing_procedure import SourcingProcedure
-from krawl.normalizer import FileHandler, Normalizer
+from krawl.normalizer import Normalizer
+from krawl.normalizer.file_handler import FileHandler
 from krawl.util import extract_path as krawl_util_extract_path
 from krawl.util import is_url
 

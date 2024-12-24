@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from krawl.log import get_child_logger
-from krawl.normalizer import FileHandler
+from krawl.normalizer.file_handler import FileHandler
 from krawl.util import extract_path
 
 log = get_child_logger("github")

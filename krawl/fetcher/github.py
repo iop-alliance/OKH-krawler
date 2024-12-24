@@ -14,7 +14,9 @@ from requests.adapters import HTTPAdapter, Retry
 
 from krawl.config import Config
 from krawl.errors import FetcherError, NotFound, ParserError
-from krawl.fetcher import FailedFetch, Fetcher, FetchResult
+from krawl.fetcher import Fetcher
+from krawl.fetcher.event import FailedFetch
+from krawl.fetcher.result import FetchResult
 from krawl.fetcher.util import is_accepted_manifest_file_name, is_empty
 from krawl.log import get_child_logger
 from krawl.model.data_set import CrawlingMeta, DataSet
@@ -23,8 +25,9 @@ from krawl.model.hosting_unit import HostingUnitIdForge
 from krawl.model.manifest import Manifest, ManifestFormat
 # from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
-# from krawl.normalizer.github import GitHubFileHandler
-# from krawl.normalizer.manifest import ManifestNormalizer
+from krawl.normalizer import Normalizer
+from krawl.normalizer.github import GitHubFileHandler
+from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.repository import FetcherStateRepository
 from krawl.request.rate_limit import RateLimitFixedTimedelta, RateLimitNumRequests
 
@@ -213,7 +216,7 @@ class GitHubFetcher(Fetcher):
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         super().__init__(state_repository=state_repository)
         # self._state_repository = state_repository
-        # self._normalizer = ManifestNormalizer(GitHubFileHandler())
+        # self._normalizer = self.create_normalizer()
         # self._deserializer_factory = DeserializerFactory()
         self._repo_cache = {}
         # https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
@@ -256,6 +259,10 @@ class GitHubFetcher(Fetcher):
             "User-Agent": config.user_agent,
             "Authorization": f"token {config.access_token}",
         })
+
+    @classmethod
+    def create_normalizer(cls) -> Normalizer:
+        return ManifestNormalizer(GitHubFileHandler())
 
     def __fetch_one(self, hosting_unit_id: HostingUnitIdForge, path: Path) -> FetchResult:
         try:

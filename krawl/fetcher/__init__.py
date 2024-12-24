@@ -1,45 +1,17 @@
 from __future__ import annotations
 
 from collections.abc import Generator
-from dataclasses import dataclass
 
 from krawl.errors import NotOverriddenError
-from krawl.model.data_set import DataSet
+from krawl.fetcher.event import FailedFetch, FetchListener
+from krawl.fetcher.result import FetchResult
 from krawl.model.hosting_id import HostingId
-from krawl.model.hosting_unit import HostingUnitId
-from krawl.model.manifest import Manifest
 from krawl.model.project_id import ProjectId
+from krawl.normalizer import Normalizer
 from krawl.repository import FetcherStateRepository
 
 
-@dataclass(slots=True, frozen=True)
-class FetchResult:
-    """The result of a successful fetch of an OSH projects meta-data.
-    This might be OKH data, or projects hosting systems native format
-    (e.g. whatever the Thingiverse API returns about a project
-    (and probably in JSON format)."""
-    data_set: DataSet = None  # Meta-data about the crawl
-    data: Manifest = None  # The actually main content of the crawl; yummy, yummy data!
-
-
-@dataclass(slots=True, frozen=True)
-class FailedFetch:
-    """The result of a failed fetch of an OSH projects meta-data."""
-    hosting_unit_id: HostingUnitId = None
-    error: Exception = None
-
-
-class FetchListener:
-    """Receives events of failed or successful fetches of OSH projects"""
-
-    def fetched(self, fetch_result: FetchResult) -> None:
-        pass
-
-    def failed_fetch(self, failed_fetch: FailedFetch) -> None:
-        pass
-
-
-class CountingFetchListener:
+class CountingFetchListener(FetchListener):
     """Counts successes and failures"""
     _successes: int = 0
     _failures: int = 0
@@ -71,6 +43,10 @@ class Fetcher:
     def __init__(self, state_repository: FetcherStateRepository) -> None:
         self._state_repository: FetcherStateRepository = state_repository
         self._fetch_listeners: list[FetchListener] = []
+
+    @classmethod
+    def create_normalizer(cls) -> Normalizer:
+        raise NotOverriddenError()
 
     def add_fetch_listener(self, listener: FetchListener) -> None:
         self._fetch_listeners.append(listener)

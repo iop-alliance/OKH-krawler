@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from krawl.fetcher import FailedFetch, FetchListener, FetchResult
+from krawl.fetcher.event import FailedFetch, FetchListener
+from krawl.fetcher.result import FetchResult
 
 
 class FetchResultRepository(FetchListener):

@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from krawl.dict_utils import DictUtils
-from krawl.fetcher import FetchResult
+from krawl.fetcher.result import FetchResult
 from krawl.file_formats import get_type_from_extension
 from krawl.log import get_child_logger
 from krawl.model import licenses

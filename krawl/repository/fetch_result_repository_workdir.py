@@ -5,10 +5,11 @@ import os
 from pathlib import Path
 
 from krawl.config import Config
-from krawl.fetcher import FetchResult  # , FailedFetch # TODO Maybe write a marker file on a failed fetch?
+from krawl.fetcher.result import FetchResult
+# from krawl.fetcher.event import FailedFetch # TODO Maybe write a marker file on a failed fetch?
 from krawl.log import get_child_logger
-from krawl.model.manifest import ManifestFormat
 from krawl.model.hosting_unit import HostingUnitId
+from krawl.model.manifest import ManifestFormat
 from krawl.repository.fetch_result_repository import FetchResultRepository
 from krawl.serializer.util import json_serialize
 

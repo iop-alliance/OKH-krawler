@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
-from krawl.errors import ParserError, NotOverriddenError
+from krawl.errors import NotOverriddenError, ParserError
 from krawl.model.hosting_id import HostingId
 from krawl.model.util import create_url
 

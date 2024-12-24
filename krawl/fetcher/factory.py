@@ -4,9 +4,11 @@ from collections.abc import Generator
 
 from krawl.config import Config
 from krawl.errors import FetcherError
-from krawl.fetcher import Fetcher, FetchListener, FetchResult
+from krawl.fetcher import Fetcher
+from krawl.fetcher.event import FetchListener
 from krawl.fetcher.github import GitHubFetcher
 from krawl.fetcher.oshwa import OshwaFetcher
+from krawl.fetcher.result import FetchResult
 from krawl.fetcher.thingiverse import ThingiverseFetcher
 from krawl.model.hosting_id import HostingId
 from krawl.model.project_id import ProjectId

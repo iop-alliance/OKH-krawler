@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from krawl.fetcher import FailedFetch, FetchListener, FetchResult
+from krawl.fetcher.event import FailedFetch, FetchListener
+from krawl.fetcher.result import FetchResult
 from krawl.model.hosting_unit import HostingUnitId
 from krawl.model.project import Project
 

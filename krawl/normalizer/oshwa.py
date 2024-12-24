@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from krawl.dict_utils import DictUtils
-from krawl.fetcher import FetchResult
+from krawl.fetcher.result import FetchResult
 from krawl.log import get_child_logger
 from krawl.model import licenses
 from krawl.model.data_set import DataSet

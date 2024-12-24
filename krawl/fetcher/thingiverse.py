@@ -12,7 +12,9 @@ from urllib3 import Retry
 
 from krawl.config import Config
 from krawl.errors import FetcherError, ParserError
-from krawl.fetcher import FailedFetch, Fetcher, FetchResult
+from krawl.fetcher import Fetcher
+from krawl.fetcher.event import FailedFetch
+from krawl.fetcher.result import FetchResult
 from krawl.log import get_child_logger
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
@@ -20,6 +22,8 @@ from krawl.model.hosting_unit import HostingUnitIdWebById
 from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
+from krawl.normalizer import Normalizer
+from krawl.normalizer.thingiverse import ThingiverseNormalizer
 from krawl.repository import FetcherStateRepository
 
 log = get_child_logger("thingiverse")
@@ -41,7 +45,7 @@ class ThingiverseFetcher(Fetcher):
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         super().__init__(state_repository=state_repository)
-        # self._normalizer = ThingiverseNormalizer()
+        # self._normalizer = self.create_normalizer()
 
         self._repo_cache = {}
         self._rate_limit = {}
@@ -63,6 +67,10 @@ class ThingiverseFetcher(Fetcher):
             "User-Agent": config.user_agent,
             "Authorization": f"Bearer {config.access_token}",
         })
+
+    @classmethod
+    def create_normalizer(cls) -> Normalizer:
+        return ThingiverseNormalizer()
 
     def __fetch_one(self, hosting_unit_id: HostingUnitIdWebById, last_visited: datetime) -> FetchResult:
         try:
