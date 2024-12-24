@@ -9,6 +9,7 @@ from clikit.api.args.format import Option
 from krawl.config import (CliConfigLoader, Config, KrawlerConfigLoader, YamlFileConfigLoader, get_assembled_schema,
                           iterate_schema)
 from krawl.fetcher.factory import FetcherFactory
+from krawl.model.hosting_id import HostingId
 from krawl.repository.factory import ProjectRepositoryFactory
 
 
@@ -31,7 +32,9 @@ class KrawlCommand(Command):
             raise ValueError(f"{key} must be lower than {max}")
         return value
 
-    def _load_config_schema(self, enabled_repositories: list[str] = None, enabled_fetchers: list[str] = None) -> dict:
+    def _load_config_schema(self,
+                            enabled_repositories: list[str] = None,
+                            enabled_fetchers: list[HostingId] = None) -> dict:
         fetchers_schema = FetcherFactory.get_config_schemas(enabled_fetchers)
         repositories_schema = ProjectRepositoryFactory.get_config_schemas(enabled_repositories)
         config_schema = get_assembled_schema(fetchers_schema, repositories_schema)

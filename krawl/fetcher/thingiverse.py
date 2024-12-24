@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import math
 from collections.abc import Generator
 from datetime import datetime, timezone
 from time import sleep
@@ -10,10 +12,12 @@ from urllib3 import Retry
 
 from krawl.config import Config
 from krawl.errors import FetcherError, ParserError
-from krawl.fetcher import Fetcher
+from krawl.fetcher import Fetcher, FetchResult
 from krawl.log import get_child_logger
+from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdWebById
+from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
 from krawl.normalizer.thingiverse import ThingiverseNormalizer
@@ -32,11 +36,13 @@ class ThingiverseFetcher(Fetcher):
     """
     HOSTING_ID: HostingId = HostingId.THINGIVERSE_COM
     RETRY_CODES = [429, 500, 502, 503, 504]
+    BATCH_SIZE = 30
+    # BATCH_SIZE = 1
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name="thingiverse", default_timeout=10, access_token=True)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
-        self._state_repository = state_repository
-        self._normalizer = ThingiverseNormalizer()
+        super().__init__(state_repository=state_repository)
+        # self._normalizer = ThingiverseNormalizer()
 
         self._repo_cache = {}
         self._rate_limit = {}
@@ -59,33 +65,49 @@ class ThingiverseFetcher(Fetcher):
             "Authorization": f"Bearer {config.access_token}",
         })
 
-    def __fetch_one(self, hosting_unit_id: HostingUnitIdWebById, last_visited: datetime) -> Project:
+    def __fetch_one(self, hosting_unit_id: HostingUnitIdWebById, last_visited: datetime) -> FetchResult:
         thing_id = hosting_unit_id.project_id
         log.info("Try to fetch thing with id %d", thing_id)
         # Documentation for this call:
         # <https://www.thingiverse.com/developers/swagger#/Thing/get_things__thing_id_>
-        thing = self._do_request(f"https://api.thingiverse.com/things/{thing_id}")
+        raw_project = self._do_request(f"https://api.thingiverse.com/things/{thing_id}")
 
-        log.info("Convert thing %s...", thing.get('name'))
+        log.info("Convert thing %s...", raw_project.get('name'))
 
         # Documentation for this call:
         # <https://www.thingiverse.com/developers/swagger#/Thing/get_things__thing_id__files>
         thing_files = self._do_request(f"https://api.thingiverse.com/things/{thing_id}/files")
 
-        thing['lastVisited'] = last_visited
-        thing["fetcher"] = self.HOSTING_ID
-        thing["files"] = thing_files
+        raw_project["files"] = thing_files
 
-        project = self._normalizer.normalize(thing)
-        if not project:
-            raise FetcherError(f"project with name {thing['name']} could not be normalized")
+        data_set = DataSet(
+            crawling_meta=CrawlingMeta(
+                # created_at: datetime = None
+                last_visited=last_visited,
+                # manifest=path,
+                # last_changed: datetime = None
+                # history = None,
+            ),
+            hosting_unit_id=hosting_unit_id,
+        )
+
+        fetch_result = FetchResult(data_set=data_set,
+                                   data=Manifest(content=json.dumps(raw_project, indent=2), format=ManifestFormat.JSON))
+
+        # project = self._normalizer.normalize(raw_project)
+        # if not project:
+        #     raise FetcherError(f"project with name {raw_project['name']} could not be normalized")
 
         log.info("%d requests triggered", self._request_counter)
 
-        # save current progress
-        self._state_repository.store(self.HOSTING_ID, {"id_cursor": id_cursor, "fetch_things_ids": fetch_things_ids})
+        self._fetched(fetch_result)
 
-        return project
+        # save current progress
+        next_total_hit_index, fetched_things_ids = self._get_state()
+        next_total_hit_index += 1
+        fetched_things_ids.append(thing_id)
+        self._set_state(next_total_hit_index, fetched_things_ids)
+        return fetch_result
 
     def fetch(self, id: ProjectId) -> Project:
         try:
@@ -112,26 +134,50 @@ class ThingiverseFetcher(Fetcher):
 
         return response.json()
 
-    def fetch_all(self, start_over=False) -> Generator[Project]:
-        id_cursor = 0
-        projects_counter = 0
-        fetch_things_ids = []
-
+    def _get_state(self, start_over=False) -> (int, list[int]):
+        next_total_hit_index: int = 0
+        fetched_things_ids = []
         if start_over:
             self._state_repository.delete(self.HOSTING_ID)
         else:
             state = self._state_repository.load(self.HOSTING_ID)
             if state:
-                id_cursor = state.get("id_cursor", 1)
-                fetch_things_ids = state.get("fetch_things_ids", [])
+                next_total_hit_index = state.get("next_total_hit_index", 0)
+                fetched_things_ids = state.get("fetched_things_ids", [])
+        return (next_total_hit_index, fetched_things_ids)
 
+    def _set_state(self, next_total_hit_index: int, fetched_things_ids: list[int]) -> None:
+        self._state_repository.store(self.HOSTING_ID, {
+            "next_total_hit_index": next_total_hit_index,
+            "fetched_things_ids": fetched_things_ids
+        })
+
+    def fetch_all(self, start_over=False) -> Generator[Project]:
+        projects_counter = 0
+        next_total_hit_index, _fetched_things_ids = self._get_state(start_over)
+
+        page_id = math.floor(next_total_hit_index / self.BATCH_SIZE) + 1
+        page_thing_index = next_total_hit_index - ((page_id - 1) * self.BATCH_SIZE)
         # Documentation for this call:
-        # <https://www.thingiverse.com/developers/swagger#/Thing/get_things__thing_id__files>
+        # <https://www.thingiverse.com/developers/swagger#/Search/get_search__term___type_things>
         data = self._do_request(
             "https://api.thingiverse.com/search",
             {
-                'sort': 'newest',
                 "type": "things",
+                "per_page": self.BATCH_SIZE,
+                "page": page_id,
+                'sort': 'newest',
+                # Only show Things posted before this date.
+                # Can be a concrete date or "math" like: +1h
+                # For more details, see:
+                # <https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math>
+                # "posted_before": "<some-date-in-the-right-format>",
+                # Only show Things posted after this date.
+                # Can be a concrete date or "math" like: +1h
+                # For more details, see:
+                # <https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math>
+                # "posted_after": "<some-date-in-the-right-format>",
+
                 # "license": "cc",
                 # "license": "cc-sa",
                 # "license": "cc-nd", # Bad
@@ -140,39 +186,40 @@ class ThingiverseFetcher(Fetcher):
                 # "license": "cc-nc-nd", # Bad
                 # "license": "pd0",
                 # "license": "gpl",
-                # "license": "lgpl",
+                "license": "lgpl",
                 # "license": "bsd",
                 # "license": "none", # Bad
-                "license": "nokia",  # Bad
+                # "license": "nokia",  # Bad
                 # "license": "public",
-                "per_page": 30
             })
 
         log.info("Found things (total): %d", data["total"])
         log.info("Found things (len(hits)): %d", len(data["hits"]))
-        log.info("-----------------------")
-        log.info("All received data: %d", data)
-        log.info("-----------------------")
-        first_thing_id = data["hits"][0]["id"]
-        last_thing_id = data["hits"][-1]["id"]
-        log.info("First thing ID: %d", first_thing_id)
-        log.info("Last thing ID: %d", last_thing_id)
-        log.info("Found things: %d", last_thing_id - first_thing_id)
-        return None
+        log.debug("-----------------------")
+        log.debug("All received data: %d", data)
+        log.debug("-----------------------")
+        # first_thing_id = data["hits"][0]["id"]
+        # last_thing_id = data["hits"][-1]["id"]
+        # log.info("First thing ID: %d", first_thing_id)
+        # log.info("Last thing ID: %d", last_thing_id)
+        # log.info("Found things: %d", last_thing_id - first_thing_id)
+        # return None
 
-        last_thing_id = data["hits"].pop(0)["id"]
+        # last_thing_id = data["hits"].pop(0)["id"]
         last_visited = datetime.now(timezone.utc)
 
-        while id_cursor < last_thing_id:  # TODO Should this not rather be `<=`?
-            fetch_things_ids.append(id_cursor)
-            id_cursor += 1
+        # for raw_project in data["hits"]:
+        for hit_idx in range(page_thing_index, len(data["hits"])):
+            raw_project = data["hits"][hit_idx]
+            thing_id = raw_project["id"]
+            # fetched_things_ids.append(thing_id)
+            # next_total_hit_index += 1
             try:
-                thing_id = TODO
                 hosting_unit_id = HostingUnitIdWebById(_hosting_id=self.HOSTING_ID, project_id=thing_id)
-                project = self.__fetch_one(hosting_unit_id, last_visited)
-                log.debug("yield project #%d: %s", projects_counter, project.id)
+                fetch_result = self.__fetch_one(hosting_unit_id, last_visited)
+                log.debug("yield project #%d: %s", projects_counter, hosting_unit_id)
                 projects_counter += 1
-                yield project
+                yield fetch_result
             except FetcherError as err:
                 log.warning(err)
                 continue

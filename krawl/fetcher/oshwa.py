@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Generator
 from datetime import datetime, timezone
 
@@ -9,14 +10,15 @@ from urllib3 import Retry
 
 from krawl.config import Config
 from krawl.errors import FetcherError, NormalizerError, ParserError
-from krawl.fetcher import Fetcher
+from krawl.fetcher import Fetcher, FetchResult
 from krawl.log import get_child_logger
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdWebById
-from krawl.model.project import Project
+from krawl.model.manifest import Manifest, ManifestFormat
+# from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
-from krawl.normalizer.oshwa import OshwaNormalizer
+# from krawl.normalizer.oshwa import OshwaNormalizer
 from krawl.repository import FetcherStateRepository
 from krawl.request.rate_limit import RateLimitFixedTimedelta
 
@@ -32,8 +34,8 @@ class OshwaFetcher(Fetcher):
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name="oshwa", default_timeout=10, access_token=True)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
-        self._state_repository = state_repository
-        self._normalizer = OshwaNormalizer()
+        super().__init__(state_repository=state_repository)
+        # self._normalizer = OshwaNormalizer()
         self._rate_limit = RateLimitFixedTimedelta(seconds=5)
 
         retry = Retry(
@@ -52,36 +54,37 @@ class OshwaFetcher(Fetcher):
             "Authorization": f"Bearer {config.access_token}",
         })
 
-    def __fetch_one(self, hosting_unit_id: HostingUnitIdWebById, raw_project: dict, last_visited: datetime) -> Project:
+    def __fetch_one(self, hosting_unit_id: HostingUnitIdWebById, raw_project: dict,
+                    last_visited: datetime) -> FetchResult:
         # id = ProjectId(self.HOSTING_ID, slugify(raw_project["responsibleParty"]), raw_project["oshwaUid"].lower())
 
-        unfiltered_output = {
-            "data-set": DataSet(
-                crawling_meta=CrawlingMeta(
-                    # created_at: datetime = None
-                    last_visited=last_visited,
-                    # manifest=path,
-                    # last_changed: datetime = None
-                    # history = None,
-                ),
-                hosting_unit_id=hosting_unit_id,
-            )
-            # {
-            #     "id": hosting_unit_id,
-            #     "last_visited": last_visited,
-            # }
-        }
+        data_set = DataSet(
+            crawling_meta=CrawlingMeta(
+                # created_at: datetime = None
+                last_visited=last_visited,
+                # manifest=path,
+                # last_changed: datetime = None
+                # history = None,
+            ),
+            hosting_unit_id=hosting_unit_id,
+        )
+        # {
+        #     "id": hosting_unit_id,
+        #     "last_visited": last_visited,
+        # }
 
+        fetch_result = FetchResult(data_set=data_set,
+                                   data=Manifest(content=json.dumps(raw_project, indent=2), format=ManifestFormat.JSON))
         # try normalizing it
-        try:
-            raw_project.update(unfiltered_output)
-            project = self._normalizer.normalize(raw_project)
-        except NormalizerError as err:
-            raise FetcherError(f"Normalization failed, that should not happen: {err}") from err
+        # try:
+        #     raw_project.update(unfiltered_output)
+        #     project = self._normalizer.normalize(raw_project)
+        # except NormalizerError as err:
+        #     raise FetcherError(f"Normalization failed, that should not happen: {err}") from err
+        self._fetched(fetch_result)
+        return fetch_result
 
-        return project
-
-    def fetch(self, id: ProjectId) -> Project:
+    def fetch(self, id: ProjectId) -> FetchResult:
 
         log.debug('Start fetching project %s', id)
 
@@ -105,11 +108,11 @@ class OshwaFetcher(Fetcher):
 
         project = self.__fetch_one(hosting_unit_id, raw_project, last_visited)
 
-        log.debug(f"yield project {project.id}")
+        log.debug(f"yield project {hosting_unit_id}")
 
         return project
 
-    def fetch_all(self, start_over=True) -> Generator[Project]:
+    def fetch_all(self, start_over=True) -> Generator[FetchResult]:
         last_offset = 0
         num_fetched = 0
         batch_size = self.BATCH_SIZE
@@ -141,7 +144,7 @@ class OshwaFetcher(Fetcher):
             for raw_project in data["items"]:
                 hosting_unit_id = HostingUnitIdWebById(_hosting_id=self.HOSTING_ID, project_id=raw_project['oshwaUid'])
                 project = self.__fetch_one(hosting_unit_id, raw_project, last_visited)
-                log.debug("yield project %s", project.id)
+                log.debug("yield project %s", hosting_unit_id)
                 yield project
 
             # save current progress

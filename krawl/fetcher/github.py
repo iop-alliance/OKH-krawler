@@ -15,16 +15,17 @@ from requests.adapters import HTTPAdapter, Retry
 
 from krawl.config import Config
 from krawl.errors import ConversionError, DeserializerError, FetcherError, NormalizerError, NotFound, ParserError
-from krawl.fetcher import Fetcher
+from krawl.fetcher import Fetcher, FetchResult
 from krawl.fetcher.util import convert_okh_v1_to_losh, is_accepted_manifest_file_name, is_binary, is_empty
 from krawl.log import get_child_logger
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdForge
-from krawl.model.project import Project
+from krawl.model.manifest import Manifest, ManifestFormat
+# from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
-from krawl.normalizer.github import GitHubFileHandler
-from krawl.normalizer.manifest import ManifestNormalizer
+# from krawl.normalizer.github import GitHubFileHandler
+# from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.repository import FetcherStateRepository
 from krawl.request.rate_limit import RateLimitFixedTimedelta, RateLimitNumRequests
 from krawl.serializer.factory import DeserializerFactory
@@ -212,9 +213,10 @@ class GitHubFetcher(Fetcher):
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name="github", default_timeout=15, access_token=True)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
-        self._state_repository = state_repository
-        self._normalizer = ManifestNormalizer(GitHubFileHandler())
-        self._deserializer_factory = DeserializerFactory()
+        super().__init__(state_repository=state_repository)
+        # self._state_repository = state_repository
+        # self._normalizer = ManifestNormalizer(GitHubFileHandler())
+        # self._deserializer_factory = DeserializerFactory()
         self._repo_cache = {}
         # https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
         self._primary_search_rate_limit = RateLimitNumRequests(num_requests=30)
@@ -257,7 +259,7 @@ class GitHubFetcher(Fetcher):
             "Authorization": f"token {config.access_token}",
         })
 
-    def __fetch_one(self, hosting_unit_id: HostingUnitIdForge, path: Path) -> Project:
+    def __fetch_one(self, hosting_unit_id: HostingUnitIdForge, path: Path) -> FetchResult:
         log.debug("fetching project '%s' path '%s' ...", hosting_unit_id, str(path))
 
         # check file name
@@ -280,10 +282,12 @@ class GitHubFetcher(Fetcher):
         # check file contents
         if is_empty(manifest_contents):
             raise FetcherError(f"Manifest file is empty: '{manifest_dl_url}'")
-        if is_binary(manifest_contents):
-            raise FetcherError(f"Manifest file is binary (should be text): '{manifest_dl_url}'")
+        # if is_binary(manifest_contents):
+        #     raise FetcherError(f"Manifest file is binary (should be text): '{manifest_dl_url}'")
 
         format_suffix = path.suffix.lower().lstrip('.')
+        manifest_format: ManifestFormat = ManifestFormat.from_ext(format_suffix)
+        manifest = Manifest(content=manifest_contents, format=manifest_format)
 
         # is_yaml = format_suffix in ['yml', 'yaml']
         # log.debug(f"Checking if manifest '{format_suffix}' is YAML ...")
@@ -304,33 +308,34 @@ class GitHubFetcher(Fetcher):
         #         "last_visited": last_visited,
         #     }
         # }
-        unfiltered_output = {
-            "data-set": DataSet(
-                crawling_meta=CrawlingMeta(
-                    # created_at: datetime = None
-                    last_visited=last_visited,
-                    manifest=path,
-                    # last_changed: datetime = None
-                    # history = None,
-                ),
-                hosting_unit_id=hosting_unit_id,
-            )
-        }
+        data_set = DataSet(
+            crawling_meta=CrawlingMeta(
+                # created_at: datetime = None
+                last_visited=last_visited,
+                manifest=path,
+                # last_changed: datetime = None
+                # history = None,
+            ),
+            hosting_unit_id=hosting_unit_id,
+        )
         # log.info(f"manifest_contents: {manifest_contents}")
 
-        # try deserialize
-        try:
-            project = self._deserializer_factory.deserialize(format_suffix, manifest_contents, self._normalizer,
-                                                             unfiltered_output)
-        except DeserializerError as err:
-            raise FetcherError(f"deserialization failed (invalid content/format for its file-type): {err}") from err
-        except NormalizerError as err:
-            raise FetcherError(f"normalization failed: {err}") from err
+        # # try deserialize
+        # try:
+        #     project = self._deserializer_factory.deserialize(format_suffix, manifest_contents, self._normalizer,
+        #                                                      unfiltered_output)
+        # except DeserializerError as err:
+        #     raise FetcherError(f"deserialization failed (invalid content/format for its file-type): {err}") from err
+        # except NormalizerError as err:
+        #     raise FetcherError(f"normalization failed: {err}") from err
 
-        log.debug("fetched project %s", project.id)
-        return project
+        log.debug("fetched project %s", hosting_unit_id)
+        fetch_result = FetchResult(data=manifest, data_set=data_set)
 
-    def fetch(self, id: ProjectId) -> Project:
+        self._fetched(fetch_result)
+        return fetch_result
+
+    def fetch(self, id: ProjectId) -> FetchResult:
         try:
             hosting_unit_id, path_raw = HostingUnitIdForge.from_url(id.uri)
         except ParserError as err:
@@ -347,9 +352,9 @@ class GitHubFetcher(Fetcher):
             except FetcherError:
                 continue
         raise FetcherError("Non direct path to a manifest file given,"
-                            f" and no known manifest file found at: '{id.uri}'")
+                           f" and no known manifest file found at: '{id.uri}'")
 
-    def fetch_all(self, start_over=True) -> Generator[Project]:
+    def fetch_all(self, start_over=True) -> Generator[FetchResult]:
         num_fetched_projects = 0
         if start_over:
             self._state_repository.delete(self.HOSTING_ID)

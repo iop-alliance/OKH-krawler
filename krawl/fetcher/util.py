@@ -4,10 +4,11 @@ import os
 import re
 import subprocess
 import sys
-import yaml
-import toml
 import tempfile
 from pathlib import Path
+
+import toml
+import yaml
 
 from krawl.errors import ConversionError
 from krawl.log import get_child_logger
@@ -108,6 +109,7 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes | None:
         os.remove(fn_losh)
 
     return manifest_contents
+
 
 def convert_okh_v1_dict_to_losh(manifest_contents: dict) -> dict:
     """Converts deserialized OKH v1 (YAMl) manifest contents

@@ -33,6 +33,15 @@ class HostingUnitId:
     def from_url(cls, url: str) -> (HostingUnitId, Path):
         raise NotImplementedError(OVERRIDE_MSG)
 
+    def to_path_str(self) -> str:
+        raise NotImplementedError(OVERRIDE_MSG)
+
+    def __str__(self) -> str:
+        return self.to_path_str()
+
+    def to_path(self) -> Path:
+        return Path(self.to_path_str())
+
     def hosting_id(self) -> HostingId:
         raise NotImplementedError(OVERRIDE_MSG)
 
@@ -76,8 +85,8 @@ class HostingUnitIdForge(HostingUnitId):
     """Could be a branch, tag or commit"""
     ref: str = None
 
-    def __str__(self) -> str:
-        return f"{self.hosting_id()}/{self.owner}{"/" + self.group_hierarchy if self.group_hierarchy else ''}/{self.repo}{"/" + self.ref if self.ref else ''}"
+    def to_path_str(self) -> str:
+        return f"{self.hosting_id()}/{self.owner}{" / " + self.group_hierarchy if self.group_hierarchy else ''}/{self.repo}{" / " + self.ref if self.ref else ''}"
 
     def hosting_id(self) -> HostingId:
         return self._hosting_id
@@ -257,7 +266,7 @@ class HostingUnitIdWebById(HostingUnitId):
     """The name or other ID of the repo/project"""
     project_id: str = None
 
-    def __str__(self) -> str:
+    def to_path_str(self) -> str:
         return f"{self.hosting_id()}/{self.project_id}"
 
     def hosting_id(self) -> HostingId:

@@ -24,6 +24,10 @@ class DeserializerError(KrawlerError):
     pass
 
 
+class NotOverriddenError(KrawlerError, NotImplementedError):
+    pass
+
+
 class ParserError(KrawlerError):
     pass
 
