@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import orjson
-
-from krawl.errors import SerializerError
 from krawl.model.project import Project
 from krawl.serializer import ProjectSerializer
+from krawl.serializer.util import json_serialize
 
 
 def manual_type_mapper(value) -> dict:
@@ -22,11 +20,4 @@ class JsonProjectSerializer(ProjectSerializer):
         return ["json"]
 
     def serialize(self, project: Project) -> str:
-        try:
-            serialized = orjson.dumps(project,
-                                      default=manual_type_mapper,
-                                      option=orjson.OPT_NAIVE_UTC | orjson.OPT_APPEND_NEWLINE | orjson.OPT_INDENT_2 |
-                                      orjson.OPT_SORT_KEYS).decode("utf-8")
-        except Exception as err:
-            raise SerializerError(f"failed to serialize JSON: {err}") from err
-        return serialized
+        return json_serialize(project)
