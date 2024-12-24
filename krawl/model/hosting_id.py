@@ -30,7 +30,6 @@ class HostingType(StrEnum):
     GIT_LAB = "GitLab"
     OSHWA = "Oshwa"
     THINGIVERSE = "Thingiverse"
-    WIKI_FACTORY = "WikiFactory"
 
     def __str__(self) -> str:
         match self:
@@ -46,14 +45,12 @@ class HostingType(StrEnum):
                 return "SW|oshwa.org"
             case self.THINGIVERSE:
                 return "SW|thingiverse.com"
-            case self.WIKI_FACTORY:
-                return "SW|wikifactory.com"
             case _:
                 raise NotImplementedError(f"Missing `__str__()` impl for enum variant {self}")
 
     def category(self) -> HostingCategory:
         match self:
-            case self.FORGE_JO | self.GIT_HUB | self.GIT_LAB | self.WIKI_FACTORY:
+            case self.FORGE_JO | self.GIT_HUB | self.GIT_LAB:
                 return HostingCategory.FORGE
             case self.APPROPEDIA | self.OSHWA | self.THINGIVERSE:
                 return HostingCategory.OTHER
@@ -76,7 +73,6 @@ class HostingId(StrEnum):
     GITLAB_OPENSOURCEECOLOGY_DE = "gitlab.opensourceecology.de"
     OSHWA_ORG = "oshwa.org"  # "certification.oshwa.org"
     THINGIVERSE_COM = "thingiverse.com"
-    WIKI_FACTORY_COM = "wikifactory.com"
 
     @classmethod
     def type(cls) -> HostingType:
@@ -93,8 +89,6 @@ class HostingId(StrEnum):
                 platform_type = HostingType.OSHWA
             case cls.THINGIVERSE_COM:
                 platform_type = HostingType.THINGIVERSE
-            case cls.WIKI_FACTORY_COM:
-                platform_type = HostingType.WIKI_FACTORY
             case _:
                 raise NotImplementedError(f"Missing `cls.type()` impl for enum variant {cls}")
 
@@ -120,8 +114,6 @@ class HostingId(StrEnum):
                 hosting_id = HostingId.OSHWA_ORG
             case "thingiverse.com" | "www.thingiverse.com":
                 hosting_id = HostingId.THINGIVERSE_COM
-            case "wikifactory.com":
-                hosting_id = HostingId.WIKI_FACTORY_COM
             case _:
                 raise ValueError(f"Unknown platform: '{url}'")
 

@@ -64,13 +64,6 @@ okhkrawl:dataProviderThingiverse
   dcterms:identifier "https://www.thingiverse.com"^^xsd:anyURI ;
   .
 
-okhkrawl:dataProviderWikifactory
-  a okh:DataProvider ;
-  rdfs:label "Wikifactory" ;
-  dcterms:title "Wikifactory" ;
-  dcterms:identifier "https://wikifactory.com"^^xsd:anyURI ;
-  .
-
 okhkrawl:dataSourcingProcedureApi
   a okh:DataSourcingProcedure ;
   rdfs:label "API" ;

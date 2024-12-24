@@ -150,16 +150,6 @@ class HostingUnitIdForge(HostingUnitId):
                 elif len(path_parts) >= 5 and path_parts[2] == "-" and path_parts[3] in ["commit", "tags"]:
                     ref = path_parts[4]
 
-            case HostingId.WIKI_FACTORY_COM:
-                owner = path_parts[0] if len(path_parts) >= 1 else None
-                repo = path_parts[1] if len(path_parts) >= 2 else None
-                if len(path_parts) >= 4 and path_parts[2] in ["file", "files"]:
-                    path = "/".join(path_parts[3:])
-                elif len(path_parts) >= 4 and path_parts[2] == "v":
-                    ref = path_parts[3]
-                    if len(path_parts) >= 6 and path_parts[4] in ["file", "files"]:
-                        path = "/".join(path_parts[5:])
-
             case HostingId.APPROPEDIA_ORG | HostingId.OSHWA_ORG | HostingId.THINGIVERSE_COM:
                 raise ParserError(f"This is not a forge(-like) hosting Id: {hosting_id}."
                                   " Please use HostingUnitIdWebById instead.")
@@ -206,11 +196,6 @@ class HostingUnitIdForge(HostingUnitId):
                         url_domain = "gitlab.opensourceecology.de"
                 url_path = f"/{self.owner}{self.path_opt(self.group_hierarchy)}/{self.repo}"
 
-            case HostingId.WIKI_FACTORY_COM:
-                # format: https://wikifactory.com/@{owner}/{repo}
-                url_domain = "wikifactory.com"
-                url_path = f"/@{self.owner}/{self.repo}"
-
             case HostingId.APPROPEDIA_ORG | HostingId.OSHWA_ORG | HostingId.THINGIVERSE_COM:
                 raise NotImplementedError(f"This is not a forge(-like) hosting Id: {self.hosting_id()}."
                                           " Please use HostingUnitIdWebById instead.")
@@ -252,15 +237,6 @@ class HostingUnitIdForge(HostingUnitId):
                     case _:
                         raise NotImplementedError(f"Unhandled hosting ID '{self.hosting_id()}'")
                 url_path = f"/{self.owner}/{self.group_hierarchy}/{self.repo}/-/raw/{ref_opt}{self.path_opt(path)}"
-
-            case HostingId.WIKI_FACTORY_COM:
-                # format: https://projects.fablabs.io/{owner}/{repo}/contributions/{branch}/file/{path}
-                url_domain = "projects.fablabs.io"
-                if isinstance(self.ref, str) and _sha1_pattern.match(self.ref):
-                    ref_opt = f"/contributions/{self.ref[:7]}"
-                else:
-                    ref_opt = ""
-                url_path = f"/{self.owner}/{self.repo}{ref_opt}/file{self.path_opt(path)}"
 
             case HostingId.APPROPEDIA_ORG | HostingId.OSHWA_ORG | HostingId.THINGIVERSE_COM:
                 raise NotImplementedError(f"This is not a forge(-like) hosting Id: {self.hosting_id()}."
@@ -304,7 +280,7 @@ class HostingUnitIdWebById(HostingUnitId):
         project_id = None
         path = None
         match hosting_id:
-            case HostingId.GITHUB_COM | HostingId.CODEBERG_ORG | HostingId.GITLAB_COM | HostingId.WIKI_FACTORY_COM:
+            case HostingId.GITHUB_COM | HostingId.CODEBERG_ORG | HostingId.GITLAB_COM:
                 raise NotImplementedError(f"This is not a simple, web-hosted projects platform URL: '{url}';"
                                           " Please parse it as a HostingUnitIdForge instead.")
 
@@ -349,7 +325,7 @@ class HostingUnitIdWebById(HostingUnitId):
         self.validate()
 
         match self.hosting_id():
-            case HostingId.GITHUB_COM | HostingId.CODEBERG_ORG | HostingId.GITLAB_COM | HostingId.WIKI_FACTORY_COM:
+            case HostingId.GITHUB_COM | HostingId.CODEBERG_ORG | HostingId.GITLAB_COM:
                 raise NotImplementedError(f"This is not supported by this DataHostingUnit type: {self.hosting_id()}."
                                           " Please try HostingUnitIdForge instead.")
 
@@ -377,7 +353,7 @@ class HostingUnitIdWebById(HostingUnitId):
         self.validate()
 
         match self.hosting_id():
-            case HostingId.GITHUB_COM | HostingId.CODEBERG_ORG | HostingId.GITLAB_COM | HostingId.WIKI_FACTORY_COM:
+            case HostingId.GITHUB_COM | HostingId.CODEBERG_ORG | HostingId.GITLAB_COM:
                 raise NotImplementedError(f"This is not supported by this DataHostingUnit type: {self.hosting_id()}."
                                           " Please try HostingUnitIdForge instead.")
 

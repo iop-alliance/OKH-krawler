@@ -13,9 +13,6 @@ fetchers:
   defaults:      # (opt) default values for fetchers
     retries: 3   # (opt) default number of retries
     timeout: 10  # (opt) default request timeout
-  wikifactory.com:
-    retries: 3   # (opt) fetcher specific number of retries
-    timeout: 15  # (opt) fetcher specific request timeout
   github.com:
     retries: 3   # (opt) fetcher specific number of retries
     timeout: 15  # (opt) fetcher specific request timeout

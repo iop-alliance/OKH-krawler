@@ -8,14 +8,12 @@ from krawl.fetcher import Fetcher
 from krawl.fetcher.github import GitHubFetcher
 from krawl.fetcher.oshwa import OshwaFetcher
 from krawl.fetcher.thingiverse import ThingiverseFetcher
-from krawl.fetcher.wikifactory import WikifactoryFetcher
 from krawl.model.hosting_unit import HostingUnitId, HostingUnitIdFactory
 from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
 from krawl.repository import FetcherStateRepository
 
 _fetcher_classes = {
-    WikifactoryFetcher.HOSTING_ID: WikifactoryFetcher,
     GitHubFetcher.HOSTING_ID: GitHubFetcher,
     OshwaFetcher.HOSTING_ID: OshwaFetcher,
     ThingiverseFetcher.HOSTING_ID: ThingiverseFetcher,

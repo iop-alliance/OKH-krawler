@@ -1,8 +1,13 @@
 # OKH Krawler
 
 A crawler for the [Library of Open Source Hardware (LOSH)](https://losh.opennext.eu).
-The crawler searches [Wikifactory](https://wikifactory.com)
-and [GitHub](https://github.com) for hardware projects,
+The crawler currently searches:
+
+- [GitHub](https://github.com),
+- [OSHWA](https://certification.oshwa.org), and
+- [Thingiverse](https://www.thingiverse.com)
+
+for hardware projects,
 that comply with the [OKH specification](https://github.com/iop-alliance/OpenKnowHow).
 Once such a project is found, its metadata is downloaded, parsed and sanitize,
 converted into a RDF format and uploaded into the database.
@@ -76,7 +81,7 @@ Examples:
 ```sh
 # fetch selected projects
 krawl fetch url -c config.yml -v "https://github.com/iop-alliance/OpenKnowHow/blob/master/res/sample_data/okh-sample-OHLOOM.toml"
-krawl fetch url -c config.yml -v "https://wikifactory.com/+OttoDIY/otto-diy-plus"
+krawl fetch url -c config.yml -v "https://www.thingiverse.com/thing:3062487"
 
 # search and fetch all projects of a platform
 krawl fetch github.com -c config.yml -v --report report.txt
