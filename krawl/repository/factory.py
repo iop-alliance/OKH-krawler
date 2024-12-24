@@ -7,11 +7,9 @@ from krawl.errors import RepositoryError
 from krawl.model.project import Project
 from krawl.repository import ProjectRepository
 from krawl.repository.project_file import ProjectRepositoryFile
-from krawl.repository.project_wikibase import ProjectRepositoryWikibase
 
 _repositories_schemas = {
     ProjectRepositoryFile.TYPE: ProjectRepositoryFile.CONFIG_SCHEMA,
-    ProjectRepositoryWikibase.TYPE: ProjectRepositoryWikibase.CONFIG_SCHEMA,
 }
 
 
@@ -69,6 +67,3 @@ class ProjectRepositoryFactory:
     def _init_repositories(self, repositories_config: Config, enabled: list[str]):
         if "file" in enabled:
             self._repositories["file"] = ProjectRepositoryFile(repositories_config.file)
-
-        if "wikibase" in enabled:
-            self._repositories["wikibase"] = ProjectRepositoryWikibase(repositories_config.wikibase)
