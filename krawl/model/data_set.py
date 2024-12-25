@@ -5,7 +5,6 @@ from datetime import datetime
 
 from krawl.model.agent import Agent, Organization
 from krawl.model.hosting_unit import HostingUnitId
-# from krawl.model.util import parse_date
 from krawl.model.licenses import License
 from krawl.model.sourcing_procedure import SourcingProcedure
 
@@ -21,7 +20,7 @@ class CrawlingMeta:  # pylint: disable=too-many-instance-attributes
     last_changed: datetime = None
     history = None
     # # internally calculated score for project importance to decide re-visit schedule
-    # score: DataSet = field(default=None, init=False)
+    # score: float = field(default=None, init=False)
 
 
 # :OHLOOMDataset
@@ -59,34 +58,3 @@ class DataSet:  # pylint: disable=too-many-instance-attributes
     license: License = None
     creator: Agent = None  # Who created the projects meta data
     organization: Organization = None  # Who created the projects meta data
-
-    # @classmethod
-    # def from_dict(cls, data: dict) -> DataSet:
-    #     if data is None:
-    #         return None
-    #     meta = cls()
-    #     meta.hosting_unit_id = data.get("hosting-unit-id", None)  # FIXME This is an object, will probably not work like this
-    #     # meta.owner = data.get("owner", None)
-    #     # meta.repo = data.get("repo", None)
-    #     # meta.ref = data.get("ref", None)
-    #     meta.manifest_path = data.get("manifest-path", None)
-    #     meta.created_at = parse_date(data.get("created-at"))
-    #     meta.last_visited = parse_date(data.get("last-visited"))
-    #     meta.last_changed = parse_date(data.get("last-changed"))
-    #     meta.history = data.get("history", None)
-    #     # meta.score = data.get("score", None)
-    #     return meta
-
-    # def as_dict(self) -> dict:
-    #     return {
-    #         "hosting-unit-id": self.hosting_unit_id,
-    #         # "owner": self.owner,
-    #         # "repo": self.repo,
-    #         # "ref": self.ref,
-    #         "manifest-path": self.manifest_path,
-    #         "created-at": self.created_at.isoformat() if self.created_at is not None else None,
-    #         "last-visited": self.last_visited.isoformat() if self.last_visited is not None else None,
-    #         "last-changed": self.last_changed.isoformat() if self.last_changed is not None else None,
-    #         "history": self.history,
-    #         # "score": self.score,
-    #     }
