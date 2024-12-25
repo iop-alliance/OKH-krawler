@@ -76,7 +76,7 @@ class FetcherFactory:
 
     def fetch(self, project_id: ProjectId) -> FetchResult:
         """Call `fetch` function on fitting fetcher."""
-        # TODO PRIORITY:LOW We parse the URI here, but then parse it again within the individual fetcher. Maybe try to parse only once
+        # TODO PRIORITY:LOW Also parsed within the individual fetcher. Maybe try to parse only once
         hosting_id = HostingId.from_url(project_id.uri)
         if hosting_id not in self._fetchers:
             raise FetcherError(

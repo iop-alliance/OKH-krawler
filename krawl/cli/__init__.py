@@ -76,6 +76,7 @@ class ApplicationConfig(DefaultApplicationConfig):
                   input_stream: InputStream = None,
                   output_stream: OutputStream = None,
                   error_stream: OutputStream = None) -> ConsoleIO:
+        # pylint: disable=too-many-arguments,too-many-positional-arguments
         if input_stream is None:
             input_stream = StandardInputStream()
         if output_stream is None:

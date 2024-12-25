@@ -15,6 +15,7 @@ def _orjson_manual_type_mapper(value) -> dict:
 
 def json_serialize(obj) -> str:
     try:
+        # pylint: disable=no-member
         serialized = orjson.dumps(obj,
                                   default=_orjson_manual_type_mapper,
                                   option=orjson.OPT_NAIVE_UTC | orjson.OPT_APPEND_NEWLINE | orjson.OPT_INDENT_2 |

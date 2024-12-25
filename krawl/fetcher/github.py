@@ -316,7 +316,8 @@ class GitHubFetcher(Fetcher):
             #     project = self._deserializer_factory.deserialize(format_suffix, manifest_contents, self._normalizer,
             #                                                      unfiltered_output)
             # except DeserializerError as err:
-            #     raise FetcherError(f"deserialization failed (invalid content/format for its file-type): {err}") from err
+            #     raise FetcherError(
+            #         f"deserialization failed (invalid content/format for its file-type): {err}") from err
             # except NormalizerError as err:
             #     raise FetcherError(f"normalization failed: {err}") from err
 
