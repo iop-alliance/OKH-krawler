@@ -321,7 +321,7 @@ class GitHubFetcher(Fetcher):
             #     raise FetcherError(f"normalization failed: {err}") from err
 
             log.debug("fetched project %s", hosting_unit_id)
-            fetch_result = FetchResult(data=manifest, data_set=data_set)
+            fetch_result = FetchResult(data_set=data_set, data=manifest)
 
             self._fetched(fetch_result)
             return fetch_result

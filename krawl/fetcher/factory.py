@@ -90,7 +90,7 @@ class FetcherFactory:
             yield from fetcher.fetch_all(start_over=start_over)
 
     def add_fetch_listener(self, listener: FetchListener) -> None:
-        for fetcher in self._fetchers:
+        for fetcher in self._fetchers.values():
             fetcher.add_fetch_listener(listener)
 
     def _init_fetchers(self, repository_config: Config, state_repository, fetchers_config: Config,

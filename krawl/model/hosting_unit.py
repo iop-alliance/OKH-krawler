@@ -5,15 +5,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
-from krawl.errors import ParserError
+from krawl.errors import ParserError, NotOverriddenError
 from krawl.model.hosting_id import HostingId
 from krawl.model.util import create_url
 
 # import validators
 
 _sha1_pattern = re.compile(r"^[A-Fa-f0-9]{40}$")
-
-OVERRIDE_MSG = "The sub-class needs to overwrite this method"
 
 
 @dataclass(slots=True, frozen=True)
@@ -31,10 +29,10 @@ class HostingUnitId:
 
     @classmethod
     def from_url(cls, url: str) -> (HostingUnitId, Path):
-        raise NotImplementedError(OVERRIDE_MSG)
+        raise NotOverriddenError()
 
     def to_path_str(self) -> str:
-        raise NotImplementedError(OVERRIDE_MSG)
+        raise NotOverriddenError()
 
     def __str__(self) -> str:
         return self.to_path_str()
@@ -43,30 +41,30 @@ class HostingUnitId:
         return Path(self.to_path_str())
 
     def hosting_id(self) -> HostingId:
-        raise NotImplementedError(OVERRIDE_MSG)
+        raise NotOverriddenError()
 
     def __eq__(self, other) -> bool:
-        raise NotImplementedError(OVERRIDE_MSG)
+        raise NotOverriddenError()
 
     def references_version(self) -> bool:
-        raise NotImplementedError(OVERRIDE_MSG)
+        raise NotOverriddenError()
 
     def check_is_versioned(self) -> None:
         if not self.references_version():
             raise ValueError("Missing ref (version info)")
 
     def is_valid(self) -> bool:
-        raise NotImplementedError(OVERRIDE_MSG)
+        raise NotOverriddenError()
 
     def validate(self) -> None:
         if not self.is_valid():
             raise ValueError("Invalid HostingUnitId")
 
     def create_project_hosting_url(self) -> str:
-        raise NotImplementedError(OVERRIDE_MSG)
+        raise NotOverriddenError()
 
     def create_download_url(self, path: str = None) -> str:
-        raise NotImplementedError(OVERRIDE_MSG)
+        raise NotOverriddenError()
 
 
 @dataclass(slots=True, frozen=True)

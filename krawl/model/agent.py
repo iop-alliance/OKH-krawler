@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-# from krawl.errors import ParserError
-
 
 @dataclass(slots=True)
 class Agent:
@@ -18,7 +16,7 @@ class Agent:
 
 @dataclass(slots=True)
 class Person(Agent):
-    email: str = None
+    pass
 
 
 @dataclass(slots=True)
