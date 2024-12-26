@@ -25,5 +25,5 @@ class ProjectDeserializer:
         """Returns a list of supported file extensions in all lower-case."""
         raise NotImplementedError()
 
-    def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict = None) -> Project:
+    def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict | None = None) -> Project:
         raise NotImplementedError()

@@ -16,7 +16,7 @@ class StrictValidator(
         Validator
 ):  # TODO Remove this. Validation should be derived automatically from the OKH ontology, and be done as much as possible through OS and standardized tools nad formats. This is the goal of e.g. owl2shacl.
 
-    def validate(self, project: Project) -> tuple[bool, list[str]]:
+    def validate(self, project: Project) -> tuple[bool, list[str] | None]:
         reasons = []
 
         if not is_non_zero_length_string(project.okhv):

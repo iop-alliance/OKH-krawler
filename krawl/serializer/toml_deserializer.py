@@ -16,7 +16,7 @@ class TOMLProjectDeserializer(ProjectDeserializer):
     def extensions(cls) -> list[str]:
         return ["toml"]
 
-    def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict = None) -> Project:
+    def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict | None = None) -> Project:
         try:
             if isinstance(serialized, bytes):
                 serialized = serialized.decode(encoding="UTF-8", errors="ignore")

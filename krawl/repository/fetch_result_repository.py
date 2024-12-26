@@ -7,7 +7,7 @@ from krawl.fetcher.result import FetchResult
 class FetchResultRepository(FetchListener):
     """Interface for storing crawled projects metadata."""
 
-    CONFIG_SCHEMA = None
+    CONFIG_SCHEMA: dict
 
     def store(self, fetch_result: FetchResult) -> None:
         raise NotImplementedError()

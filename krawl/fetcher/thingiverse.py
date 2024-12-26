@@ -20,7 +20,6 @@ from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdWebById
 from krawl.model.manifest import Manifest, ManifestFormat
-from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
 from krawl.normalizer import Normalizer
 from krawl.normalizer.thingiverse import ThingiverseNormalizer
@@ -47,8 +46,8 @@ class ThingiverseFetcher(Fetcher):
         super().__init__(state_repository=state_repository)
         # self._normalizer = self.create_normalizer()
 
-        self._repo_cache = {}
-        self._rate_limit = {}
+        # self._repo_cache = {}
+        # self._rate_limit = {}
         self._request_counter = 0
         self._request_start_time = None
 
@@ -123,7 +122,7 @@ class ThingiverseFetcher(Fetcher):
 
     def fetch(self, project_id: ProjectId) -> FetchResult:
         try:
-            hosting_unit_id = HostingUnitIdWebById.from_url_no_path(project_id.uri)
+            hosting_unit_id: HostingUnitIdWebById = HostingUnitIdWebById.from_url_no_path(project_id.uri)
         except ParserError as err:
             raise FetcherError(f"Invalid Thingiverse thing URL: '{project_id.uri}'") from err
         last_visited = datetime.now(timezone.utc)
@@ -146,7 +145,7 @@ class ThingiverseFetcher(Fetcher):
 
         return response.json()
 
-    def _get_state(self, start_over=False) -> (int, list[int]):
+    def _get_state(self, start_over=False) -> tuple[int, list[int]]:
         next_total_hit_index: int = 0
         fetched_things_ids = []
         if start_over:
@@ -164,8 +163,8 @@ class ThingiverseFetcher(Fetcher):
             "fetched_things_ids": fetched_things_ids
         })
 
-    def fetch_all(self, start_over=False) -> Generator[Project]:
-        projects_counter = 0
+    def fetch_all(self, start_over=False) -> Generator[FetchResult]:
+        projects_counter: int = 0
         next_total_hit_index, _fetched_things_ids = self._get_state(start_over)
 
         page_id = math.floor(next_total_hit_index / self.BATCH_SIZE) + 1

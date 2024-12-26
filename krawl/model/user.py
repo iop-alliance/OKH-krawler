@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 @dataclass(slots=True)
-class User:
+class User:  # TODO Unused, can be removed
     """User data model."""
 
     name: str = None

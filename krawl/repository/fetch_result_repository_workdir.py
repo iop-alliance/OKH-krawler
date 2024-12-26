@@ -19,7 +19,7 @@ log = get_child_logger("repo_file")
 class FetchResultRepositoryWorkdir(FetchResultRepository):
     """Stores fetch results in the local file-system."""
 
-    CONFIG_SCHEMA = {
+    CONFIG_SCHEMA: dict = {
         "type": "dict",
         "default": {},
         "meta": {

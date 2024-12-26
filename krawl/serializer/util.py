@@ -7,7 +7,7 @@ import orjson
 from krawl.errors import SerializerError
 
 
-def _orjson_manual_type_mapper(value) -> dict:
+def _orjson_manual_type_mapper(value) -> str:
     if isinstance(value, Path):
         return str(value)
     raise TypeError

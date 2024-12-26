@@ -6,5 +6,5 @@ from krawl.validator import Validator
 
 class DummyValidator(Validator):
 
-    def validate(self, project: Project) -> tuple[bool, list[str]]:
+    def validate(self, project: Project) -> tuple[bool, list[str] | None]:
         return True, None

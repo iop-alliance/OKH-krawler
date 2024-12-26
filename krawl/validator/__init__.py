@@ -81,5 +81,5 @@ def is_max_length(value, max):
 
 class Validator:
 
-    def validate(self, project: Project) -> tuple[bool, list[str]]:
+    def validate(self, project: Project) -> tuple[bool, list[str] | None]:
         raise NotImplementedError()

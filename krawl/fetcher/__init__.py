@@ -35,10 +35,10 @@ class Fetcher:
     (e.g. GitHub or IPFS)."""
 
     # The platform the fetcher can fetch projects from
-    HOSTING_ID: HostingId = None
+    HOSTING_ID: HostingId
     # configuration validation schema, see Cerberus for more information:
     # https://docs.python-cerberus.org/en/stable/validation-rules.html
-    CONFIG_SCHEMA = None
+    CONFIG_SCHEMA: dict
 
     def __init__(self, state_repository: FetcherStateRepository) -> None:
         self._state_repository: FetcherStateRepository = state_repository
@@ -57,7 +57,7 @@ class Fetcher:
 
     def _failed_fetch(self, evt: FailedFetch) -> None:
         for fetch_listener in self._fetch_listeners:
-            fetch_listener.fetched(evt)
+            fetch_listener.failed_fetch(evt)
 
     @classmethod
     def _generate_config_schema(cls, long_name: str, default_timeout: int, access_token: bool) -> dict:

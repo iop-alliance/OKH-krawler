@@ -18,13 +18,13 @@ class FileReporter(Reporter):
     def add(self,
             hosting_unit_id: HostingUnitId,
             status: Status,
-            reasons: list[str] = None,
-            project: Project = None) -> None:
+            reasons: list[str] | None = None,
+            project: Project | None = None) -> None:
         match status:
             case Status.OK | Status.UNKNOWN:
                 line = f"{str(status):<8}: {str(hosting_unit_id)}\n"
             case Status.FAILED:
-                line = f"{str(status):<8}: {str(hosting_unit_id)} : {', '.join(reasons)}\n"
+                line = f"{str(status):<8}: {str(hosting_unit_id)} : {', '.join(reasons if reasons else [])}\n"
             case _:
                 raise ValueError(f"unknown status: {status}")
         self._file.write(line)

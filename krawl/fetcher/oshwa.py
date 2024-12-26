@@ -97,7 +97,7 @@ class OshwaFetcher(Fetcher):
     def fetch(self, project_id: ProjectId) -> FetchResult:
         log.debug('Start fetching project %s', project_id)
 
-        hosting_unit_id = HostingUnitIdWebById.from_url_no_path(project_id.uri)
+        hosting_unit_id: HostingUnitIdWebById = HostingUnitIdWebById.from_url_no_path(project_id.uri)
 
         try:
             hosting_unit_id = HostingUnitIdWebById.from_url_no_path(project_id.uri)

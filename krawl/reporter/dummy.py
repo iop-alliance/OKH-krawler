@@ -11,8 +11,8 @@ class DummyReporter(Reporter):
     def add(self,
             hosting_unit_id: HostingUnitId,
             status: Status,
-            reasons: list[str] = None,
-            project: Project = None) -> None:
+            reasons: list[str] | None = None,
+            project: Project | None = None) -> None:
         pass
 
     def close(self) -> None:

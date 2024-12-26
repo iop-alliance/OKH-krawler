@@ -41,7 +41,7 @@ class OshwaNormalizer(Normalizer):
 
     def normalize(self, fetch_result: FetchResult) -> Project:
         project = Project()
-        raw: dict = fetch_result.data.content
+        raw: dict[str, str | dict[str, str | dict[str, str | dict]]] = fetch_result.data.content
         data_set: DataSet = fetch_result.data_set
         # project.meta.source = meta["id"].hosting_id
         # # project.meta.owner = meta["id"].owner
@@ -75,8 +75,8 @@ class OshwaNormalizer(Normalizer):
         return project
 
     @classmethod
-    def _classification(cls, raw: dict):
-        primary_type = raw.get("primaryType")
+    def _classification(cls, raw: dict[str, str | dict]):
+        primary_type: str = str(raw.get("primaryType"))
 
         if primary_type in CATEGORIES_CPC_UNMAPPABLE:
             additional_type = raw.get("additionalType")

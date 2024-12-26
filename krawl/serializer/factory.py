@@ -2,18 +2,20 @@ from __future__ import annotations
 
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer
-from krawl.serializer.json_serializer import JsonProjectSerializer
-from krawl.serializer.rdf_deserializer import RDFProjectDeserializer
-from krawl.serializer.rdf_serializer import RDFProjectSerializer
-from krawl.serializer.toml_deserializer import TOMLProjectDeserializer
-from krawl.serializer.toml_serializer import TOMLProjectSerializer
-from krawl.serializer.yaml_deserializer import YAMLProjectDeserializer
+
+from . import ProjectDeserializer, ProjectSerializer
+from .json_serializer import JsonProjectSerializer
+from .rdf_deserializer import RDFProjectDeserializer
+from .rdf_serializer import RDFProjectSerializer
+from .toml_deserializer import TOMLProjectDeserializer
+from .toml_serializer import TOMLProjectSerializer
+from .yaml_deserializer import YAMLProjectDeserializer
 
 
 class SerializerFactory():
 
     def __init__(self, **kwargs) -> None:
-        self._serializers = {}
+        self._serializers: dict[str, ProjectSerializer] = {}
         self._init_serializers(**kwargs)
 
     def serialize(self, suffix: str, project: Project) -> str:
@@ -37,10 +39,14 @@ class SerializerFactory():
 class DeserializerFactory():
 
     def __init__(self, **kwargs) -> None:
-        self._deserializers = {}
+        self._deserializers: dict[str, ProjectDeserializer] = {}
         self._init_deserializer(**kwargs)
 
-    def deserialize(self, suffix: str, serialized: str | bytes, normalizer: Normalizer, enrich: dict = None) -> Project:
+    def deserialize(self,
+                    suffix: str,
+                    serialized: str | bytes,
+                    normalizer: Normalizer,
+                    enrich: dict | None = None) -> Project:
         deserializer = self._deserializers.get(suffix.lower())
         if not deserializer:
             raise ValueError(f"Unknown deserializer type: '{suffix}'")

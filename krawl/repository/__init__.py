@@ -16,8 +16,8 @@ class ProjectRepositoryType(StrEnum):
 class ProjectRepository:
     """Interface for storing crawled projects metadata."""
 
-    TYPE: ProjectRepositoryType = None
-    CONFIG_SCHEMA = None
+    TYPE: ProjectRepositoryType
+    CONFIG_SCHEMA: dict
 
     def load(self, id: ProjectId) -> Project:
         raise NotImplementedError()

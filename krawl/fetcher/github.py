@@ -218,7 +218,7 @@ class GitHubFetcher(Fetcher):
         # self._state_repository = state_repository
         # self._normalizer = self.create_normalizer()
         # self._deserializer_factory = DeserializerFactory()
-        self._repo_cache = {}
+        self._repo_cache: dict[str, dict] = {}
         # https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
         self._primary_search_rate_limit = RateLimitNumRequests(num_requests=30)
         # https://docs.github.com/en/graphql/overview/resource-limitations#rate-limit
@@ -357,7 +357,7 @@ class GitHubFetcher(Fetcher):
                            f" and no known manifest file found at: '{project_id.uri}'")
 
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
-        num_fetched_projects = 0
+        num_fetched_projects: int = 0
         if start_over:
             self._state_repository.delete(self.HOSTING_ID)
         else:
@@ -437,7 +437,7 @@ class GitHubFetcher(Fetcher):
             if len(raw_found_files) < expected_num_results:
                 if num_retries_after_incomplete_results >= 10:
                     raise FetcherError("failed to fetch complete set of results, "
-                                       f"got only {len(num_fetched_projects)}/{expected_num_results} from page {page}")
+                                       f"got only {num_fetched_projects}/{expected_num_results} from page {page}")
                 log.debug("got incomplete set of results, retrying...")
                 num_retries_after_incomplete_results = num_retries_after_incomplete_results + 1
                 continue
@@ -447,7 +447,7 @@ class GitHubFetcher(Fetcher):
             for raw_found_file in raw_found_files:
                 raw_url = raw_found_file["html_url"]
                 # parsed_url = urlparse(raw_url)
-                hosting_id, path_raw = HostingUnitIdForge.from_url(raw_url)
+                hosting_id, path = HostingUnitIdForge.from_url(raw_url)
                 # path = Path(raw_url.path)
                 # path_parts = path.parts
                 # owner = path_parts[1]
@@ -462,7 +462,6 @@ class GitHubFetcher(Fetcher):
                 # )
 
                 try:
-                    path = Path(path_raw)
                     yield self.__fetch_one(hosting_id, path)
                 except FetcherError as err:
                     log.debug(f"skipping file, because: {err}")
@@ -504,7 +503,7 @@ class GitHubFetcher(Fetcher):
 
     def _get_repo_info(self, hosting_unit_id: HostingUnitIdForge) -> dict:
         # return cached information
-        key = f"{hosting_unit_id.hosting_id()}/{hosting_unit_id.owner}/{hosting_unit_id.repo}"
+        key = str(hosting_unit_id)
         if key in self._repo_cache:
             return self._repo_cache[key]
 

@@ -20,7 +20,7 @@ class ProjectRepositoryFile(ProjectRepository):
     """Storing and loading projects metadata."""
 
     TYPE: ProjectRepositoryType = ProjectRepositoryType.FILE
-    CONFIG_SCHEMA = {
+    CONFIG_SCHEMA: dict = {
         "type": "dict",
         "default": {},
         "meta": {

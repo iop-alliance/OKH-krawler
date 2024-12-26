@@ -23,8 +23,8 @@ class Reporter(FetchListener):
     def add(self,
             hosting_unit_id: HostingUnitId,
             status: Status,
-            reasons: list[str] = None,
-            project: Project = None) -> None:
+            reasons: list[str] | None = None,
+            project: Project | None = None) -> None:
         """Add an entry to the report."""
         raise NotImplementedError()
 
@@ -39,4 +39,4 @@ class Reporter(FetchListener):
         self.add(fetch_result.data_set.hosting_unit_id, Status.OK)
 
     def failed_fetch(self, failed_fetch: FailedFetch) -> None:
-        self.add(failed_fetch.data_set.hosting_unit_id, Status.FAILED, str(failed_fetch.error))
+        self.add(failed_fetch.hosting_unit_id, Status.FAILED, [str(failed_fetch.error)])

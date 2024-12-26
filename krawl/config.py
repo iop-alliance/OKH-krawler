@@ -12,7 +12,7 @@ It offer following features:
 
 from __future__ import annotations
 
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Generator, Mapping, MutableMapping
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -23,7 +23,7 @@ from cerberus import TypeDefinition, Validator
 from cerberus.errors import REQUIRED_FIELD, BasicErrorHandler, ValidationError
 from str_to_bool import str_to_bool
 
-from krawl.errors import ConfigError
+from .errors import ConfigError, NotOverriddenError
 
 # schema for normalization/validation
 # see: https://docs.python-cerberus.org/en/stable/index.html
@@ -122,11 +122,11 @@ def get_assembled_schema(fetchers_schema, repositories_schema):
     return full_schema
 
 
-def _flatten_list(list_: list) -> list:
+def _flatten_list(*list_: str | list) -> list:
     """Flatten a nested list.
 
     Args:
-        list_ (list): A nested list to be flattened.
+        element (str | list): A nested list to be flattened (or a single item).
 
     Returns:
         list: A recursively flattened list.
@@ -153,7 +153,7 @@ def _flat_name(*args: str | list, separator="_", uppercase=False) -> str:
     Returns:
         str: A flat name with underscore used as a delimiter.
     """
-    components = [item for item in _flatten_list(args) if len(item) > 0]
+    components = [item for item in _flatten_list(*args) if len(item) > 0]
     flat_name = separator.join(components)
     if uppercase:
         flat_name = flat_name.upper()
@@ -161,18 +161,18 @@ def _flat_name(*args: str | list, separator="_", uppercase=False) -> str:
 
 
 def iterate_schema(schema: Mapping,
-                   key_path: list[str] = None,
-                   _long_name_list: list[str] = None) -> tuple[list[str], Mapping]:
+                   _key_path: list[str] | None = None,
+                   _long_name_list: list[str] | None = None) -> Generator[tuple[list[str], Mapping]]:
     """Iterate over a schema.
 
     Args:
         schema (Mapping): Schema to be iterated over.
-        key_path (list, optional): Path of the current key (used in recursive call).
+        _key_path (list, optional): Path of the current key (used in recursive call).
 
     Yields:
         Tuple: Tuple of key path and the associate rule.
     """
-    key_path = key_path or []
+    key_path = _key_path or []
     long_name_list = _long_name_list or []
     for key, rules in schema.items():
         long_name = rules.get("meta", {}).get("long_name")
@@ -187,7 +187,7 @@ def iterate_schema(schema: Mapping,
             yield (key_path + [key], rules)
 
 
-def validate(config: Mapping, schema: Mapping, middle_stage=False) -> tuple[Mapping, list[str]]:
+def validate(config: Mapping, schema: Mapping, middle_stage=False) -> tuple[Mapping | None, list[str]]:
     """Normalize and validate a config against a given schema.
 
     Args:
@@ -196,7 +196,7 @@ def validate(config: Mapping, schema: Mapping, middle_stage=False) -> tuple[Mapp
         middle_stage (bool): If True, default values and 'required' checks are ignored.
 
     Returns:
-        tuple(Mapping, list[str]): Tuple of normalized/validated config and
+        tuple(Mapping | None, list[str]): Tuple of normalized/validated config and
             reasons why the validation failed.
     """
     validator = ConfigValidator(schema, ignore_defaults=middle_stage)
@@ -216,7 +216,7 @@ def validate(config: Mapping, schema: Mapping, middle_stage=False) -> tuple[Mapp
     return validator.document, reasons
 
 
-def effective_config_info(config: Config) -> list[str]:
+def effective_config_info(config: Config) -> Generator[str]:
     redacted_value = "X" * 20
     for key_path, rules in iterate_schema(BASE_SCHEMA):
         name = _flat_name(key_path, separator=".")
@@ -247,7 +247,7 @@ class Config(MutableMapping):
         mapping (Mapping): Initial value of the config.
     """
 
-    def __init__(self, mapping: Mapping = None) -> None:
+    def __init__(self, mapping: Mapping | None = None) -> None:
         super().__setattr__("_mapping", {})
         self.update(mapping or {})
 
@@ -424,16 +424,20 @@ class ConfigValidator(Validator):
             return value
         return int(value)
 
-    def _normalize_coerce_semicolon_list(self, value: list | str) -> list:
-        """Coerce a semicolon delimitered string into a proper list."""
+    def _normalize_coerce_semicolon_list(self, value: list[str] | set[str] | str) -> list:
+        """Coerce a semicolon (';') delimited string into a proper list."""
+        if isinstance(value, set):
+            return list(value)
         if isinstance(value, list):
             return value
         return list(map(lambda vi: vi.strip(), value.split(';')))
 
-    def _normalize_coerce_semicolon_set(self, value: list | str) -> set:
-        """Coerce a semicolon delimitered string into a proper list."""
+    def _normalize_coerce_semicolon_set(self, value: list[str] | set[str] | str) -> set:
+        """Coerce a semicolon (';') delimited string into a proper set."""
         if isinstance(value, set):
             return value
+        if isinstance(value, list):
+            return set(value)
         return set(map(lambda vi: vi.strip(), value.split(';')))
 
     def _normalize_coerce_datetime(self, value: Any) -> datetime:
@@ -482,6 +486,7 @@ class ConfigLoader:
         Returns:
             Config: Loaded and validated configuration.
         """
+        raise NotOverriddenError()
 
 
 class CliConfigLoader(ConfigLoader):
@@ -522,8 +527,8 @@ class YamlFileConfigLoader(ConfigLoader):
             # get YAML file content
             with self._path.open("r") as f:
                 raw = yaml.safe_load(f) or {}
-        except OSError as e:
-            raise ConfigError(f"Failed to load YAML config: {e}", reasons=str(e)) from e
+        except OSError as err:
+            raise ConfigError(f"Failed to load YAML config: {err}", reasons=[str(err)]) from err
 
         # normalize and validate the yaml content
         validated, reasons = validate(raw, self._schema, middle_stage=True)

@@ -29,21 +29,21 @@ class FetcherFactory:
                  repository_config: Config,
                  state_repository: FetcherStateRepository,
                  fetchers_config: Config,
-                 enabled: list[HostingId] = None) -> None:
-        self._fetchers = {}
+                 enabled: list[HostingId] | None = None) -> None:
+        self._fetchers: dict = {}
         self._enabled = enabled or list(_fetcher_classes.keys())
 
-        for e in enabled:
+        for e in self._enabled:
             assert e in _fetcher_classes
 
-        self._init_fetchers(repository_config, state_repository, fetchers_config, enabled)
+        self._init_fetchers(repository_config, state_repository, fetchers_config, self._enabled)
 
     @property
     def enabled(self) -> list[HostingId]:
         return self._enabled
 
     @classmethod
-    def get_config_schemas(cls, hosting_ids: list[HostingId] = None) -> dict:
+    def get_config_schemas(cls, hosting_ids: list[HostingId] | None = None) -> dict:
         if not hosting_ids:
             return {n: c.CONFIG_SCHEMA for n, c in _fetcher_classes.items()}
         schema = {}

@@ -28,7 +28,7 @@ class HostingUnitId:
         return id
 
     @classmethod
-    def from_url(cls, url: str) -> (HostingUnitId, Path):
+    def from_url(cls, url: str) -> tuple[HostingUnitId, Path | None]:
         raise NotOverriddenError()
 
     def to_path_str(self) -> str:
@@ -63,25 +63,25 @@ class HostingUnitId:
     def create_project_hosting_url(self) -> str:
         raise NotOverriddenError()
 
-    def create_download_url(self, path: str = None) -> str:
+    def create_download_url(self, path: Path | str) -> str:
         raise NotOverriddenError()
 
 
 @dataclass(slots=True, frozen=True)
 class HostingUnitIdForge(HostingUnitId):
-    _hosting_id: HostingId = None
+    _hosting_id: HostingId
     """The owning user or organization of the project"""
-    owner: str = None
+    owner: str
+    """The name of the repo/project"""
+    repo: str
     """The path leading up to the repo, if any.
     This is [supported by GitLab](https://docs.gitlab.com/ee/user/group/#group-hierarchy),
     but for example GitHub and ForgeJo (CodeBerg) do not support this."""
-    group_hierarchy: str = None
-    """The name of the repo/project"""
-    repo: str = None
+    group_hierarchy: str | None = None
     # """The path within the repo"""
     # path: str = None
     """Could be a branch, tag or commit"""
-    ref: str = None
+    ref: str | None = None
 
     def to_path_str(self) -> str:
         return f"{self.hosting_id()}/{self.owner}{" / " + self.group_hierarchy if self.group_hierarchy else ''}/{self.repo}{" / " + self.ref if self.ref else ''}"
@@ -89,7 +89,7 @@ class HostingUnitIdForge(HostingUnitId):
     def hosting_id(self) -> HostingId:
         return self._hosting_id
 
-    def derive(self, hosting_id=None, owner=None, group_hierarchy=None, repo=None, ref=None) -> HostingId:
+    def derive(self, hosting_id=None, owner=None, group_hierarchy=None, repo=None, ref=None) -> HostingUnitIdForge:
         return self.__class__(
             _hosting_id=hosting_id if hosting_id else self.hosting_id(),
             owner=owner if owner else self.owner,
@@ -108,14 +108,14 @@ class HostingUnitIdForge(HostingUnitId):
         return self.ref is not None
 
     def is_valid(self) -> bool:
-        return self.hosting_id() and self.owner and self.repo
+        return bool(self.hosting_id()) and bool(self.owner) and bool(self.repo)
 
     @staticmethod
-    def path_opt(path_part) -> str:
+    def path_opt(path_part: Path | str | None) -> str:
         return f"/{str(path_part)}" if path_part else ""
 
     @classmethod
-    def from_url(cls, url: str) -> HostingUnitIdForge:
+    def from_url(cls, url: str) -> tuple[HostingUnitIdForge, Path | None]:
         hosting_id = HostingId.from_url(url)
         # if not (isinstance(url, str) and validators.url(url)):
         #     raise ValueError(f"invalid URL '{url}'")
@@ -123,22 +123,26 @@ class HostingUnitIdForge(HostingUnitId):
         domain = parsed_url.hostname
         path_parts = Path(parsed_url.path).relative_to("/").parts
 
-        group_hierarchy = None
-        path = None
-        ref = None
+        owner: str
+        group_hierarchy: str | None = None
+        repo: str
+        path: Path | None = None
+        ref: str | None = None
         # TODO Replace all the following with regex matching (with named capture groups)
         match hosting_id:
             case HostingId.GITHUB_COM | HostingId.CODEBERG_ORG:  # FIXME Codeberg is not handled right here
-                owner = path_parts[0] if len(path_parts) >= 1 else None
-                repo = path_parts[1] if len(path_parts) >= 2 else None
+                if len(path_parts) < 2:
+                    raise ParserError(f"Not a valid {hosting_id} project URL: {url}")
+                owner = path_parts[0]
+                repo = path_parts[1]
                 if domain == "raw.githubusercontent.com":
                     ref = path_parts[2] if len(path_parts) >= 3 else None
-                    path = "/".join(path_parts[3:]) if len(path_parts) >= 4 else None
+                    path = Path("/".join(path_parts[3:])) if len(path_parts) >= 4 else None
                 else:
                     if len(path_parts) >= 4 and path_parts[2] in ["tree", "blob", "raw"]:
                         ref = path_parts[3]
                         if len(path_parts) > 4:
-                            path = "/".join(path_parts[4:])
+                            path = Path("/".join(path_parts[4:]))
                     elif len(path_parts) > 4 and path_parts[2] == "releases" and path_parts[3] == "tag":
                         ref = path_parts[4]
                     elif len(path_parts) > 3 and path_parts[2] == "commit":
@@ -147,13 +151,15 @@ class HostingUnitIdForge(HostingUnitId):
                     #     raise NotImplementedError(f"Unknown or invalid path format: '{parsed_url.path}'; for platform {hosting_id}.")
 
             case HostingId.GITLAB_COM:
-                owner = path_parts[0] if len(path_parts) >= 1 else None
-                repo = path_parts[1] if len(path_parts) >= 2 else None
-                # FIXME GitLab URL path parsing needs work here. We still need to set repo_path!
+                if len(path_parts) < 2:
+                    raise ParserError(f"Not a valid {hosting_id} project URL: {url}")
+                owner = path_parts[0]
+                repo = path_parts[1]
+                # FIXME GitLab URL path parsing needs work here. We still need to set group_hierarchy!
                 if len(path_parts) >= 5 and path_parts[2] == "-" and path_parts[3] in ["tree", "blob", "raw"]:
                     ref = path_parts[4]
                     if len(path_parts) > 5:
-                        path = "/".join(path_parts[5:])
+                        path = Path("/".join(path_parts[5:]))
                 elif len(path_parts) >= 5 and path_parts[2] == "-" and path_parts[3] in ["commit", "tags"]:
                     ref = path_parts[4]
 
@@ -173,10 +179,9 @@ class HostingUnitIdForge(HostingUnitId):
         hosting_unit_id = cls(
             _hosting_id=hosting_id,
             owner=owner,
-            group_hierarchy=group_hierarchy,
             repo=repo,
+            group_hierarchy=group_hierarchy,
             ref=ref,
-            # path=path,
         )
 
         return (hosting_unit_id, path)
@@ -215,7 +220,7 @@ class HostingUnitIdForge(HostingUnitId):
             path=url_path,
         )
 
-    def create_download_url(self, path: str = None) -> str:
+    def create_download_url(self, path: Path | str) -> str:
         self.validate()
 
         match self.hosting_id():
@@ -260,9 +265,9 @@ class HostingUnitIdForge(HostingUnitId):
 
 @dataclass(slots=True, frozen=True)
 class HostingUnitIdWebById(HostingUnitId):
-    _hosting_id: HostingId = None
+    _hosting_id: HostingId
     """The name or other ID of the repo/project"""
-    project_id: str = None
+    project_id: str
 
     def to_path_str(self) -> str:
         return f"{self.hosting_id()}/{self.project_id}"
@@ -277,7 +282,7 @@ class HostingUnitIdWebById(HostingUnitId):
         return False
 
     @classmethod
-    def from_url(cls, url: str) -> HostingUnitIdWebById:
+    def from_url(cls, url: str) -> tuple[HostingUnitIdWebById, Path | None]:
         hosting_id = HostingId.from_url(url)
         # if not (isinstance(url, str) and validators.url(url)):
         #     raise ValueError(f"invalid URL '{url}'")
@@ -285,7 +290,7 @@ class HostingUnitIdWebById(HostingUnitId):
         path_parts = Path(parsed_url.path).relative_to("/").parts
 
         project_id = None
-        path = None
+        path: Path = None
         match hosting_id:
             case HostingId.GITHUB_COM | HostingId.CODEBERG_ORG | HostingId.GITLAB_COM:
                 raise NotImplementedError(f"This is not a simple, web-hosted projects platform URL: '{url}';"
@@ -326,7 +331,7 @@ class HostingUnitIdWebById(HostingUnitId):
         ), path)
 
     def is_valid(self) -> bool:
-        return self.hosting_id() and self.project_id
+        return self.hosting_id() is not None and self.project_id is not None
 
     def create_project_hosting_url(self) -> str:
         self.validate()
@@ -345,7 +350,7 @@ class HostingUnitIdWebById(HostingUnitId):
                 url_path = f"/{self.project_id.lower()}.html"
 
             case HostingId.THINGIVERSE_COM:
-                url_domain = "www.thingiverse.com",
+                url_domain = "www.thingiverse.com"
                 url_path = f"/thing:{self.project_id}"
 
             case _:
@@ -356,7 +361,7 @@ class HostingUnitIdWebById(HostingUnitId):
             path=url_path,
         )
 
-    def create_download_url(self, path: str = None) -> str:
+    def create_download_url(self, path: Path | str) -> str:
         self.validate()
 
         match self.hosting_id():
@@ -386,7 +391,7 @@ class HostingUnitIdFactory:
             return HostingUnitIdWebById.from_url_no_path(url)
 
     @classmethod
-    def from_url(cls, url: str) -> (HostingUnitId, Path):
+    def from_url(cls, url: str) -> tuple[HostingUnitId, Path | None]:
         try:
             return HostingUnitIdForge.from_url(url)
         except ParserError:

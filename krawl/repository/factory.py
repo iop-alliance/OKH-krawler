@@ -5,31 +5,31 @@ from collections.abc import Generator
 from krawl.config import Config
 from krawl.errors import RepositoryError
 from krawl.model.project import Project
-from krawl.repository import ProjectRepository
+from krawl.repository import ProjectRepository, ProjectRepositoryType
 from krawl.repository.project_file import ProjectRepositoryFile
 
-_repositories_schemas = {
+_repositories_schemas: dict[ProjectRepositoryType, dict] = {
     ProjectRepositoryFile.TYPE: ProjectRepositoryFile.CONFIG_SCHEMA,
 }
 
 
 class ProjectRepositoryFactory:
 
-    def __init__(self, repositories_config: Config, enabled: list[str] = None) -> None:
-        self._repositories = {}
+    def __init__(self, repositories_config: Config, enabled: list[str] | None = None) -> None:
+        self._repositories: dict = {}
         self._enabled = enabled or list(_repositories_schemas.keys())
 
-        for e in enabled:
+        for e in self._enabled:
             assert e in _repositories_schemas
 
-        self._init_repositories(repositories_config, enabled)
+        self._init_repositories(repositories_config, self._enabled)
 
     @property
     def enabled(self) -> list[str]:
         return self._enabled
 
     @classmethod
-    def get_config_schemas(cls, names: list[str] = None) -> dict:
+    def get_config_schemas(cls, names: list[ProjectRepositoryType] | None = None) -> dict:
         if not names:
             return _repositories_schemas
         schema = {}
