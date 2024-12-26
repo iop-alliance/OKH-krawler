@@ -25,7 +25,8 @@ from krawl.normalizer import Normalizer
 from krawl.normalizer.thingiverse import ThingiverseNormalizer
 from krawl.repository import FetcherStateRepository
 
-log = get_child_logger("thingiverse")
+long_name = "thingiverse"
+log = get_child_logger(long_name)
 
 
 class ThingiverseFetcher(Fetcher):
@@ -40,7 +41,7 @@ class ThingiverseFetcher(Fetcher):
     RETRY_CODES = [429, 500, 502, 503, 504]
     BATCH_SIZE = 30
     # BATCH_SIZE = 1
-    CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name="thingiverse", default_timeout=10, access_token=True)
+    CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=long_name, default_timeout=10, access_token=True)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         super().__init__(state_repository=state_repository)
@@ -124,7 +125,7 @@ class ThingiverseFetcher(Fetcher):
         try:
             hosting_unit_id: HostingUnitIdWebById = HostingUnitIdWebById.from_url_no_path(project_id.uri)
         except ParserError as err:
-            raise FetcherError(f"Invalid Thingiverse thing URL: '{project_id.uri}'") from err
+            raise FetcherError(f"Invalid {self.HOSTING_ID} project URL: '{project_id.uri}'") from err
         last_visited = datetime.now(timezone.utc)
         return self.__fetch_one(hosting_unit_id, last_visited)
 
@@ -139,13 +140,13 @@ class ThingiverseFetcher(Fetcher):
         self._request_counter += 1
 
         if response.status_code > 205:
-            raise FetcherError(f"failed to fetch projects from Thingiverse: {response.text}")
+            raise FetcherError(f"failed to fetch projects from {self.HOSTING_ID}: {response.text}")
 
         sleep(1)  # one request per second rate limit
 
         return response.json()
 
-    def _get_state(self, start_over=False) -> tuple[int, list[int]]:
+    def _get_state(self, start_over=False) -> tuple[int, list[str]]:
         next_total_hit_index: int = 0
         fetched_things_ids = []
         if start_over:
@@ -157,7 +158,7 @@ class ThingiverseFetcher(Fetcher):
                 fetched_things_ids = state.get("fetched_things_ids", [])
         return (next_total_hit_index, fetched_things_ids)
 
-    def _set_state(self, next_total_hit_index: int, fetched_things_ids: list[int]) -> None:
+    def _set_state(self, next_total_hit_index: int, fetched_things_ids: list[str]) -> None:
         self._state_repository.store(self.HOSTING_ID, {
             "next_total_hit_index": next_total_hit_index,
             "fetched_things_ids": fetched_things_ids
@@ -228,7 +229,7 @@ class ThingiverseFetcher(Fetcher):
             try:
                 hosting_unit_id = HostingUnitIdWebById(_hosting_id=self.HOSTING_ID, project_id=thing_id)
                 fetch_result = self.__fetch_one(hosting_unit_id, last_visited)
-                log.debug("yield project #%d: %s", projects_counter, hosting_unit_id)
+                log.debug("yield fetch result #%d: %s", projects_counter, hosting_unit_id)
                 projects_counter += 1
                 yield fetch_result
             except FetcherError as err:

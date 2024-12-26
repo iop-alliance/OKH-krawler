@@ -26,14 +26,15 @@ from krawl.request.rate_limit import RateLimitFixedTimedelta
 
 # from krawl.util import slugify
 
-log = get_child_logger("oshwa")
+long_name = "oshwa"
+log = get_child_logger(long_name)
 
 
 class OshwaFetcher(Fetcher):
     HOSTING_ID: HostingId = HostingId.OSHWA_ORG
     RETRY_CODES = [429, 500, 502, 503, 504]
     BATCH_SIZE = 50
-    CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name="oshwa", default_timeout=10, access_token=True)
+    CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=long_name, default_timeout=10, access_token=True)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         super().__init__(state_repository=state_repository)
@@ -146,15 +147,15 @@ class OshwaFetcher(Fetcher):
             )
             self._rate_limit.update()
             if response.status_code > 205:
-                raise FetcherError(f"failed to fetch projects from OSHWA: {response.text}")
+                raise FetcherError(f"failed to fetch projects from {self.HOSTING_ID}: {response.text}")
 
             data = response.json()
             last_visited = datetime.now(timezone.utc)
             for raw_project in data["items"]:
                 hosting_unit_id = HostingUnitIdWebById(_hosting_id=self.HOSTING_ID, project_id=raw_project['oshwaUid'])
-                project = self.__fetch_one(hosting_unit_id, raw_project, last_visited)
-                log.debug("yield project %s", hosting_unit_id)
-                yield project
+                fetch_result = self.__fetch_one(hosting_unit_id, raw_project, last_visited)
+                log.debug("yield fetch_result %s", hosting_unit_id)
+                yield fetch_result
 
             # save current progress
             batch_size = data["limit"]  # in case the batch size will be lowered on the platform in some point in time
@@ -169,4 +170,4 @@ class OshwaFetcher(Fetcher):
             })
 
         self._state_repository.delete(self.HOSTING_ID)
-        log.debug("fetched %d projects from OSHWA", num_fetched)
+        log.debug(f"fetched {num_fetched} projects from {self.HOSTING_ID}")
