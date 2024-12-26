@@ -9,8 +9,8 @@ from krawl.model.hosting_unit import HostingUnitId
 @dataclass(slots=True, frozen=True)
 class FailedFetch:
     """The result of a failed fetch of an OSH projects meta-data."""
-    hosting_unit_id: HostingUnitId = None
-    error: Exception = None
+    hosting_unit_id: HostingUnitId
+    error: Exception
 
 
 class FetchListener:
