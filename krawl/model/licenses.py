@@ -4,7 +4,7 @@ import json
 import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +15,7 @@ _name_to_id: dict[str, str]
 log = get_child_logger("licenses")
 
 
-class LicenseType(str, Enum):
+class LicenseType(StrEnum):
     UNKNOWN = "unknown"
     WEAK = "weak"
     STRONG = "strong"

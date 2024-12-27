@@ -38,6 +38,7 @@ from krawl.request.rate_limit import RateLimitFixedTimedelta, RateLimitNumReques
 __long_name__: str = "github"
 __hosting_id__: HostingId = HostingId.GITHUB_COM
 __sourcing_procedure__: SourcingProcedure = SourcingProcedure.MANIFEST
+__default_manifest_path__: Path = Path("okh.toml")
 log = get_child_logger(__long_name__)
 
 MANIFEST_FILE_EXTENSIONS = ['toml', 'yaml', 'yml', 'json', 'ttl', 'rdf', 'jsonld']
@@ -247,7 +248,7 @@ class GitHubFetcher(Fetcher):
                 "Authorization": f"bearer {config.access_token}",
             },
             verify=True,
-            retries=retry,
+            retries=config.retries,
             timeout=config.timeout,
         )
         self._graphql_client = GQLClient(
@@ -394,8 +395,8 @@ class GitHubFetcher(Fetcher):
                 # "q": "path:/okh.*yml/",
                 # "q": "path:okh.yml",
                 # "q": "path:okh.toml",
-                "per_page": self.BATCH_SIZE,
-                "page": page,
+                "per_page": str(self.BATCH_SIZE),
+                "page": str(page),
             }
             # code search is not available in the GitHub API v4 (graphql)
             # information on code search: https://docs.github.com/en/rest/reference/search
@@ -472,7 +473,7 @@ class GitHubFetcher(Fetcher):
                 # )
 
                 try:
-                    yield self.__fetch_one(hosting_id, path)
+                    yield self.__fetch_one(hosting_id, path or __default_manifest_path__)
                 except FetcherError as err:
                     log.debug(f"skipping file, because: {err}")
 
