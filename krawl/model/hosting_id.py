@@ -102,7 +102,7 @@ class HostingId(StrEnum):
         domain = parsed_url.hostname
 
         match domain:
-            case "appropedia.org":
+            case "appropedia.org" | "www.appropedia.org":
                 hosting_id = HostingId.APPROPEDIA_ORG
             case "codeberg.org":
                 hosting_id = HostingId.CODEBERG_ORG

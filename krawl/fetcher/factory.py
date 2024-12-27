@@ -4,7 +4,7 @@ from collections.abc import Generator
 
 from krawl.config import Config
 from krawl.errors import FetcherError
-from krawl.fetcher import Fetcher, github, oshwa, thingiverse
+from krawl.fetcher import Fetcher, appropedia, github, oshwa, thingiverse
 from krawl.fetcher.event import FetchListener
 from krawl.fetcher.result import FetchResult
 from krawl.model.hosting_id import HostingId
@@ -14,6 +14,7 @@ from krawl.repository.fetch_result_repository import FetchResultRepository
 from krawl.repository.fetch_result_repository_workdir import FetchResultRepositoryWorkdir
 
 _fetcher_classes = {
+    appropedia.__hosting_id__: appropedia.AppropediaFetcher,
     github.__hosting_id__: github.GitHubFetcher,
     oshwa.__hosting_id__: oshwa.OshwaFetcher,
     thingiverse.__hosting_id__: thingiverse.ThingiverseFetcher,
