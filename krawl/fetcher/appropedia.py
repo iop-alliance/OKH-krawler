@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import json
 import urllib.parse
 from collections.abc import Generator
 from dataclasses import dataclass
@@ -80,7 +79,7 @@ class _FetcherState:
 
 
 class AppropediaFetcher(Fetcher):
-    """
+    """\
     Documentation and tips from Felipe (Admin of Appropedia.org):
 
     ---
@@ -239,15 +238,6 @@ class AppropediaFetcher(Fetcher):
 
     def _get_projects_index(self) -> Generator[str]:
         project_list_json = self._download_projects_index()
-
-        # log.debug("Raw fetched project index HTML:\n---\n%s\n---", project_list_html)
-        raw_json_file = "appro_raw_proj_index.json"
-        with open(raw_json_file, "w") as text_file:
-            # text_file.write(json.dump(project_list_json))
-            json.dump(project_list_json, text_file)
-        # write_to_file(raw_html_file, project_list_html)
-        log.debug("Raw fetched project index JSON written to: '%s'", raw_json_file)
-
         for project in project_list_json["query"]["categorymembers"]:
             yield project["title"]
 
@@ -255,7 +245,6 @@ class AppropediaFetcher(Fetcher):
         project_ids = list(self._get_projects_index())
         project_ids.sort()
         total_projects = len(project_ids)
-        log.debug("All fetched Project IDs:\n---\n%s\n---", "\n".join(project_ids))
 
         proj_idx = -1
         last_visited = datetime.now(timezone.utc)
