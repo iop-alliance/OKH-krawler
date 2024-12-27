@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import io
 
 from krawl.model.hosting_unit import HostingUnitId
 from krawl.model.project import Project
@@ -12,7 +13,7 @@ class FileReporter(Reporter):
 
     def __init__(self, path: Path) -> None:
         super().__init__()
-        self._file = None
+        self._file: io.TextIOWrapper
         self._open(path)
 
     def add(self,

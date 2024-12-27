@@ -11,5 +11,5 @@ class RDFProjectDeserializer(ProjectDeserializer):
     def extensions(cls) -> list[str]:
         return ["ttl"]
 
-    def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict = None) -> Project:
+    def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict | None = None) -> Project:
         raise NotImplementedError()

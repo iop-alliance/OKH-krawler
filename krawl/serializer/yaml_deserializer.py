@@ -16,7 +16,7 @@ class YAMLProjectDeserializer(ProjectDeserializer):
     def extensions(cls) -> list[str]:
         return ["yml", "yaml"]
 
-    def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict = None) -> Project:
+    def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict | None = None) -> Project:
         try:
             deserialized = yaml.safe_load(serialized)
         except Exception as err:

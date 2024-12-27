@@ -36,7 +36,7 @@ class RDFProjectSerializer(ProjectSerializer):
         try:
             graph = self._make_graph(project)
 
-            serialized = graph.serialize(format="turtle").decode("utf-8")
+            serialized = str(graph.serialize(format="turtle").encode("utf-8"))
         except Exception as err:
             raise SerializerError(f"failed to serialize RDF: {err}") from err
         return serialized
@@ -123,7 +123,7 @@ class RDFProjectSerializer(ProjectSerializer):
         cls.add(graph, subject, OKH.depth, outer_dimensions.depth)
 
     @classmethod
-    def _add_part(cls, graph, namespace, project) -> rdflib.URIRef:
+    def _add_part(cls, graph, namespace: rdflib.Namespace, project) -> list[URIRef]:
 
         def get_fallback(part, key):
             if hasattr(part, key):
@@ -137,7 +137,7 @@ class RDFProjectSerializer(ProjectSerializer):
             part_name = cls._title_case(part.name_clean if part.name_clean != project.name else part.name_clean +
                                         "_part")
 
-            part_subject = namespace[part_name]
+            part_subject: URIRef = namespace[part_name]
             cls.add(graph, part_subject, rdflib.RDF.type, OKH.Part)
             cls.add(graph, part_subject, rdflib.RDFS.label, part.name)
 
@@ -218,7 +218,7 @@ class RDFProjectSerializer(ProjectSerializer):
         return part_subjects
 
     @classmethod
-    def _add_module(cls, graph, namespace, project) -> rdflib.URIRef:
+    def _add_module(cls, graph, namespace: rdflib.Namespace, project) -> rdflib.URIRef:
         module_subject = namespace['Project']
         cls.add(graph, module_subject, rdflib.RDF.type, OKH.Module)
 
@@ -298,20 +298,20 @@ class RDFProjectSerializer(ProjectSerializer):
     #     return entity, l
 
     @classmethod
-    def _add_info_file(cls, graph, namespace, project, key, entity_name, rdf_type):
+    def _add_info_file(cls, graph, namespace: rdflib.Namespace, project, key, entity_name, rdf_type) -> URIRef | None:
         parent_name = f"{project.name} {project.version}"
         file = getattr(project, key) if hasattr(project, key) else None
         if file is None:
             return None
 
-        subject = namespace[entity_name]
+        subject: URIRef = namespace[entity_name]
         cls.add(graph, subject, rdflib.RDF.type, rdf_type)
         cls.add(graph, subject, rdflib.RDFS.label, f"{entity_name} of {parent_name}")
         cls.add_file(graph, subject, file)
         return subject
 
     @classmethod
-    def _make_graph(cls, project):
+    def _make_graph(cls, project) -> rdflib.Graph:
         graph = rdflib.Graph()
         graph.bind("okh", OKH)
         graph.bind("otrl", OTRL)
