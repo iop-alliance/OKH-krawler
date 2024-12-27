@@ -82,6 +82,7 @@ class ThingiverseFetcher(Fetcher):
 
     - General: <https://www.thingiverse.com/developers>
     - Requests: <https://www.thingiverse.com/developers/swagger>
+    - Legal: <https://www.thingiverse.com/legal/api>
     """
     RETRY_CODES = [429, 500, 502, 503, 504]
     BATCH_SIZE = 30
