@@ -19,19 +19,26 @@ from krawl.fetcher.event import FailedFetch
 from krawl.fetcher.result import FetchResult
 from krawl.fetcher.util import is_accepted_manifest_file_name, is_empty
 from krawl.log import get_child_logger
+from krawl.model.agent import Organization
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdForge
+from krawl.model.licenses import License
+from krawl.model.licenses import get_by_id_or_name_required as get_license_required
 from krawl.model.manifest import Manifest, ManifestFormat
 # from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
+from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.normalizer import Normalizer
 from krawl.normalizer.github import GitHubFileHandler
 from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.repository import FetcherStateRepository
 from krawl.request.rate_limit import RateLimitFixedTimedelta, RateLimitNumRequests
 
-log = get_child_logger("github")
+__long_name__: str = "github"
+__hosting_id__: HostingId = HostingId.GITHUB_COM
+__sourcing_procedure__: SourcingProcedure = SourcingProcedure.MANIFEST
+log = get_child_logger(__long_name__)
 
 MANIFEST_FILE_EXTENSIONS = ['toml', 'yaml', 'yml', 'json', 'ttl', 'rdf', 'jsonld']
 #pylint: disable=consider-using-f-string
@@ -208,10 +215,10 @@ class GitHubFetcher(Fetcher):
     https://docs.github.com/en/graphql
     """
 
-    HOSTING_ID: HostingId = HostingId.GITHUB_COM
+    HOSTING_ID: HostingId = __hosting_id__
     RETRY_CODES = [429, 500, 502, 503, 504]
     BATCH_SIZE = 10
-    CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name="github", default_timeout=15, access_token=True)
+    CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=__long_name__, default_timeout=15, access_token=True)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         super().__init__(state_repository=state_repository)
@@ -307,14 +314,18 @@ class GitHubFetcher(Fetcher):
             #     log.debug("YAML (v1) Manifest converted to TOML (LOSH)!")
 
             data_set = DataSet(
+                okhv="OKH-LOSHv1.0",  # FIXME Not good, not right
                 crawling_meta=CrawlingMeta(
+                    sourcing_procedure=__sourcing_procedure__,
                     # created_at: datetime = None
                     last_visited=last_visited,
-                    manifest=path,
+                    manifest=str(path),
                     # last_changed: datetime = None
                     # history = None,
                 ),
                 hosting_unit_id=hosting_unit_id,
+                license=None,  # TODO,
+                creator=None,  # TODO,
             )
             # log.info(f"manifest_contents: {manifest_contents}")
 
@@ -359,9 +370,9 @@ class GitHubFetcher(Fetcher):
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
         num_fetched_projects: int = 0
         if start_over:
-            self._state_repository.delete(self.HOSTING_ID)
+            self._state_repository.delete(__hosting_id__)
         else:
-            state = self._state_repository.load(self.HOSTING_ID)
+            state = self._state_repository.load(__hosting_id__)
             if state:
                 num_fetched_projects = state.get("num_fetched_projects", 0)
 
@@ -453,9 +464,9 @@ class GitHubFetcher(Fetcher):
                 # owner = path_parts[1]
                 # repo = path_parts[2]
                 # ref = str(Path(*path_parts[5:]))
-                # id = ProjectId(self.HOSTING_ID, path_parts[1], path_parts[2], str(Path(*path_parts[5:])))
+                # id = ProjectId(__hosting_id__, path_parts[1], path_parts[2], str(Path(*path_parts[5:])))
                 # hosting_id = HostingUnitIdForge(
-                #     _hosting_id=self.HOSTING_ID,
+                #     _hosting_id=__hosting_id__,
                 #     owner=owner,
                 #     repo=repo,
                 #     ref=ref,
@@ -469,14 +480,14 @@ class GitHubFetcher(Fetcher):
             # save current progress
             page = page + 1
             num_fetched_projects = num_fetched_projects + len(raw_found_files)
-            self._state_repository.store(self.HOSTING_ID, {
+            self._state_repository.store(__hosting_id__, {
                 "num_fetched_projects": num_fetched_projects,
             })
 
             if is_last_page:
                 break
 
-        self._state_repository.delete(self.HOSTING_ID)
+        self._state_repository.delete(__hosting_id__)
         log.debug("fetched %d projects from GitHub", num_fetched_projects)
 
     def _edit_hosting_unit_id(self, hosting_unit_id: HostingUnitIdForge) -> HostingUnitIdForge:

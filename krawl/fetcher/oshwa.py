@@ -13,11 +13,15 @@ from krawl.fetcher import Fetcher
 from krawl.fetcher.event import FailedFetch
 from krawl.fetcher.result import FetchResult
 from krawl.log import get_child_logger
+from krawl.model.agent import Organization
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdWebById
+from krawl.model.licenses import License
+from krawl.model.licenses import get_by_id_or_name_required as get_license_required
 from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
+from krawl.model.sourcing_procedure import SourcingProcedure
 # from krawl.model.project import Project
 from krawl.normalizer import Normalizer
 from krawl.normalizer.oshwa import OshwaNormalizer
@@ -26,15 +30,21 @@ from krawl.request.rate_limit import RateLimitFixedTimedelta
 
 # from krawl.util import slugify
 
-long_name = "oshwa"
-log = get_child_logger(long_name)
+__long_name__: str = "oshwa"
+__hosting_id__: HostingId = HostingId.OSHWA_ORG
+__sourcing_procedure__: SourcingProcedure = SourcingProcedure.API
+__dataset_license__: License = None  # TODO  # get_license_required("CC-BY-SA-4.0")
+__dataset_creator__: Organization = Organization(name="Open Source Hardware Association",
+                                                 email="info@oshwa.org",
+                                                 url="https://www.oshwa.org")
+log = get_child_logger(__long_name__)
 
 
 class OshwaFetcher(Fetcher):
-    HOSTING_ID: HostingId = HostingId.OSHWA_ORG
+    HOSTING_ID: HostingId = __hosting_id__
     RETRY_CODES = [429, 500, 502, 503, 504]
     BATCH_SIZE = 50
-    CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=long_name, default_timeout=10, access_token=True)
+    CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=__long_name__, default_timeout=10, access_token=True)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         super().__init__(state_repository=state_repository)
@@ -71,7 +81,9 @@ class OshwaFetcher(Fetcher):
             #     )
 
             data_set = DataSet(
+                okhv="OKH-LOSHv1.0",  # FIXME Not good, not right
                 crawling_meta=CrawlingMeta(
+                    sourcing_procedure=__sourcing_procedure__,
                     # created_at: datetime = None
                     last_visited=last_visited,
                     # manifest=path,
@@ -79,6 +91,8 @@ class OshwaFetcher(Fetcher):
                     # history = None,
                 ),
                 hosting_unit_id=hosting_unit_id,
+                license=__dataset_license__,
+                creator=__dataset_creator__,
             )
 
             fetch_result = FetchResult(data_set=data_set,
@@ -127,9 +141,9 @@ class OshwaFetcher(Fetcher):
         num_fetched = 0
         batch_size = self.BATCH_SIZE
         if start_over:
-            self._state_repository.delete(self.HOSTING_ID)
+            self._state_repository.delete(__hosting_id__)
         else:
-            state = self._state_repository.load(self.HOSTING_ID)
+            state = self._state_repository.load(__hosting_id__)
             if state:
                 last_offset = state.get("last_offset", 0)
                 num_fetched = state.get("num_fetched", 0)
@@ -147,12 +161,12 @@ class OshwaFetcher(Fetcher):
             )
             self._rate_limit.update()
             if response.status_code > 205:
-                raise FetcherError(f"failed to fetch projects from {self.HOSTING_ID}: {response.text}")
+                raise FetcherError(f"failed to fetch projects from {__hosting_id__}: {response.text}")
 
             data = response.json()
             last_visited = datetime.now(timezone.utc)
             for raw_project in data["items"]:
-                hosting_unit_id = HostingUnitIdWebById(_hosting_id=self.HOSTING_ID, project_id=raw_project['oshwaUid'])
+                hosting_unit_id = HostingUnitIdWebById(_hosting_id=__hosting_id__, project_id=raw_project['oshwaUid'])
                 fetch_result = self.__fetch_one(hosting_unit_id, raw_project, last_visited)
                 log.debug("yield fetch_result %s", hosting_unit_id)
                 yield fetch_result
@@ -164,10 +178,10 @@ class OshwaFetcher(Fetcher):
             if last_offset > data["total"]:
                 break
 
-            self._state_repository.store(self.HOSTING_ID, {
+            self._state_repository.store(__hosting_id__, {
                 "last_offset": last_offset,
                 "num_fetched": num_fetched,
             })
 
-        self._state_repository.delete(self.HOSTING_ID)
-        log.debug(f"fetched {num_fetched} projects from {self.HOSTING_ID}")
+        self._state_repository.delete(__hosting_id__)
+        log.debug(f"fetched {num_fetched} projects from {__hosting_id__}")
