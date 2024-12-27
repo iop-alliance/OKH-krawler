@@ -33,7 +33,7 @@ from krawl.request.rate_limit import RateLimitFixedTimedelta
 __long_name__: str = "oshwa"
 __hosting_id__: HostingId = HostingId.OSHWA_ORG
 __sourcing_procedure__: SourcingProcedure = SourcingProcedure.API
-__dataset_license__: License = None  # TODO  # get_license_required("CC-BY-SA-4.0")
+__dataset_license__: License = get_license_required("CC0-1.0")
 __dataset_creator__: Organization = Organization(name="Open Source Hardware Association",
                                                  email="info@oshwa.org",
                                                  url="https://www.oshwa.org")
