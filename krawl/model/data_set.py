@@ -13,12 +13,12 @@ from krawl.model.sourcing_procedure import SourcingProcedure
 class CrawlingMeta:  # pylint: disable=too-many-instance-attributes
     """Meta data about the crawling of the data"""
 
-    sourcing_procedure: SourcingProcedure = None
+    sourcing_procedure: SourcingProcedure
+    last_visited: datetime
     manifest: str | None = None  # Repo internal path or absolute HTTP(S) URLto the manifest file, if any. This is `None``, for example, if data was fetched through platform API only.
-    created_at: datetime = None
-    last_visited: datetime = None
-    last_changed: datetime = None
-    history = None
+    created_at: datetime | None = None
+    last_changed: datetime | None = None
+    # history = None
     # # internally calculated score for project importance to decide re-visit schedule
     # score: float = field(default=None, init=False)
 
@@ -52,9 +52,12 @@ class DataSet:  # pylint: disable=too-many-instance-attributes
     """Meta data about one source of data
     (e.g. one repo, one hosted project or one manifest file)."""
 
-    okhv: str = None
-    crawling_meta: CrawlingMeta = None
-    hosting_unit_id: HostingUnitId = None  # info about the repository on the hosting platform
-    license: License = None
-    creator: Agent = None  # Who created the projects meta data
-    organization: Organization = None  # Who created the projects meta data
+    okhv: str
+    crawling_meta: CrawlingMeta
+    hosting_unit_id: HostingUnitId
+    """info about the repository on the hosting platform"""
+    license: License
+    creator: Agent
+    """Who created the projects meta data"""
+    organization: Organization | None = None
+    """Who created the projects meta data"""

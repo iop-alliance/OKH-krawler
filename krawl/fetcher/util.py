@@ -42,7 +42,7 @@ def _recuperate_invalid_yaml_manifest(manifest_contents: bytes) -> bytes:
     Many manifests out there use bad syntax or invalid values,
     which we try to undo as much as possible in here."""
 
-    (_, fn_v1) = tempfile.mkstemp()
+    fn_v1: Path = Path(tempfile.mkstemp()[1])
     # Target file should not yet exist when converting
     os.remove(fn_v1)
 
@@ -62,7 +62,7 @@ def sanitize_okh_v1_yaml(manifest_file: Path):
     using the external software 'sanitize-v1-yaml'
     from the okh-tool repo."""
 
-    conv_cmd = ['sanitize-v1-yaml', '--in-place', manifest_file]
+    conv_cmd: list[str] = ['sanitize-v1-yaml', '--in-place', str(manifest_file)]
     # res = subprocess.run(conv_cmd)
     try:
         subprocess.check_output(conv_cmd, stderr=subprocess.PIPE)
@@ -74,7 +74,7 @@ def sanitize_okh_v1_yaml(manifest_file: Path):
             f" stdout: {err.output.decode(sys.getfilesystemencoding())}", []) from err
 
 
-def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes | None:
+def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes:
     """Converts serialized (bytes) OKH v1 (YAMl) manifest contents
     to serialized (bytes) OKH LOSH (TOML) manifest contents,
     using the external software 'okh-tool'."""

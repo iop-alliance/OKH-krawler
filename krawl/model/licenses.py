@@ -8,8 +8,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-_licenses = None
-_name_to_id = None
+from krawl.log import get_child_logger
+
+_licenses: dict[str, License]
+_name_to_id: dict[str, str]
+log = get_child_logger("licenses")
 
 
 class LicenseType(str, Enum):
@@ -40,9 +43,9 @@ class LicenseType(str, Enum):
 class License:  # pylint: disable=too-many-instance-attributes
     _id: str
     name: str
+    reference_url: str
     type_: LicenseType = LicenseType.UNKNOWN
-    reference_url: str = None
-    details_url: str = None
+    details_url: str | None = None
     is_spdx: bool = False
     is_osi_approved: bool = False
     is_fsf_libre: bool = False
@@ -59,7 +62,7 @@ class License:  # pylint: disable=too-many-instance-attributes
 
 
 def _normalize_name(name: str) -> str:
-    return unicodedata.normalize('NFKD', name).casefold().encode('ascii', 'ignore').strip()
+    return str(unicodedata.normalize('NFKD', name).casefold().encode('ascii', 'ignore')).strip()
 
 
 def _init_licenses():
@@ -69,21 +72,25 @@ def _init_licenses():
         spdx-licenses.json: https://raw.githubusercontent.com/spdx/license-list-data/master/json/licenses.json
         spdx-blocklist.json: https://raw.githubusercontent.com/OPEN-NEXT/LOSH-Licenses/main/SPDX-blocklist.json
     """
-    assets_path = Path(__file__).parent.parent / "assets"
+    assets_path: Path = Path(__file__).parent.parent / "assets"
 
     licenses_file = assets_path / "spdx-licenses.json"
     with licenses_file.open("r") as f:
-        raw_license_info = json.load(f)
-        license_info = {_normalize_name(lic["licenseId"]): lic for lic in raw_license_info["licenses"]}
-    licenses_extra_file = assets_path / "spdx-licenses-extra.json"
+        raw_license_info: dict[str, Any] = json.load(f)
+        license_info: dict[str, dict[str, Any]] = {
+            _normalize_name(lic["licenseId"]): lic for lic in raw_license_info["licenses"]
+        }
+    licenses_extra_file: Path = assets_path / "spdx-licenses-extra.json"
     with licenses_extra_file.open("r") as f:
-        raw_license_extra_info = json.load(f)
-        license_extra_info = {_normalize_name(lic["licenseId"]): lic for lic in raw_license_extra_info["licenses"]}
+        raw_license_extra_info: dict[str, Any] = json.load(f)
+        license_extra_info: dict[str, dict[str, Any]] = {
+            _normalize_name(lic["licenseId"]): lic for lic in raw_license_extra_info["licenses"]
+        }
     for name in license_extra_info:
         if name in license_info:
             license_info[name] = _merge_dicts(license_info[name], license_extra_info[name])
 
-    licenses = {
+    licenses: dict[str, License] = {
         n: License(
             _id=lic_inf["licenseId"],
             name=lic_inf["name"],
@@ -98,7 +105,7 @@ def _init_licenses():
     }
 
     # create mapping between license name and id (performance wise)
-    name_to_id = {_normalize_name(lic.name): key for key, lic in licenses.items()}
+    name_to_id: dict[str, str] = {_normalize_name(lic.name): key for key, lic in licenses.items()}
 
     return licenses, name_to_id
 
@@ -133,27 +140,35 @@ def get_blocked():
     return filter(lambda lic: lic.is_blocked, _licenses.values())
 
 
-def get_by_id(id: str) -> License:
+def get_by_id(id: str) -> License | None:
     normalized = _normalize_name(id)
     if normalized in _licenses:
         return _licenses[normalized]
     return None
 
 
-def get_by_id_or_name(id_or_name: str) -> License:
+def get_by_id_or_name_required(id_or_name: str) -> License:
     if not id_or_name:
-        return None
+        raise ValueError("id_or_name is required")
     normalized = _normalize_name(id_or_name)
     if normalized in _licenses:
         return _licenses[normalized]
     if normalized in _name_to_id:
         return _licenses[_name_to_id[normalized]]
-    print(f'WARN: Non-SPDX license detected: "{id_or_name}"')
+    log.warn(f'WARN: Non-SPDX license detected: "{id_or_name}"')
 
     return License(
         _id=f'LicenseRef-{id_or_name}',
         name=id_or_name,
+        reference_url=f"file://LICENSES/LicenseRef-{id_or_name}.txt",
     )
+
+
+def get_by_id_or_name(id_or_name: str) -> License | None:
+    try:
+        return get_by_id_or_name_required(id_or_name)
+    except ValueError:
+        return None
 
 
 def get_spdx_by_id_or_name(id_or_name: str) -> str | None:

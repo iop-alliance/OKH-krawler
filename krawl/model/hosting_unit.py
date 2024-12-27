@@ -9,6 +9,10 @@ from krawl.errors import NotOverriddenError, ParserError
 from krawl.model.hosting_id import HostingId
 from krawl.model.util import create_url
 
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 # import validators
 
 _sha1_pattern = re.compile(r"^[A-Fa-f0-9]{40}$")
@@ -21,14 +25,14 @@ class HostingUnitId:
     """
 
     @classmethod
-    def from_url_no_path(cls, url: str) -> HostingUnitId:
-        id, path = cls.from_url(url)
+    def from_url_no_path(cls, url: str) -> Self:
+        hosting_unit_id, path = cls.from_url(url)
         if path:
             raise ParserError(f"Project hosting URL should have no path part: '{url}'")
-        return id
+        return hosting_unit_id
 
     @classmethod
-    def from_url(cls, url: str) -> tuple[HostingUnitId, Path | None]:
+    def from_url(cls, url: str) -> tuple[Self, Path | None]:
         raise NotOverriddenError()
 
     def to_path_str(self) -> str:
@@ -115,7 +119,7 @@ class HostingUnitIdForge(HostingUnitId):
         return f"/{str(path_part)}" if path_part else ""
 
     @classmethod
-    def from_url(cls, url: str) -> tuple[HostingUnitIdForge, Path | None]:
+    def from_url(cls, url: str) -> tuple[Self, Path | None]:
         hosting_id = HostingId.from_url(url)
         # if not (isinstance(url, str) and validators.url(url)):
         #     raise ValueError(f"invalid URL '{url}'")
@@ -282,15 +286,15 @@ class HostingUnitIdWebById(HostingUnitId):
         return False
 
     @classmethod
-    def from_url(cls, url: str) -> tuple[HostingUnitIdWebById, Path | None]:
+    def from_url(cls, url: str) -> tuple[Self, Path | None]:
         hosting_id = HostingId.from_url(url)
         # if not (isinstance(url, str) and validators.url(url)):
         #     raise ValueError(f"invalid URL '{url}'")
         parsed_url = urlparse(url)
         path_parts = Path(parsed_url.path).relative_to("/").parts
 
-        project_id = None
-        path: Path = None
+        project_id: str
+        path: Path | None
         match hosting_id:
             case HostingId.GITHUB_COM | HostingId.CODEBERG_ORG | HostingId.GITLAB_COM:
                 raise NotImplementedError(f"This is not a simple, web-hosted projects platform URL: '{url}';"

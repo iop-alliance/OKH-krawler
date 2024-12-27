@@ -7,8 +7,8 @@ from dataclasses import dataclass
 class Agent:
     """A Person or Organization."""
 
-    name: str = None
-    email: str = None
+    name: str
+    email: str | None = None
 
     def is_valid(self) -> bool:
         return bool(self.name)
@@ -21,4 +21,4 @@ class Person(Agent):
 
 @dataclass(slots=True)
 class Organization(Agent):
-    url: str = None
+    url: str | None = None

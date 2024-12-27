@@ -22,6 +22,7 @@ class ManifestFormat(StrEnum):
                 for alt_ext in format.alt_exts():
                     if alt_ext == ext_lower:
                         return format
+        raise ValueError(f"Unknown/Invalid manifest file extension '{ext}'")
 
     def alt_exts(self) -> list[str]:
         if self == ManifestFormat.YAML:
@@ -33,8 +34,8 @@ class ManifestFormat(StrEnum):
 class Manifest:
     """The content and basic meta info of an OKH manifest file."""
 
-    content: str | bytes | dict = None
-    format: ManifestFormat = None
+    content: str | bytes | dict
+    format: ManifestFormat
 
     def is_valid(self) -> bool:
-        return self.content and self.format
+        return bool(self.content) and bool(self.format)
