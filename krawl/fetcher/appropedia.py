@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import re
+import json
 import urllib.parse
 from collections.abc import Generator
 from dataclasses import dataclass
@@ -221,68 +221,33 @@ class AppropediaFetcher(Fetcher):
 
         return fetch_result
 
-    def _download_projects_index(self) -> str:
+    def _download_projects_index(self) -> dict:
         response = self._session.get(
-            url="https://www.appropedia.org/Special:Export?catname=Projects",
+            url=
+            "https://www.appropedia.org/w/api.php?action=query&format=json&list=categorymembers&cmlimit=max&cmtitle=Category:Projects",
             headers={
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Origin': 'https://www.appropedia.org',
-                'Referer': 'https://www.appropedia.org/Special:Export?catname=Projects',
-                'Upgrade-Insecure-Requests': '1',
-            },
-            data={
-                'catname': 'Projects',
-                'addcat': 'Add',
-                'pages': '',
-                'curonly': '1',
-                'wpDownload': '1',
-                'wpEditToken': '5f27bfd18afea6b01388921dcead718d676d9c64+\\',
-                'title': 'Special%3AExport'
+                'Accept': 'application/json',
             },
         )
         if response.status_code > 205:
             raise FetcherError(f"Failed to fetch projects from {__hosting_id__}: {response.text}")
-        return response.text
+        return response.json()
 
     def _get_projects_index(self) -> Generator[str]:
-        project_list_html = self._download_projects_index()
+        project_list_json = self._download_projects_index()
+
         # log.debug("Raw fetched project index HTML:\n---\n%s\n---", project_list_html)
-        raw_html_file = "appro_raw_proj_index.html"
-        with open(raw_html_file, "w") as text_file:
-            text_file.write(project_list_html)
+        raw_json_file = "appro_raw_proj_index.json"
+        with open(raw_json_file, "w") as text_file:
+            # text_file.write(json.dump(project_list_json))
+            json.dump(project_list_json, text_file)
         # write_to_file(raw_html_file, project_list_html)
-        log.debug("Raw fetched project index HTML written to: '%s'", raw_html_file)
+        log.debug("Raw fetched project index JSON written to: '%s'", raw_json_file)
 
-        pat_id = re.compile(r".*id='ooui-php-2'")
-        pat_tag_end = re.compile(r".*>")
-        pat_tag_start = re.compile(r".*>")
-
-        found_id = False
-        in_list = False
-        done = False
-        for line in project_list_html.splitlines():
-            if not found_id:
-                changed_line = pat_id.sub("", line)
-                if changed_line != line:
-                    found_id = True
-                    line = changed_line
-            if found_id and not in_list and not done:
-                changed_line = pat_tag_end.sub("", line)
-                if changed_line != line:
-                    in_list = True
-                    line = changed_line
-            was_in_list = in_list
-            if in_list:
-                new_line = pat_tag_start.sub("", line)
-                if new_line != line:
-                    in_list = False
-                    done = True
-            if was_in_list:
-                yield line.replace("&amp;", "&").replace("&quot;", "\"")
+        for project in project_list_json["query"]["categorymembers"]:
+            yield project["title"]
 
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
-
         project_ids = list(self._get_projects_index())
         project_ids.sort()
         total_projects = len(project_ids)
@@ -290,7 +255,7 @@ class AppropediaFetcher(Fetcher):
 
         proj_idx = -1
         last_visited = datetime.now(timezone.utc)
-        fetcher_state: _FetcherState = _FetcherState.load(self._state_repository)
+        fetcher_state: _FetcherState = _FetcherState.load(self._state_repository, start_over=start_over)
         fetcher_state.total_projects = total_projects
         fetcher_state.store(self._state_repository)
         for project_id in project_ids:
