@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2021 - 2022 Andre Lehmann <aisberg@posteo.de>
+# SPDX-FileCopyrightText: 2022 Nicolas Traeder <nicolas@konek.to>
+# SPDX-FileCopyrightText: 2024 Robin Vobruba <hoijui.quaero@gmail.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from __future__ import annotations
 
 from collections.abc import Generator

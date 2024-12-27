@@ -1,0 +1,19 @@
+version = 1
+SPDX-PackageName = "LOSH-krawler"
+SPDX-PackageSupplier = "Robin Vobruba (Open Source Ecology Germany e.V.) <hoijui.quaero@gmail.com>"
+SPDX-PackageDownloadLocation = "https://github.com/iop-alliance/OKH-krawler"
+
+[[annotations]]
+path = [
+  "krawl/assets/file_extensions/*.txt",
+  "krawl/assets/file_extensions/*.csv"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 Andre Lehmann <aisberg@posteo.de>"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "krawl/assets/spdx-licenses*.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 Andre Lehmann <aisberg@posteo.de>"
+SPDX-License-Identifier = "CC0-1.0"

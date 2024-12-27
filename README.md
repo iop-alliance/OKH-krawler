@@ -1,3 +1,14 @@
+<!--
+SPDX-FileCopyrightText: 2021 - 2022 Andre Lehmann <aisberg@posteo.de>
+SPDX-FileCopyrightText: 2021 Alec Hanefeld <alec@hanefeld.eu>
+SPDX-FileCopyrightText: 2021 Alec Hanefeld <alec@konek.to>
+SPDX-FileCopyrightText: 2021 hoijui <hoijui.quaero@gmail.com>
+SPDX-FileCopyrightText: 2021 moedn <45949491+moedn@users.noreply.github.com>
+SPDX-FileCopyrightText: 2023 - 2024 Robin Vobruba <hoijui.quaero@gmail.com>
+
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Open Know-How Krawler
 
 A [crawler] for hardware design projects.

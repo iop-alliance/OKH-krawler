@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 - 2022 Andre Lehmann <aisberg@posteo.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from __future__ import annotations
 
 from krawl.cli.command import KrawlCommand

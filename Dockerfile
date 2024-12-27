@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2022 Andre Lehmann <aisberg@posteo.de>
+# SPDX-FileCopyrightText: 2024 Robin Vobruba <hoijui.quaero@gmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 # syntax=docker/dockerfile:1
 # NOTE Lint this file with https://hadolint.github.io/hadolint/
 

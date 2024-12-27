@@ -1,3 +1,10 @@
+# SPDX-FileCopyrightText: 2021 - 2022 Andre Lehmann <aisberg@posteo.de>
+# SPDX-FileCopyrightText: 2021 Alec Hanefeld <alec@konek.to>
+# SPDX-FileCopyrightText: 2021 hoijui <hoijui.quaero@gmail.com>
+# SPDX-FileCopyrightText: 2022 - 2024 Robin Vobruba <hoijui.quaero@gmail.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from __future__ import annotations
 
 import json

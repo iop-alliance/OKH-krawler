@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2021 - 2022 Andre Lehmann <aisberg@posteo.de>
+# SPDX-FileCopyrightText: 2021 Alec Hanefeld <alec@konek.to>
+# SPDX-FileCopyrightText: 2024 Robin Vobruba <hoijui.quaero@gmail.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """This module takes care of loading, normalizing and validating configurations
 from different sources and merging them together.
 
