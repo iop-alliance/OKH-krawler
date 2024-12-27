@@ -30,10 +30,6 @@ from krawl.normalizer import Normalizer
 from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.repository import FetcherStateRepository
 
-# from krawl.request.rate_limit import RateLimitFixedTimedelta
-
-# from krawl.util import slugify
-
 __long_name__: str = "appropedia"
 __hosting_id__: HostingId = HostingId.APPROPEDIA_ORG
 __sourcing_procedure__: SourcingProcedure = SourcingProcedure.GENERATED_MANIFEST
@@ -143,7 +139,6 @@ class AppropediaFetcher(Fetcher):
         )
         self._session.headers.update({
             "User-Agent": config.user_agent,
-            # "Authorization": f"Bearer {config.access_token}",
         })
 
     @classmethod
@@ -228,7 +223,6 @@ class AppropediaFetcher(Fetcher):
 
     def _download_projects_index(self) -> str:
         response = self._session.get(
-            # url="https://www.appropedia.org/Special:Export",
             url="https://www.appropedia.org/Special:Export?catname=Projects",
             headers={
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -246,10 +240,6 @@ class AppropediaFetcher(Fetcher):
                 'wpEditToken': '5f27bfd18afea6b01388921dcead718d676d9c64+\\',
                 'title': 'Special%3AExport'
             },
-            # params={
-            #     "limit": batch_size,
-            #     "offset": last_offset
-            # },
         )
         if response.status_code > 205:
             raise FetcherError(f"Failed to fetch projects from {__hosting_id__}: {response.text}")
@@ -292,16 +282,6 @@ class AppropediaFetcher(Fetcher):
                 yield line.replace("&amp;", "&").replace("&quot;", "\"")
 
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
-        # last_offset = 0
-        # num_fetched = 0
-        # batch_size = self.BATCH_SIZE
-        # if start_over:
-        #     self._state_repository.delete(__hosting_id__)
-        # else:
-        #     state = self._state_repository.load(__hosting_id__)
-        #     if state:
-        #         last_offset = state.get("last_offset", 0)  # TODO
-        #         num_fetched = state.get("num_fetched", 0)
 
         project_ids = list(self._get_projects_index())
         project_ids.sort()
@@ -320,29 +300,6 @@ class AppropediaFetcher(Fetcher):
             hosting_unit_id = HostingUnitIdWebById(_hosting_id=__hosting_id__, project_id=project_id)
             fetch_result = self.__fetch_one(fetcher_state, hosting_unit_id, last_visited)
             fetcher_state.store(self._state_repository)  # XXX This might be very costly
-
-            # manifest_dl_url = f"https://www.appropedia.org/generateOpenKnowHowManifest.php?title={self.url_encode(project_id)}"
-            # okh_v1_contents = self._download_manifest(manifest_dl_url)
-
-            # data = response.json()
-            # last_visited = datetime.now(timezone.utc)
-            # for raw_project in data["items"]:
-            #     hosting_unit_id = HostingUnitIdWebById(_hosting_id=__hosting_id__, project_id=raw_project['oshwaUid'])
-            #     project = self.__fetch_one(hosting_unit_id, raw_project, last_visited)
-            #     log.debug("yield project %s", hosting_unit_id)
-            #     yield project
-
-            # # save current progress
-            # batch_size = data["limit"]  # in case the batch size will be lowered on the platform in some point in time
-            # num_fetched += len(data["items"])
-            # last_offset += batch_size
-            # if last_offset > data["total"]:
-            #     break
-
-            self._state_repository.store(__hosting_id__, {
-                "last_offset": proj_idx,
-                "num_fetched": proj_idx,
-            })
 
             yield fetch_result
 
