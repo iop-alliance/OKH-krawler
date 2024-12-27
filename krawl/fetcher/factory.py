@@ -4,12 +4,9 @@ from collections.abc import Generator
 
 from krawl.config import Config
 from krawl.errors import FetcherError
-from krawl.fetcher import Fetcher
+from krawl.fetcher import Fetcher, github, oshwa, thingiverse
 from krawl.fetcher.event import FetchListener
-from krawl.fetcher.github import GitHubFetcher
-from krawl.fetcher.oshwa import OshwaFetcher
 from krawl.fetcher.result import FetchResult
-from krawl.fetcher.thingiverse import ThingiverseFetcher
 from krawl.model.hosting_id import HostingId
 from krawl.model.project_id import ProjectId
 from krawl.repository import FetcherStateRepository
@@ -17,9 +14,9 @@ from krawl.repository.fetch_result_repository import FetchResultRepository
 from krawl.repository.fetch_result_repository_workdir import FetchResultRepositoryWorkdir
 
 _fetcher_classes = {
-    GitHubFetcher.HOSTING_ID: GitHubFetcher,
-    OshwaFetcher.HOSTING_ID: OshwaFetcher,
-    ThingiverseFetcher.HOSTING_ID: ThingiverseFetcher,
+    github.__hosting_id__: github.GitHubFetcher,
+    oshwa.__hosting_id__: oshwa.OshwaFetcher,
+    thingiverse.__hosting_id__: thingiverse.ThingiverseFetcher,
 }
 
 

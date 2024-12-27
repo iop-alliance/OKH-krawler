@@ -83,7 +83,6 @@ class ThingiverseFetcher(Fetcher):
     - General: <https://www.thingiverse.com/developers>
     - Requests: <https://www.thingiverse.com/developers/swagger>
     """
-    HOSTING_ID: HostingId = __hosting_id__
     RETRY_CODES = [429, 500, 502, 503, 504]
     BATCH_SIZE = 30
     # BATCH_SIZE = 1

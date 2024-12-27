@@ -215,7 +215,6 @@ class GitHubFetcher(Fetcher):
     https://docs.github.com/en/graphql
     """
 
-    HOSTING_ID: HostingId = __hosting_id__
     RETRY_CODES = [429, 500, 502, 503, 504]
     BATCH_SIZE = 10
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=__long_name__, default_timeout=15, access_token=True)

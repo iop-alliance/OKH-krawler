@@ -41,7 +41,6 @@ log = get_child_logger(__long_name__)
 
 
 class OshwaFetcher(Fetcher):
-    HOSTING_ID: HostingId = __hosting_id__
     RETRY_CODES = [429, 500, 502, 503, 504]
     BATCH_SIZE = 50
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=__long_name__, default_timeout=10, access_token=True)
