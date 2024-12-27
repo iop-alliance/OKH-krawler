@@ -19,15 +19,12 @@ from krawl.fetcher.event import FailedFetch
 from krawl.fetcher.result import FetchResult
 from krawl.fetcher.util import is_accepted_manifest_file_name, is_empty
 from krawl.log import get_child_logger
-from krawl.model.agent import Organization
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdForge
-from krawl.model.licenses import License
-from krawl.model.licenses import get_by_id_or_name_required as get_license_required
 from krawl.model.manifest import Manifest, ManifestFormat
-# from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
+from krawl.model.project_part_reference import Ref
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.normalizer import Normalizer
 from krawl.normalizer.github import GitHubFileHandler
@@ -324,8 +321,9 @@ class GitHubFetcher(Fetcher):
                     # history = None,
                 ),
                 hosting_unit_id=hosting_unit_id,
-                license=None,  # TODO,
-                creator=None,  # TODO,
+                license=Ref.DOCUMENTATION,
+                creator=Ref.DOCUMENTATION,
+                organization=Ref.DOCUMENTATION,
             )
             # log.info(f"manifest_contents: {manifest_contents}")
 
