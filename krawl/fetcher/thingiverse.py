@@ -21,7 +21,7 @@ from krawl.model.agent import Organization
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdWebById
-from krawl.model.licenses import License
+from krawl.model.licenses import License, LicenseType
 from krawl.model.licenses import get_by_id_or_name_required as get_license_required
 from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
@@ -33,7 +33,16 @@ from krawl.repository import FetcherStateRepository
 __long_name__: str = "thingiverse"
 __hosting_id__: HostingId = HostingId.THINGIVERSE_COM
 __sourcing_procedure__: SourcingProcedure = SourcingProcedure.API
-__dataset_license__: License = None  # TODO  # get_license_required("CC-BY-SA-4.0")
+__dataset_license__: License = License(
+    _id="LicenseRef-Thingiverse-API",
+    name="API License Agreement for the MakerBot Developer Program",
+    reference_url="https://www.thingiverse.com/legal/api",
+    type_=LicenseType.PROPRIETARY,
+    is_spdx=False,
+    is_osi_approved=False,
+    is_fsf_libre=False,
+    is_blocked=True,
+)
 __dataset_creator__: Organization = Organization(name="Thingiverse", url="https://www.thingiverse.com")
 log = get_child_logger(__long_name__)
 
