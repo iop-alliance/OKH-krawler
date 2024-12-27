@@ -28,15 +28,18 @@ class LicenseType(StrEnum):
     def from_string(cls, type_: str):
         type_ = type_ or "unknown"
         type_ = type_.lower()
-        match type_:
-            case "weak":
-                return cls.WEAK
-            case "strong":
-                return cls.STRONG
-            case "permissive":
-                return cls.PERMISSIVE
+        try:
+            return cls(type_)
+        except ValueError:
+            return cls.UNKNOWN
+
+    @classmethod
+    def is_open(cls):
+        match cls:
+            case cls.WEAK | cls.STRONG | cls.PERMISSIVE:
+                return True
             case _:
-                return cls.UNKNOWN
+                return False
 
 
 @dataclass(slots=True, frozen=True)
