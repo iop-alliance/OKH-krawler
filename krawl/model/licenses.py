@@ -20,6 +20,7 @@ class LicenseType(StrEnum):
     WEAK = "weak"
     STRONG = "strong"
     PERMISSIVE = "permissive"
+    PROPRIETARY = "proprietary"
 
     def __str__(self) -> str:
         return self.name
