@@ -80,13 +80,55 @@ class _FetcherState:
 
 
 class AppropediaFetcher(Fetcher):
+    """
+    Documentation and tips from Felipe (Admin of Appropedia.org):
+
+    ---
+
+    To get the wiki-text, HTML or semantic data of a set of pages,
+    my recommendation is that you first get the list of pages,
+    and then query for the wiki-text,
+    HTML or semantic data of each.
+
+    To get a list of pages in a category (like `Category:Projects`),
+    you can use the following API query:
+    <https://www.appropedia.org/w/api.php?action=query&format=json&list=categorymembers&cmlimit=max&cmtitle=Category:Projects>
+    See <https://www.appropedia.org/w/api.php?action=help&modules=query>
+    for help and more options.
+
+    Another way is to use the search API with the `incategory:Projects` search keyword,
+    like so:
+
+    <https://www.appropedia.org/w/api.php?action=query&format=json&list=search&srlimit=max&srsearch=incategory:Projects>
+
+    The nice thing about this is you can easily refine the query
+    by adding search terms and keywords,
+    like so:
+
+    <https://www.appropedia.org/w/api.php?action=query&format=json&list=search&srlimit=max&srsearch=incategory:Projects+incategory:SDG01_No_poverty>
+
+    (will search for projects that are also in the `Category:SDG01_No_poverty`)
+    See <https://www.mediawiki.org/wiki/Help:CirrusSearch>
+    for documentation on available search keywords.
+
+    Once you have your list of pages,
+    you can easily get the wiki-text,
+    HTML or semantic data of each using our REST API, like so:
+
+    - <https://www.appropedia.org/w/rest.php/v1/page/AEF_food_dehydrator>
+      (wiki-text and other basic data)
+    - <https://www.appropedia.org/w/rest.php/v1/page/AEF_food_dehydrator/html>
+      (html)
+    - <https://www.appropedia.org/w/rest.php/v1/page/AEF_food_dehydrator/semantic>
+      (semantic data)
+
+    ---
+    """
     RETRY_CODES = [429, 500, 502, 503, 504]
-    # BATCH_SIZE = 50
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=__long_name__, default_timeout=1, access_token=False)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         super().__init__(state_repository=state_repository)
-        # self._rate_limit = RateLimitFixedTimedelta(seconds=5)
 
         retry = Retry(
             total=config.retries,
