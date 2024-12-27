@@ -22,7 +22,6 @@ from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitIdWebById
 from krawl.model.licenses import License, LicenseType
-from krawl.model.licenses import get_by_id_or_name_required as get_license_required
 from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.sourcing_procedure import SourcingProcedure
@@ -209,7 +208,7 @@ class ThingiverseFetcher(Fetcher):
 
     def fetch_all(self, start_over=False) -> Generator[FetchResult]:
         projects_counter: int = 0
-        fetcher_state = _FetcherState.load(self._state_repository, start_over)
+        fetcher_state = _FetcherState.load(self._state_repository, start_over=start_over)
 
         page_id = math.floor(fetcher_state.next_fetch / self.BATCH_SIZE) + 1
         page_thing_index = fetcher_state.next_fetch - ((page_id - 1) * self.BATCH_SIZE)
