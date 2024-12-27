@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2024 Robin Vobruba <hoijui.quaero@gmail.com>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
-
 """\
 Utilities for dictionaries, useful for manifest containing dicts.\
 """

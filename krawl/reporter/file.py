@@ -6,8 +6,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import io
+from pathlib import Path
 
 from krawl.model.hosting_unit import HostingUnitId
 from krawl.model.project import Project
