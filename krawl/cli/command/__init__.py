@@ -83,7 +83,7 @@ class KrawlCommand(Command):
             )
 
     def _get_options_from_schema(self, schema, prefix=None) -> Mapping:
-        c = Config()
+        config = Config()
         for key, rule in iterate_schema(schema):
             meta = rule.get("meta", {})
             short_name = meta.get("short_name")
@@ -93,7 +93,7 @@ class KrawlCommand(Command):
                     short_name = None
                     long_name = prefix + long_name
                 long_name = self._normalize_option_name(long_name)
-                c[key] = self.option(long_name)
+                config[key] = self.option(long_name)
             elif short_name:
-                c[key] = self.option(short_name)
-        return c
+                config[key] = self.option(short_name)
+        return config
