@@ -72,10 +72,6 @@ class OshwaFetcher(Fetcher):
             "Authorization": f"Bearer {config.access_token}",
         })
 
-    @classmethod
-    def create_normalizer(cls) -> Normalizer:
-        return OshwaNormalizer()
-
     def __fetch_one(self, hosting_unit_id: HostingUnitIdWebById, raw_project: dict,
                     last_visited: datetime) -> FetchResult:
         try:

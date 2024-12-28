@@ -144,10 +144,6 @@ class AppropediaFetcher(Fetcher):
             "User-Agent": config.user_agent,
         })
 
-    @classmethod
-    def create_normalizer(cls) -> Normalizer:
-        return ManifestNormalizer()
-
     @staticmethod
     def url_encode(raw_url_part: str) -> str:
         return urllib.parse.quote_plus(raw_url_part)

@@ -269,10 +269,6 @@ class GitHubFetcher(Fetcher):
             "Authorization": f"token {config.access_token}",
         })
 
-    @classmethod
-    def create_normalizer(cls) -> Normalizer:
-        return ManifestNormalizer(GitHubFileHandler())
-
     def __fetch_one(self, hosting_unit_id: HostingUnitIdForge, path: Path) -> FetchResult:
         try:
             log.debug("fetching project '%s' path '%s' ...", hosting_unit_id, str(path))

@@ -128,10 +128,6 @@ class ThingiverseFetcher(Fetcher):
             "Authorization": f"Bearer {config.access_token}",
         })
 
-    @classmethod
-    def create_normalizer(cls) -> Normalizer:
-        return ThingiverseNormalizer()
-
     def __fetch_one(self, fetcher_state: _FetcherState, hosting_unit_id: HostingUnitIdWebById,
                     last_visited: datetime) -> FetchResult:
         try:

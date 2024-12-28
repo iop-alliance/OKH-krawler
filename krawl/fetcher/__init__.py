@@ -12,7 +12,6 @@ from krawl.fetcher.event import FailedFetch, FetchListener
 from krawl.fetcher.result import FetchResult
 from krawl.model.hosting_id import HostingId
 from krawl.model.project_id import ProjectId
-from krawl.normalizer import Normalizer
 from krawl.repository import FetcherStateRepository
 
 
@@ -48,10 +47,6 @@ class Fetcher:
     def __init__(self, state_repository: FetcherStateRepository) -> None:
         self._state_repository: FetcherStateRepository = state_repository
         self._fetch_listeners: list[FetchListener] = []
-
-    @classmethod
-    def create_normalizer(cls) -> Normalizer:
-        raise NotOverriddenError()
 
     def add_fetch_listener(self, listener: FetchListener) -> None:
         self._fetch_listeners.append(listener)
