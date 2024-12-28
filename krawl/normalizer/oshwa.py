@@ -13,7 +13,7 @@ from krawl.model import licenses
 from krawl.model.data_set import DataSet
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer, strip_html
-from krawl.recursive_dict import RecDictStr
+from krawl.recursive_type import RecDictStr
 
 log = get_child_logger("oshwa")
 

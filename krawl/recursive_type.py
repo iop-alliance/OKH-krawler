@@ -4,4 +4,4 @@
 
 from typing import Union
 
-RecDictStr = dict[str, Union["RecDictStr", str]]
+RecVal = Union[bool, float, int, str, list["RecVal"], dict[str, "RecVal"]]

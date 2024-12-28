@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from krawl.recursive_dict import RecDictStr
+from krawl.recursive_type import RecDictStr
 
 
 class ManifestFormat(StrEnum):
