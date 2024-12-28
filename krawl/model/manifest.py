@@ -7,6 +7,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
+from krawl.recursive_dict import RecDictStr
+
 
 class ManifestFormat(StrEnum):
     """Valid file formats for an OKH manifest file."""
@@ -38,7 +40,7 @@ class ManifestFormat(StrEnum):
 class Manifest:
     """The content and basic meta info of an OKH manifest file."""
 
-    content: str | bytes | dict
+    content: str | bytes | RecDictStr
     format: ManifestFormat
 
     def is_valid(self) -> bool:

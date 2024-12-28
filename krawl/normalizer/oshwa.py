@@ -14,6 +14,7 @@ from krawl.model.data_set import DataSet
 from krawl.model.project import Project
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.normalizer import Normalizer, strip_html
+from krawl.recursive_dict import RecDictStr
 
 log = get_child_logger("oshwa")
 
@@ -47,7 +48,7 @@ class OshwaNormalizer(Normalizer):
 
     def normalize(self, fetch_result: FetchResult) -> Project:
         project = Project()
-        raw: dict[str, str | dict[str, str | dict[str, str | dict]]] = fetch_result.data.content
+        raw: RecDictStr = fetch_result.data.content
         data_set: DataSet = fetch_result.data_set
         # project.meta.source = meta["id"].hosting_id
         # # project.meta.owner = meta["id"].owner
