@@ -15,6 +15,7 @@ from krawl.config import (CliConfigLoader, Config, KrawlerConfigLoader, YamlFile
                           iterate_schema)
 from krawl.fetcher.factory import FetcherFactory
 from krawl.model.hosting_id import HostingId
+from krawl.repository import ProjectRepositoryType
 from krawl.repository.factory import ProjectRepositoryFactory
 
 
@@ -38,14 +39,15 @@ class KrawlCommand(Command):
         return value
 
     def _load_config_schema(self,
-                            enabled_repositories: list[str] = None,
-                            enabled_fetchers: list[HostingId] = None) -> dict:
+                            enabled_repositories: list[ProjectRepositoryType] | None = None,
+                            enabled_fetchers: list[HostingId] | None = None) -> dict:
         fetchers_schema = FetcherFactory.get_config_schemas(enabled_fetchers)
         repositories_schema = ProjectRepositoryFactory.get_config_schemas(enabled_repositories)
         config_schema = get_assembled_schema(fetchers_schema, repositories_schema)
         return config_schema
 
-    def _load_config(self, enabled_repositories: list[str], enabled_fetchers: list[str]) -> Config:
+    def _load_config(self, enabled_repositories: list[ProjectRepositoryType] | None,
+                     enabled_fetchers: list[HostingId] | None) -> Config:
         config_schema = self._load_config_schema(enabled_repositories, enabled_fetchers)
         cli_options = self._get_options_from_schema(config_schema)
 
