@@ -44,7 +44,6 @@ class ManifestNormalizer(Normalizer):
         self.file_dl_base_url: str = None
 
     def normalize(self, fetch_result: FetchResult) -> Project:
-        project = Project()
         raw: dict = fetch_result.data.content
         data_set: DataSet = fetch_result.data_set
 
@@ -63,12 +62,14 @@ class ManifestNormalizer(Normalizer):
         if self.file_handler is not None:
             self.fh_proj_info = self.file_handler.gen_proj_info(raw)
 
-        project.name = DictUtils.to_string(raw.get("name"))
-        project.repo = DictUtils.to_string(raw.get("repo"))
-        project.version = DictUtils.to_string(raw.get("version"))
-        project.release = DictUtils.to_string(raw.get("release"))
-        project.license = get_license(DictUtils.to_string(raw.get("license")))
-        project.licensor = DictUtils.to_string(raw.get("licensor"))
+        project = Project(
+            name=DictUtils.to_string(raw.get("name")),
+            repo=DictUtils.to_string(raw.get("repo")),
+            version=DictUtils.to_string(raw.get("version")),
+            release=DictUtils.to_string(raw.get("release")),
+            license=get_license(DictUtils.to_string(raw.get("license"))),
+            licensor=DictUtils.to_string(raw.get("licensor")),
+        )
         project.organization = DictUtils.to_string(raw.get("organization"))
         project.readme = self._file(raw.get("readme"))
         project.contribution_guide = self._file(raw.get("contribution-guide"))

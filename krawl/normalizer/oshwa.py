@@ -47,7 +47,6 @@ CATEGORIES_CPC_MAPPING = {
 class OshwaNormalizer(Normalizer):
 
     def normalize(self, fetch_result: FetchResult) -> Project:
-        project = Project()
         raw: RecDictStr = fetch_result.data.content
         data_set: DataSet = fetch_result.data_set
         # project.meta.source = meta["id"].hosting_id
@@ -57,17 +56,18 @@ class OshwaNormalizer(Normalizer):
 
         log.debug("normalizing project metadata '%s'", data_set.hosting_unit_id)
         log.debug("project metadata '%s'", raw)
-        project.name = DictUtils.get_key(raw, "projectName")
-        project.repo = self._repo(raw)
-        project.version = DictUtils.get_key(raw, "projectVersion", default="1.0.0")
-        project.license = self._license(raw)
-        project.licensor = DictUtils.get_key(raw, "responsibleParty")
+        project = Project(
+            name=DictUtils.get_key(raw, "projectName"),
+            repo=self._repo(raw),
+            version=DictUtils.get_key(raw, "projectVersion", default="1.0.0"),  # TODO Bad default
+            license=self._license(raw),
+            licensor=DictUtils.get_key(raw, "responsibleParty"),
+        )
 
         project.function = self._function(raw)
         project.documentation_language = self._language(project.function)
         project.documentation_readiness_level = "ODRL-3*"
         project.cpc_patent_class = self._classification(raw)
-        project.sourcing_procedure = SourcingProcedure.API
 
         # project.specific_api_data["primaryType"] = DictUtils.get_key(raw, "primaryType")
         # project.specific_api_data["additionalType"] = DictUtils.get_key(raw, "additionalType")

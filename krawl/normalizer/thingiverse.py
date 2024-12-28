@@ -58,7 +58,6 @@ class ThingiverseNormalizer(Normalizer):
         mimetypes.init()
 
     def normalize(self, fetch_result: FetchResult) -> Project:
-        project = Project()
         raw: dict = fetch_result.data.content
         data_set: DataSet = fetch_result.data_set
 
@@ -71,16 +70,15 @@ class ThingiverseNormalizer(Normalizer):
         fetch_result.data_set.crawling_meta.created_at = datetime.fromisoformat(raw['added'])
         fetch_result.data_set.crawling_meta.last_visited = raw[
             "lastVisited"]  # TODO Maybe not a good idea to set this like that?
-        project.name = raw['name']
-        project.repo = raw['public_url']
-        project.version = raw['modified']
-        project.license = self._license(raw)
-        project.licensor = data_set.hosting_unit_id.owner
+        project = Project(name=raw['name'],
+                          repo=raw['public_url'],
+                          version=raw['modified'],
+                          license=self._license(raw),
+                          licensor=data_set.hosting_unit_id.owner)
         project.function = self._function(raw)
         project.documentation_language = self._language(project.function)
         project.technology_readiness_level = "OTRL-4"
         project.documentation_readiness_level = "ODRL-3"
-        project.sourcing_procedure = SourcingProcedure.API
 
         project.image = self._images(project, raw)
         project.export = [self._file(project, file) for file in self._filter_files_by_category(raw["files"], "export")]
