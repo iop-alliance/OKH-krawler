@@ -29,8 +29,6 @@ from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.sourcing_procedure import SourcingProcedure
 # from krawl.model.project import Project
-from krawl.normalizer import Normalizer
-from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.repository import FetcherStateRepository
 
 __long_name__: str = "appropedia"

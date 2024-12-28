@@ -12,7 +12,6 @@ from krawl.log import get_child_logger
 from krawl.model import licenses
 from krawl.model.data_set import DataSet
 from krawl.model.project import Project
-from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.normalizer import Normalizer, strip_html
 from krawl.recursive_dict import RecDictStr
 

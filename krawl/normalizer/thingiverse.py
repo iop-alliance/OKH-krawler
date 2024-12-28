@@ -19,7 +19,6 @@ from krawl.model import licenses
 from krawl.model.data_set import DataSet
 from krawl.model.file import File
 from krawl.model.project import Project
-from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.normalizer import Normalizer, strip_html
 
 log = get_child_logger("thingiverse")

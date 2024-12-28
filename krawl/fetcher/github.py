@@ -31,9 +31,6 @@ from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.project_part_reference import Ref
 from krawl.model.sourcing_procedure import SourcingProcedure
-from krawl.normalizer import Normalizer
-from krawl.normalizer.github import GitHubFileHandler
-from krawl.normalizer.manifest import ManifestNormalizer
 from krawl.repository import FetcherStateRepository
 from krawl.request.rate_limit import RateLimitFixedTimedelta, RateLimitNumRequests
 

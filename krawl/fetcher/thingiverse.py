@@ -31,8 +31,6 @@ from krawl.model.licenses import License, LicenseType
 from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.sourcing_procedure import SourcingProcedure
-from krawl.normalizer import Normalizer
-from krawl.normalizer.thingiverse import ThingiverseNormalizer
 from krawl.repository import FetcherStateRepository
 
 __long_name__: str = "thingiverse"
