@@ -34,15 +34,15 @@ class ProjectRepositoryFactory:
         return self._enabled
 
     @classmethod
-    def get_config_schemas(cls, names: list[ProjectRepositoryType] | None = None) -> dict:
-        if not names:
+    def get_config_schemas(cls, proj_repo_types: list[ProjectRepositoryType] | None = None) -> dict:
+        if not proj_repo_types:
             return _repositories_schemas
         schema = {}
-        for name in names:
-            if name not in _repositories_schemas:
+        for proj_repo_type in proj_repo_types:
+            if proj_repo_type not in _repositories_schemas:
                 raise RepositoryError(
-                    f"no such repository '{name}', available are: {', '.join(_repositories_schemas.keys())}")
-            schema[name] = _repositories_schemas[name]
+                    f"no such repository '{proj_repo_type}', available are: {', '.join(_repositories_schemas.keys())}")
+            schema[proj_repo_type] = _repositories_schemas[proj_repo_type]
         return schema
 
     @classmethod
