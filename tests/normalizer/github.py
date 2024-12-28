@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import unittest
+
 from krawl.log import get_child_logger
 from krawl.normalizer.github import GitHubFileHandler
 
@@ -18,8 +20,6 @@ FILE_WEB_URL=BASE_URL + '/' + SLUG + '/blob/master/.gitignore'
 FILE_DL_URL=BASE_URL + '/' + SLUG + '/raw/master/.gitignore'
 FILE_FROZEN_WEB_URL=BASE_URL + '/' + SLUG + '/blob/' + VERSION + '/.gitignore'
 FILE_FROZEN_DL_URL=BASE_URL + '/' + SLUG + '/raw/' + VERSION + '/.gitignore'
-
-import unittest
 
 class TestStringMethods(unittest.TestCase):
 
