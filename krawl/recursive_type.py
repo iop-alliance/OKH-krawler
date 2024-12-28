@@ -5,3 +5,7 @@
 from typing import Union
 
 RecVal = Union[bool, float, int, str, list["RecVal"], dict[str, "RecVal"]]
+
+RecDict = dict[str, RecVal]
+
+RecDictStr = dict[str, Union["RecDictStr", str]]
