@@ -20,12 +20,14 @@ class CrawlingMeta:  # pylint: disable=too-many-instance-attributes
 
     sourcing_procedure: SourcingProcedure
     last_visited: datetime
-    manifest: str | None = None  # Repo internal path or absolute HTTP(S) URLto the manifest file, if any. This is `None``, for example, if data was fetched through platform API only.
+    manifest: str | None = None
+    """Repo internal path or absolute HTTP(S) URL to the manifest file, if any.
+    This is `None``, for example, if data was fetched through platform API only."""
     created_at: datetime | None = None
     last_changed: datetime | None = None
     # history = None
-    # # internally calculated score for project importance to decide re-visit schedule
     # score: float = field(default=None, init=False)
+    # """internally calculated score for project importance to decide re-visit schedule"""
 
 
 # :OHLOOMDataset
