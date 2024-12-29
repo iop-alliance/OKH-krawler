@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 # SPDX-FileCopyrightText: 2023 Robin Vobruba <hoijui.quaero@gmail.com>
 # SPDX-License-Identifier: Unlicense
 #
@@ -6,8 +6,8 @@
 
 # Exit immediately on each error and unset variable;
 # see: https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail/
-#set -Eeuo pipefail
-set -eu
+set -Eeuo pipefail
+# set -eu
 
 script_path="$(readlink -f "$0")"
 script_dir="$(dirname "$script_path")"
@@ -16,16 +16,32 @@ project_root=$(dirname "$script_dir")
 
 # initial default values
 APP_NAME="RDF Serialization check"
+OKH_REPO_LOCAL="$HOME/Projects/OSEG/repos/OKH"
+OKH_REPO_REMOTE="https://github.com/iop-alliance/OpenKnowHow/raw/master/"
+# OKH repo local path to OWL files, paired with their prefixes
+ont_prefixes=(
+    "okh"
+    "okhmeta"
+    "otrl"
+)
+ont_paths=(
+    "src/spec/okh.ttl"
+    "src/spec/okh-meta.ttl"
+    "src/spec/otrl.ttl"
+)
+local_repo=false
 
 print_help() {
 
-	echo "$APP_NAME - Compares this krawlers RDF serialization"
-    echo "against the OKH LOSH ontology."
+	echo "$APP_NAME - Compares this scrapers RDF serialization"
+    echo "against the OKH ontology."
     echo "This check is very rudimentary!."
 	echo
 	echo "Usage:"
 	echo "  $script_name [OPTION...]"
 	echo "Options:"
+	echo "  -l, --local"
+	echo "    Uses the local ontology repo, instead of the remote/online one"
 	echo "  -h, --help"
 	echo "    Shows this help message and exit"
 	echo "Examples:"
@@ -45,82 +61,109 @@ do
 			print_help
 			exit 0
 			;;
+		-l|--local)
+			local_repo=true
+			;;
 		*) # non-/unknown option
 			i=$((i + 1))
 			;;
 	esac
 done
 
-build_dir=build
+function log() {
+    local level timestamp
+    level="$(printf '%s' "$1" | tr '/a-z/' '/A-Z/')"
+    # timestamp="$(date +'%Y-%m-%d %H:%M:%S')"
+    timestamp="$(date --iso-8601=seconds)"
+    shift
+    >&2 echo "$timestamp $level $*"
+}
+
+build_dir="$project_root/build"
 mkdir -p "$build_dir"
 
-grep -r "OKH\." krawl/serializer/rdf_serializer.py \
-    | grep -v -e '^[ \t]*#' \
-    | sed \
-        -e 's/.*OKH\.//' \
-        -e 's/[^.a-zA-Z0-9].*//' \
-    | sort -u \
-    > "$build_dir/rdf_okh_krawler.csv"
+log info "Extracting Krawler used RDF terms ..."
+for ont_prefix in "${ont_prefixes[@]}"
+do
+    log info "   - for $ont_prefix ..."
+    ont_prefix_lower="$ont_prefix"
+    ont_prefix_upper="$(printf '%s' "$ont_prefix" | tr '/a-z/' '/A-Z/')"
+    output_file="$build_dir/rdf_${ont_prefix_lower}_krawler.csv"
 
-grep -r " OTRL\." krawl/serializer/rdf_serializer.py \
-    | grep -v -e '^[ \t]*#' \
-    | sed \
-        -e 's/.*OTRL\.//' \
-        -e 's/[^.a-zA-Z0-9].*//' \
-    | sort -u \
-    > "$build_dir/rdf_otrl_krawler.csv"
+    ( ( grep -r "$ont_prefix_upper\." \
+        "$project_root/krawl/serializer/rdf_serializer.py" \
+        || true ) \
+        | grep -v -e '^[ \t]*#' \
+        || true ) \
+        | sed \
+            -e 's/.*'"$ont_prefix_upper"'\.//' \
+            -e 's/[^.a-zA-Z0-9].*//' \
+        | sort -u \
+        > "$output_file"
+done
 
+log info "Fetching OKH ontologies ..."
+for ont_path in "${ont_paths[@]}"
+do
+    log info "   - for $ont_path ..."
+    target_file="$build_dir/$(basename "$ont_path")"
 
-wget \
-    https://github.com/iop-alliance/OpenKnowHow/raw/master/src/spec/okh.ttl \
-    --output-document="$build_dir/OKH-LOSH.ttl"
-wget \
-    https://github.com/iop-alliance/OpenKnowHow/raw/master/src/spec/otrl.ttl \
-    --output-document="$build_dir/OTRL.ttl"
+    if $local_repo
+    then
+        cp \
+            "$OKH_REPO_LOCAL/$ont_path" \
+            "$target_file"
+    else
+        wget \
+            "$OKH_REPO_REMOTE/$ont_path" \
+            --output-document="$target_file"
+    fi
+done
 
-grep '^okh:' \
-    < "$build_dir/OKH-LOSH.ttl" \
-    | sed -e 's/^okh://' \
-    | sort -u \
-    > "$build_dir/rdf_okh_ontology.csv"
+log info "Extracting Ontology used RDF terms ..."
+for ont_index in $(seq 0 "$((${#ont_prefixes[@]} - 1))")
+do
+    ont_path="${ont_paths[$ont_index]}"
+    ont_prefix="${ont_prefixes[$ont_index]}"
+    log info "   - for $ont_prefix ..."
+    ont_file="$build_dir/$(basename "$ont_path")"
+    ont_prefix_lower="$ont_prefix"
+    output_file="$build_dir/rdf_${ont_prefix_lower}_ontology.csv"
 
-grep '^otrl:' \
-    < "$build_dir/OTRL.ttl" \
-    | sed -e 's/^otrl://' \
-    | sort -u \
-    > "$build_dir/rdf_otrl_ontology.csv"
+    grep '^'"$ont_prefix_lower"':' \
+        < "$ont_file" \
+        | sed -e 's/^'"$ont_prefix_lower"'://' -e 's/[ \t].*//' \
+        | sort -u \
+        > "$output_file"
+done
 
+log info "Comparing extracted RDF terms used ..."
+has_bad=false
+for ont_prefix in "${ont_prefixes[@]}"
+do
+    log info "   - for $ont_prefix ..."
+    ont_prefix_lower="$ont_prefix"
 
-comm \
-    -13 \
-    "$build_dir/rdf_okh_ontology.csv" \
-    "$build_dir/rdf_okh_krawler.csv" \
-    > "$build_dir/rdf_okh_bad.csv"
-okh_bad=$(wc -l "$build_dir/rdf_okh_bad.csv" | sed -e 's/ .*//')
+    comm \
+        -13 \
+        "$build_dir/rdf_${ont_prefix_lower}_ontology.csv" \
+        "$build_dir/rdf_${ont_prefix_lower}_krawler.csv" \
+        > "$build_dir/rdf_${ont_prefix_lower}_bad.csv"
+    bad=$(wc -l "$build_dir/rdf_${ont_prefix_lower}_bad.csv" | sed -e 's/ .*//')
 
-comm \
-    -13 \
-    "$build_dir/rdf_otrl_ontology.csv" \
-    "$build_dir/rdf_otrl_krawler.csv" \
-    > "$build_dir/rdf_otrl_bad.csv"
-otrl_bad=$(wc -l "$build_dir/rdf_otrl_bad.csv" | sed -e 's/ .*//')
-
-if [ "$okh_bad" -gt 0 ]
+    if [ "$bad" -gt 0 ]
+    then
+        log error "Krawler uses $bad RDF elements from '$ont_prefix_lower:*' that are not in the ontology:"
+        while read -r elem
+        do
+            log error "- $ont_prefix_lower:$elem"
+        done < "$build_dir/rdf_${ont_prefix_lower}_bad.csv"
+        has_bad=true
+    fi
+done
+if $has_bad
 then
-    >&2 echo "ERROR: Krawler uses $okh_bad RDF elements from 'okh:*' that are not in the ontology:"
-    while read -r elem
-    do
-        >&2 echo "ERROR: - okh:$elem"
-    done < "$build_dir/rdf_okh_bad.csv"
     exit 1
 fi
 
-if [ "$otrl_bad" -gt 0 ]
-then
-    >&2 echo "ERROR: Krawler uses $otrl_bad RDF elements from 'otrl:*' that are not in the ontology:"
-    while read -r elem
-    do
-        >&2 echo "ERROR: - otrl:$elem"
-    done < "$build_dir/rdf_otrl_bad.csv"
-    exit 2
-fi
+log info "done."
