@@ -61,13 +61,7 @@ class Fetcher:
 
     @classmethod
     def _generate_config_schema(cls, long_name: str, default_timeout: int, access_token: bool) -> dict:
-        schema = {
-            "type": "dict",
-            "default": {},
-            "meta": {
-                "long_name": long_name,
-            },
-            "schema": {
+        inner_schema = {
                 "timeout": {
                     "type": "integer",
                     "default": default_timeout,
@@ -86,10 +80,9 @@ class Fetcher:
                         "description": "Number of retries of requests in cases of network errors"
                     }
                 },
-            },
-        }
+            }
         if access_token:
-            schema["schema"]["access_token"] = {
+            inner_schema["access_token"] = {
                 "type": "string",
                 "coerce": "strip_str",
                 "required": True,
@@ -99,7 +92,14 @@ class Fetcher:
                     "description": "Personal access token for using the API"
                 }
             }
-        return schema
+        return {
+            "type": "dict",
+            "default": {},
+            "meta": {
+                "long_name": long_name,
+            },
+            "schema": inner_schema,
+        }
 
     def fetch(self, project_id: ProjectId) -> FetchResult:
         """Fetch metadata of a single project.
