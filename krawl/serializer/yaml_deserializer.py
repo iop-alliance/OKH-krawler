@@ -13,6 +13,7 @@ from krawl.errors import DeserializerError
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer
 from krawl.serializer import ProjectDeserializer
+from krawl.recursive_type import RecDict
 
 
 class YAMLProjectDeserializer(ProjectDeserializer):
@@ -23,7 +24,7 @@ class YAMLProjectDeserializer(ProjectDeserializer):
 
     def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict | None = None) -> Project:
         try:
-            deserialized = yaml.safe_load(serialized)
+            deserialized: RecDict = yaml.safe_load(serialized)
         except Exception as err:
             raise DeserializerError(f"failed to deserialize YAML: {err}") from err
         if not isinstance(deserialized, Mapping):

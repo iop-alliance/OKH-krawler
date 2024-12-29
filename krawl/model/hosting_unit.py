@@ -228,7 +228,7 @@ class HostingUnitIdForge(HostingUnitId):
             path=url_path,
         )
 
-    def create_download_url(self, path: Path | str) -> str:
+    def create_download_url(self, path: Path | str | None) -> str:
         self.validate()
 
         match self.hosting_id():

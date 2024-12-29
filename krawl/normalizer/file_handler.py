@@ -33,7 +33,7 @@ class FileHandler:
 
     # NOTE version, just like project slug, should be given to the constructor of this FileHandler
     # def to_url(self, relative_path: str, version: str = None) -> bool:
-    def to_url(self, proj_info: dict, relative_path: str, frozen: bool) -> str:
+    def to_url(self, proj_info: dict, relative_path: str | Path, frozen: bool) -> str:
         """Constructs a URL from a relative-path to a file,
         either a non-frozen one if version  is None,
         or a frozen one otherwise.
