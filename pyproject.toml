@@ -38,6 +38,8 @@ cleo = "^0.8.1"
 langcodes = "^3.3.0"
 
 [tool.poetry.dev-dependencies]
+mypy = "^1.14.0"
+lxml = "^4.9.3"
 pytest = "^8.3.4"
 poethepoet = "^0.31.1"
 types-requests = "^2.32.0"
@@ -66,6 +68,8 @@ fast_lint = {cmd = "ruff check krawl", help = "Use Ruff to evaluate the code qua
 _publish = {cmd = "poetry publish"}
 release = {sequence = ["format", "test", "build", "_publish"], help = "Create a release of the application and publish it on PyPi"}
 test = {cmd = "python -m unittest tests/**/*.py", help = "Run the test suits"}
+mypy = {cmd = "mypy --check-untyped-defs --html-report build --txt-report build .", help = "Checks type correctness"}
+types = {sequence = ["mypy"]}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
