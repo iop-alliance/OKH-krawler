@@ -26,7 +26,7 @@ class GitHubFileHandler(FileHandler):
         # self.version = version
         # self.dev_branch = dev_branch
 
-    def _extract_version(self, proj_info: dict, url: str) -> str:
+    def _extract_version(self, _proj_info: dict, url: str) -> str:
         url_path = extract_path(url)
         path_parts = Path(url_path).relative_to("/").parts
         # log.warning('XXX Reconcatenated path parts: "%s"', '#'.join(path_parts))
@@ -35,14 +35,17 @@ class GitHubFileHandler(FileHandler):
             return None
         return path_parts[self.pre_vers_path_parts]
 
-    def gen_proj_info_raw(self, slug: str, version: str, dev_branch: str) -> dict:
+    def gen_proj_info_raw(self, slug: str, version: str, dev_branch: str | None) -> dict:
         proj_info = {}
         proj_info['slug'] = slug
         proj_info['version'] = version
-        proj_info['dev_branch'] = dev_branch
+        if dev_branch:
+            proj_info['dev_branch'] = dev_branch
         return proj_info
 
-    def _extract_slug(self, url: str) -> str:
+    def _extract_slug(self, url: str) -> str | None:
+        if url is None:
+            return None
         url_path = extract_path(url)
         path_parts = Path(url_path).relative_to("/").parts
         slug = '/'.join(path_parts[:self.slug_parts])
@@ -52,9 +55,10 @@ class GitHubFileHandler(FileHandler):
     def gen_proj_info(self, manifest_raw: dict) -> dict:
         repo_url = manifest_raw.get("repo")
         if repo_url is None:
-            slug = None
-        else:
-            slug = self._extract_slug(repo_url)
+            raise ValueError("No repo URL in manifest")
+        slug = self._extract_slug(repo_url)
+        if slug is None:
+            raise ValueError(f"Unable to extract slug from repo URL '{repo_url}'")
         version = manifest_raw.get("version")
         dev_branch = None  # TODO Maybe try to extract this from a files URL, if URLs are used ...
         return self.gen_proj_info_raw(slug, version, dev_branch)
