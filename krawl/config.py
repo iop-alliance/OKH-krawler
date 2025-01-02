@@ -563,7 +563,7 @@ class KrawlerConfigLoader(ConfigLoader):
         configs = [ldrs.load() for ldrs in self._loaders]
 
         # merge the configs
-        merged = Config()
+        merged: Config = Config()
         for key_path, _ in iterate_schema(self._schema):
             for config in configs:
                 value = config.get([key_path], missing)

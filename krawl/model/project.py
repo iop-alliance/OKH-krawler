@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from krawl.model.agent import Agent
+from krawl.model.agent import Agent, Organization
 from krawl.model.file import File
 from krawl.model.licenses import License
 from krawl.model.part import Part
@@ -20,14 +20,13 @@ class Project:  # pylint: disable=too-many-instance-attributes
     <https://github.com/iop-alliance/OpenKnowHow/blob/master/res/sample_data/okh-TEMPLATE.toml>. # TODO should be based on okh.ttl instead
     """
 
-    # okhv: str = "OKH-LOSHv1.0"
     name: str
     repo: str
     version: str
     license: License
-    release: str | None = None
     licensor: list[Agent] = field(default_factory=list)
-    organization: str | None = None
+    release: str | None = None
+    organization: Organization | None = None
     readme: File | None = None
     contribution_guide: File | None = None
     image: list[File] = field(default_factory=list)

@@ -15,17 +15,17 @@ from pathlib import Path
 @dataclass(slots=True, unsafe_hash=True)
 class File:  # pylint: disable=too-many-instance-attributes
     """File data model."""
-
-    name: str = None
-    path: Path = None
-    mime_type: str = None
-    url: str = None
-    frozen_url: str = None  # frozen URL is bound to a specific version of the file, e.g. a git commit
-    created_at: datetime = None
-    last_visited: datetime = None
-    last_changed: datetime = None
-    license: str = None
-    licensor: str = None
+    name: str | None = None
+    path: Path | None = None
+    mime_type: str | None = None
+    url: str | None = None
+    frozen_url: str | None = None
+    "frozen URL is bound to a specific version of the file, e.g. a git commit"
+    created_at: datetime | None = None
+    last_visited: datetime | None = None
+    last_changed: datetime | None = None
+    # license: str = None
+    # licensor: str = None
 
     @property
     def extension(self):
