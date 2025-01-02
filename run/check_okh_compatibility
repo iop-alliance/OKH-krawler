@@ -49,15 +49,14 @@ print_help() {
 	echo "  $script_name --help"
 }
 
-# read command-line args
-i=1
-while [ "$i" -lt "$#" ]
+# Process command line arguments
+while [[ $# -gt 0 ]]
 do
-	arg="$(eval "echo \$$i")"
+	arg="$1"
+	shift # $2 -> $1, $3 -> $2, ...
 
 	case "$arg" in
 		-h|--help)
-			shift "$i"
 			print_help
 			exit 0
 			;;
@@ -65,7 +64,8 @@ do
 			local_repo=true
 			;;
 		*) # non-/unknown option
-			i=$((i + 1))
+			>&2 echo "Unknown argument: '$arg'"
+			exit 1
 			;;
 	esac
 done
