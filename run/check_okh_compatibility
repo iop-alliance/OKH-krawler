@@ -160,6 +160,13 @@ do
         > "$build_dir/rdf_${ont_prefix_lower}_bad.csv"
     bad=$(wc -l "$build_dir/rdf_${ont_prefix_lower}_bad.csv" | sed -e 's/ .*//')
 
+    comm \
+        -13 \
+        "$build_dir/rdf_${ont_prefix_lower}_krawler.csv" \
+        "$build_dir/rdf_${ont_prefix_lower}_ontology.csv" \
+        > "$build_dir/rdf_${ont_prefix_lower}_missing.csv"
+    _missing=$(wc -l "$build_dir/rdf_${ont_prefix_lower}_missing.csv" | sed -e 's/ .*//')
+
     if [ "$bad" -gt 0 ]
     then
         log error "Krawler uses $bad RDF elements from '$ont_prefix_lower:*' that are not in the ontology:"
