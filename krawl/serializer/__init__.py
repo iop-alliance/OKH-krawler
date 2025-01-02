@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from krawl.fetcher.result import FetchResult
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer
 
@@ -18,7 +19,7 @@ class Serializer:
         without a leading dot."""
         raise NotImplementedError()
 
-    def serialize(self, project: Project) -> str:
+    def serialize(self, fetch_result: FetchResult, project: Project) -> str:
         raise NotImplementedError()
 
 
@@ -30,5 +31,8 @@ class Deserializer:
         """Returns a list of supported file extensions in all lower-case."""
         raise NotImplementedError()
 
-    def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict | None = None) -> Project:
+    def deserialize(self,
+                    serialized: str | bytes,
+                    normalizer: Normalizer,
+                    enrich: dict | None = None) -> tuple[FetchResult, Project]:
         raise NotImplementedError()

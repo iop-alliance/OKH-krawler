@@ -15,6 +15,7 @@ import validators
 from rdflib import URIRef, XSD
 
 from krawl.errors import SerializerError
+from krawl.fetcher.result import FetchResult
 from krawl.model.project import Project
 from krawl.serializer import Serializer
 
@@ -38,7 +39,7 @@ class RDFSerializer(Serializer):
     def extensions(cls) -> list[str]:
         return ["ttl"]
 
-    def serialize(self, project: Project) -> str:
+    def serialize(self, fetch_result: FetchResult, project: Project) -> str:
         try:
             graph = self._make_graph(project)
 

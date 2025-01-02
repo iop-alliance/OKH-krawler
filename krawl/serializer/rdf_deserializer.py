@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from krawl.fetcher.result import FetchResult
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer
 from krawl.serializer import Deserializer
@@ -16,5 +17,8 @@ class RDFDeserializer(Deserializer):
     def extensions(cls) -> list[str]:
         return ["ttl"]
 
-    def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict | None = None) -> Project:
+    def deserialize(self,
+                    serialized: str | bytes,
+                    normalizer: Normalizer,
+                    enrich: dict | None = None) -> tuple[FetchResult, Project]:
         raise NotImplementedError()

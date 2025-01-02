@@ -10,6 +10,7 @@ import json
 import toml
 
 from krawl.errors import SerializerError
+from krawl.fetcher.result import FetchResult
 from krawl.model.project import Project
 from krawl.serializer import Serializer
 from krawl.serializer.json_serializer import JsonSerializer
@@ -24,7 +25,7 @@ class TOMLSerializer(Serializer):
     def __init__(self) -> None:
         self.json_serializer = JsonSerializer()
 
-    def serialize(self, project: Project) -> str:
+    def serialize(self, fetch_result: FetchResult, project: Project) -> str:
         try:
             # serialized = toml.dumps(project.as_dict())
             project_json = self.json_serializer.serialize(project)

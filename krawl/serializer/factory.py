@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from krawl.fetcher.result import FetchResult
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer
 
@@ -23,11 +24,11 @@ class SerializerFactory():
         self._serializers: dict[str, Serializer] = {}
         self._init_serializers(**kwargs)
 
-    def serialize(self, suffix: str, project: Project) -> str:
+    def serialize(self, suffix: str, fetch_result: FetchResult, project: Project) -> str:
         serializer = self._serializers.get(suffix.lower())
         if not serializer:
             raise ValueError(f"Unknown serializer type: '{suffix}'")
-        return serializer.serialize(project)
+        return serializer.serialize(fetch_result, project)
 
     def _init_serializers(self):
 
@@ -51,7 +52,7 @@ class DeserializerFactory():
                     suffix: str,
                     serialized: str | bytes,
                     normalizer: Normalizer,
-                    enrich: dict | None = None) -> Project:
+                    enrich: dict | None = None) -> tuple[FetchResult, Project]:
         deserializer = self._deserializers.get(suffix.lower())
         if not deserializer:
             raise ValueError(f"Unknown deserializer type: '{suffix}'")

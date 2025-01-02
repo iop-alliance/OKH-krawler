@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from krawl.fetcher.result import FetchResult
 from krawl.model.project import Project
 from krawl.serializer import Serializer
 from krawl.serializer.util import json_serialize
@@ -16,5 +17,6 @@ class JsonSerializer(Serializer):
     def extensions(cls) -> list[str]:
         return ["json"]
 
-    def serialize(self, project: Project) -> str:
-        return json_serialize(project)
+    def serialize(self, fetch_result: FetchResult, project: Project) -> str:
+        return json_serialize(
+            project)  # FIXME nonononono.. not so fast! missing data-set nad fetch result and such stuff

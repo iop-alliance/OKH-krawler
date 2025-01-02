@@ -10,6 +10,7 @@ from collections.abc import Mapping
 import toml
 
 from krawl.errors import DeserializerError
+from krawl.fetcher.result import FetchResult
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer
 from krawl.serializer import Deserializer
@@ -21,7 +22,10 @@ class TOMLDeserializer(Deserializer):
     def extensions(cls) -> list[str]:
         return ["toml"]
 
-    def deserialize(self, serialized: str | bytes, normalizer: Normalizer, enrich: dict | None = None) -> Project:
+    def deserialize(self,
+                    serialized: str | bytes,
+                    normalizer: Normalizer,
+                    enrich: dict | None = None) -> tuple[FetchResult, Project]:
         try:
             if isinstance(serialized, bytes):
                 serialized = serialized.decode(encoding="UTF-8", errors="ignore")
