@@ -17,22 +17,29 @@ project_root=$(dirname "$script_dir")
 # initial default values
 APP_NAME="RDF Serialization check"
 OKH_REPO_LOCAL="$HOME/Projects/OSEG/repos/OKH"
+TSDC_REPO_LOCAL="$HOME/Projects/OSEG/repos/oh-tsdc"
 OSEG_ONT_IRI="https://w3id.org/oseg/ont"
 # OKH repo local path to OWL files, paired with their prefixes
 ont_prefixes=(
     "okh"
     "okhmeta"
     "otrl"
+    "tsdc"
+    "tsdcr"
 )
 ont_paths=(
     "src/spec/okh.ttl"
     "src/spec/okh-meta.ttl"
     "src/spec/otrl.ttl"
+    "oh-tsdc.ttl"
+    "tsdc-req.ttl"
 )
 ont_local_repo=(
     "$OKH_REPO_LOCAL"
     "$OKH_REPO_LOCAL"
     "$OKH_REPO_LOCAL"
+    "$TSDC_REPO_LOCAL"
+    "$TSDC_REPO_LOCAL"
 )
 
 local_repo=false
