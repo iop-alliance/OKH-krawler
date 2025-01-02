@@ -16,8 +16,8 @@ from krawl.model.software import Software
 
 @dataclass(slots=True)
 class Project:  # pylint: disable=too-many-instance-attributes
-    """Project data model based on
-    <https://github.com/iop-alliance/OpenKnowHow/blob/master/res/sample_data/okh-TEMPLATE.toml>. # TODO should be based on okh.ttl instead
+    """Project data model, based on:
+    <http://w3id.org/oseg/ont/okh.ttl>
     """
 
     name: str
