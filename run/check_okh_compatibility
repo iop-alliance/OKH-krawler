@@ -179,7 +179,7 @@ do
 done
 if $has_bad
 then
-    exit 1
+    exit 88
 fi
 
 log info "done."
