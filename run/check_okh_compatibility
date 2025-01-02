@@ -17,7 +17,7 @@ project_root=$(dirname "$script_dir")
 # initial default values
 APP_NAME="RDF Serialization check"
 OKH_REPO_LOCAL="$HOME/Projects/OSEG/repos/OKH"
-OKH_REPO_REMOTE="https://github.com/iop-alliance/OpenKnowHow/raw/master/"
+OSEG_ONT_IRI="https://w3id.org/oseg/ont"
 # OKH repo local path to OWL files, paired with their prefixes
 ont_prefixes=(
     "okh"
@@ -29,6 +29,12 @@ ont_paths=(
     "src/spec/okh-meta.ttl"
     "src/spec/otrl.ttl"
 )
+ont_local_repo=(
+    "$OKH_REPO_LOCAL"
+    "$OKH_REPO_LOCAL"
+    "$OKH_REPO_LOCAL"
+)
+
 local_repo=false
 
 print_help() {
@@ -103,19 +109,22 @@ do
 done
 
 log info "Fetching OKH ontologies ..."
-for ont_path in "${ont_paths[@]}"
+for ont_index in $(seq 0 "$((${#ont_prefixes[@]} - 1))")
 do
+    ont_path="${ont_paths[$ont_index]}"
+    ont_prefix="${ont_prefixes[$ont_index]}"
     log info "   - for $ont_path ..."
     target_file="$build_dir/$(basename "$ont_path")"
 
     if $local_repo
     then
+        _local_repo="${ont_local_repo[$ont_index]}"
         cp \
-            "$OKH_REPO_LOCAL/$ont_path" \
+            "$_local_repo/$ont_path" \
             "$target_file"
     else
         wget \
-            "$OKH_REPO_REMOTE/$ont_path" \
+            "$OSEG_ONT_IRI/${ont_prefix}.ttl" \
             --output-document="$target_file"
     fi
 done
