@@ -18,6 +18,9 @@ from krawl.model.software import Software
 class Project:  # pylint: disable=too-many-instance-attributes
     """Project data model, based on:
     <http://w3id.org/oseg/ont/okh.ttl>
+
+    What is in the ontology but not here,
+    will likely be in `:py:class:krawl.fetcher.result.FetchResult`.
     """
 
     name: str
