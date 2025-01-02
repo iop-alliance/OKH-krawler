@@ -13,6 +13,7 @@ class Agent:
 
     name: str
     email: str | None = None
+    url: str | None = None
 
     def is_valid(self) -> bool:
         return bool(self.name)
@@ -25,4 +26,4 @@ class Person(Agent):
 
 @dataclass(slots=True)
 class Organization(Agent):
-    url: str | None = None
+    pass
