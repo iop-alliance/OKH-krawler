@@ -44,6 +44,13 @@ okhkrawl:dataProviderAppropedia
   dcterms:identifier "https://appropedia.org"^^xsd:anyURI ;
   .
 
+okhkrawl:dataProviderCodeberg
+  a okh:DataProvider ;
+  rdfs:label "CodeBerg" ;
+  dcterms:title "CodeBerg" ;
+  dcterms:identifier "https://codeberg.org"^^xsd:anyURI ;
+  .
+
 okhkrawl:dataProviderGithub
   a okh:DataProvider ;
   rdfs:label "GitHub" ;
@@ -56,6 +63,20 @@ okhkrawl:dataProviderGitlab
   rdfs:label "GitLab.com" ;
   dcterms:title "GitLab.com" ;
   dcterms:identifier "https://gitlab.com"^^xsd:anyURI ;
+  .
+
+okhkrawl:dataProviderGitlabOpenSourceEcologyGermany
+  a okh:DataProvider ;
+  rdfs:label "gitlab@OSEG" ;
+  dcterms:title "gitlab@OSEG" ;
+  dcterms:identifier "https://gitlab.opensourceecology.de"^^xsd:anyURI ;
+  .
+
+okhkrawl:dataProviderOshwa
+  a okh:DataProvider ;
+  rdfs:label "OSHWA" ;
+  dcterms:title "OSHWA" ;
+  dcterms:identifier "certification.oshwa.org"^^xsd:anyURI ;
   .
 
 okhkrawl:dataProviderThingiverse
