@@ -14,9 +14,9 @@ from krawl.log import get_child_logger
 from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
 from krawl.repository import ProjectRepository, ProjectRepositoryType
-from krawl.serializer.json_serializer import JsonProjectSerializer
-from krawl.serializer.rdf_serializer import RDFProjectSerializer
-from krawl.serializer.toml_serializer import TOMLProjectSerializer
+from krawl.serializer.json_serializer import JsonSerializer
+from krawl.serializer.rdf_serializer import RDFSerializer
+from krawl.serializer.toml_serializer import TOMLSerializer
 
 log = get_child_logger("repo_file")
 
@@ -54,9 +54,9 @@ class ProjectRepositoryFile(ProjectRepository):
         },
     }
     FORMATS = {
-        "toml": (TOMLProjectSerializer(), "toml"),
-        "json": (JsonProjectSerializer(), "json"),
-        "rdf": (RDFProjectSerializer(), "ttl"),
+        "toml": (TOMLSerializer(), "toml"),
+        "json": (JsonSerializer(), "json"),
+        "rdf": (RDFSerializer(), "ttl"),
     }
 
     def __init__(self, repository_config: Config):

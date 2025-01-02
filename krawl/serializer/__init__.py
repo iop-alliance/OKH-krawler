@@ -9,7 +9,7 @@ from krawl.model.project import Project
 from krawl.normalizer import Normalizer
 
 
-class ProjectSerializer:
+class Serializer:
     """Interface for serializing project metadata."""
 
     @classmethod
@@ -22,7 +22,7 @@ class ProjectSerializer:
         raise NotImplementedError()
 
 
-class ProjectDeserializer:
+class Deserializer:
     """Interface for deserializing project metadata."""
 
     @classmethod

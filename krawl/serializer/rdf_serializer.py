@@ -16,7 +16,7 @@ from rdflib import URIRef, XSD
 
 from krawl.errors import SerializerError
 from krawl.model.project import Project
-from krawl.serializer import ProjectSerializer
+from krawl.serializer import Serializer
 
 # Useful info about RDF:
 # https://medium.com/wallscope/understanding-linked-data-formats-rdf-xml-vs-turtle-vs-n-triples-eb931dbe9827
@@ -32,7 +32,7 @@ OTRL = rdflib.Namespace(f"{BASE_IRI_OTRL}#")
 TSDC = rdflib.Namespace(f"{BASE_IRI_TSDC}#")
 
 
-class RDFProjectSerializer(ProjectSerializer):
+class RDFSerializer(Serializer):
 
     @classmethod
     def extensions(cls) -> list[str]:

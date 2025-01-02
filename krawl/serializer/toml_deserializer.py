@@ -12,10 +12,10 @@ import toml
 from krawl.errors import DeserializerError
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer
-from krawl.serializer import ProjectDeserializer
+from krawl.serializer import Deserializer
 
 
-class TOMLProjectDeserializer(ProjectDeserializer):
+class TOMLDeserializer(Deserializer):
 
     @classmethod
     def extensions(cls) -> list[str]:

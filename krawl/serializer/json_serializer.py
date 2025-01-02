@@ -6,11 +6,11 @@
 from __future__ import annotations
 
 from krawl.model.project import Project
-from krawl.serializer import ProjectSerializer
+from krawl.serializer import Serializer
 from krawl.serializer.util import json_serialize
 
 
-class JsonProjectSerializer(ProjectSerializer):
+class JsonSerializer(Serializer):
 
     @classmethod
     def extensions(cls) -> list[str]:

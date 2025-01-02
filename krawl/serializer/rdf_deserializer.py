@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer
-from krawl.serializer import ProjectDeserializer
+from krawl.serializer import Deserializer
 
 
-class RDFProjectDeserializer(ProjectDeserializer):
+class RDFDeserializer(Deserializer):
 
     @classmethod
     def extensions(cls) -> list[str]:

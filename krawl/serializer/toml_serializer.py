@@ -11,18 +11,18 @@ import toml
 
 from krawl.errors import SerializerError
 from krawl.model.project import Project
-from krawl.serializer import ProjectSerializer
-from krawl.serializer.json_serializer import JsonProjectSerializer
+from krawl.serializer import Serializer
+from krawl.serializer.json_serializer import JsonSerializer
 
 
-class TOMLProjectSerializer(ProjectSerializer):
+class TOMLSerializer(Serializer):
 
     @classmethod
     def extensions(cls) -> list[str]:
         return ["toml"]
 
     def __init__(self) -> None:
-        self.json_serializer = JsonProjectSerializer()
+        self.json_serializer = JsonSerializer()
 
     def serialize(self, project: Project) -> str:
         try:

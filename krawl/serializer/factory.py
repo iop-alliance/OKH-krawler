@@ -8,19 +8,19 @@ from __future__ import annotations
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer
 
-from . import ProjectDeserializer, ProjectSerializer
-from .json_serializer import JsonProjectSerializer
-from .rdf_deserializer import RDFProjectDeserializer
-from .rdf_serializer import RDFProjectSerializer
-from .toml_deserializer import TOMLProjectDeserializer
-from .toml_serializer import TOMLProjectSerializer
-from .yaml_deserializer import YAMLProjectDeserializer
+from . import Deserializer, Serializer
+from .json_serializer import JsonSerializer
+from .rdf_deserializer import RDFDeserializer
+from .rdf_serializer import RDFSerializer
+from .toml_deserializer import TOMLDeserializer
+from .toml_serializer import TOMLSerializer
+from .yaml_deserializer import YAMLDeserializer
 
 
 class SerializerFactory():
 
     def __init__(self, **kwargs) -> None:
-        self._serializers: dict[str, ProjectSerializer] = {}
+        self._serializers: dict[str, Serializer] = {}
         self._init_serializers(**kwargs)
 
     def serialize(self, suffix: str, project: Project) -> str:
@@ -32,9 +32,9 @@ class SerializerFactory():
     def _init_serializers(self):
 
         tmp_serializers = [
-            JsonProjectSerializer(),
-            TOMLProjectSerializer(),
-            RDFProjectSerializer(),
+            JsonSerializer(),
+            TOMLSerializer(),
+            RDFSerializer(),
         ]
         for serializer in tmp_serializers:
             for ext in serializer.extensions():
@@ -44,7 +44,7 @@ class SerializerFactory():
 class DeserializerFactory():
 
     def __init__(self, **kwargs) -> None:
-        self._deserializers: dict[str, ProjectDeserializer] = {}
+        self._deserializers: dict[str, Deserializer] = {}
         self._init_deserializer(**kwargs)
 
     def deserialize(self,
@@ -60,9 +60,9 @@ class DeserializerFactory():
     def _init_deserializer(self):
 
         tmp_deserializers = [
-            YAMLProjectDeserializer(),
-            TOMLProjectDeserializer(),
-            RDFProjectDeserializer(),
+            YAMLDeserializer(),
+            TOMLDeserializer(),
+            RDFDeserializer(),
         ]
         for deserializer in tmp_deserializers:
             for ext in deserializer.extensions():
