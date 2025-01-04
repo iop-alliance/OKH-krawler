@@ -5,6 +5,10 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+from krawl.model.hosting_unit import HostingUnitId
+
 
 class FileHandler:
     """Interface handlers of file references within a project.
@@ -12,11 +16,12 @@ class FileHandler:
     (and in a way - potentially - between projects).
     This is used e.g. in :py:func:`FileHandler.__init__()`"""
 
-    def gen_proj_info(self, manifest_raw: dict) -> dict:
+    def gen_proj_info(self, hosting_unit_id: HostingUnitId, manifest_raw: dict) -> dict:
         """From the raw manifest data, extracts and generates the essential info
         required by this handler for all its methods steps.
 
         Args:
+            hosting_unit_id (dict): The ID of the data hosting tech and ID where the data came from.
             manifest_raw (dict): The raw manifest data.
         """
         raise NotImplementedError()

@@ -12,10 +12,12 @@ from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from time import sleep
+from typing import TypeAlias
 
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
+from typing import TypedDict
 
 from krawl.config import Config
 from krawl.errors import FetcherError, ParserError
@@ -48,6 +50,148 @@ __dataset_license__: License = License(
 )
 __dataset_creator__: Organization = Organization(name="Thingiverse", url="https://www.thingiverse.com")
 log = get_child_logger(__long_name__)
+
+t_url: TypeAlias = str
+t_string: TypeAlias = str
+t_datetime: TypeAlias = str
+
+class ThingiverseThingSearch(TypedDict):
+    "This maps precisely to the Thingiverse API response of a thing - thing search."
+    total: int
+    hits: list[Hit]
+
+class Person(TypedDict):
+    "This maps precisely to the Thingiverse API response of a thing - person."
+    id: int
+    name: t_string
+    first_name: t_string
+    last_name: t_string
+    url: t_url
+    public_url: t_url
+    thumbnail: t_url
+    count_of_followers: int
+    count_of_following: int
+    count_of_designs: int
+    make_count: int
+    accepts_tips: bool
+    is_following: bool
+    location: t_string
+    cover: t_url
+    is_admin: bool
+    is_moderator: bool
+    is_featured: bool
+    is_verified: bool
+
+class ImageSize(TypedDict):
+    "This maps precisely to the Thingiverse API response of a thing - image size."
+    type: t_string
+    size: t_string
+    url: t_url
+
+class Image(TypedDict):
+    "This maps precisely to the Thingiverse API response of a thing - image."
+    id: int
+    url: t_url
+    name: t_string
+    sizes: list[ImageSize]
+    added: t_datetime
+
+class Tag(TypedDict):
+    "This maps precisely to the Thingiverse API response of a thing - tag."
+    name: t_string
+    url: t_url
+    count: int
+    things_url: t_url
+    absolute_url: t_string
+
+class ZipFile(TypedDict):
+    "This maps precisely to the Thingiverse API response of a thing - zip file."
+    name: t_string
+    url: t_url
+
+class ZipData(TypedDict):
+    "This maps precisely to the Thingiverse API response of a thing - zip data."
+    files: list[ZipFile]
+
+class Hit(TypedDict):
+    "This maps precisely to the Thingiverse API response of a thing - hit."
+    id: int
+    name: t_string
+    thumbnail: t_url
+    url: t_url
+    public_url: t_url
+    creator: Person
+    added: t_datetime
+    modified: t_datetime
+    is_published: int
+    is_wip: int
+    is_featured: bool
+    is_nsfw: bool
+    is_ai: bool
+    like_count: int
+    is_liked: bool
+    collect_count: int
+    is_collected: bool
+    comment_count: int
+    is_watched: bool
+    default_image: Image
+    description: t_string
+    instructions: t_string | None
+    description_html: t_string
+    instructions_html: t_string
+    details: t_string
+    details_parts: list[dict]
+    edu_details: t_string | None
+    edu_details_parts: list[dict]
+    license: t_string
+    allows_derivatives: bool
+    files_url: t_url
+    images_url: t_url
+    likes_url: t_url
+    ancestors_url: t_url
+    derivatives_url: t_url
+    tags_url: t_string
+    tags: list[Tag]
+    categories_url: t_url
+    file_count: int
+    is_purchased: int
+    app_id: int | None
+    download_count: int
+    view_count: int
+    education: dict
+    remix_count: int
+    make_count: int
+    app_count: int
+    root_comment_count: int
+    moderation: t_string | None
+    is_derivative: bool
+    ancestors: list
+    can_comment: bool
+    type_name: t_string
+    is_banned: bool
+    is_comments_disabled: bool
+    needs_moderation: int
+    is_decoy: int
+    zip_data: ZipData
+
+
+class ThingFile(TypedDict):
+    "This maps precisely to the Thingiverse API response of a file - file."
+    id: int
+    name: t_string
+    size: int
+    url: t_url
+    public_url: t_url
+    download_url: t_url
+    threejs_url: t_url
+    thumbnail: t_url
+    default_image: Image
+    date: t_datetime
+    formatted_size: t_string
+    download_count: int
+    direct_url: t_url
+
+
 
 
 @dataclass(slots=True)

@@ -12,25 +12,34 @@ from urllib.parse import quote, urlparse, urlunparse
 
 import rdflib
 import validators
-from rdflib import URIRef, XSD
+from rdflib import URIRef
 
 from krawl.errors import SerializerError
 from krawl.fetcher.result import FetchResult
+from krawl.model.file import File
+from krawl.model.hosting_unit import HostingId
 from krawl.model.project import Project
+from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.serializer import Serializer
 
 # Useful info about RDF:
 # https://medium.com/wallscope/understanding-linked-data-formats-rdf-xml-vs-turtle-vs-n-triples-eb931dbe9827
 
-BASE_IRI_OKH = "https://w3id.org/oseg/ont/okh"
-BASE_IRI_OKH_META = "https://w3id.org/oseg/ont/okhmeta"
-BASE_IRI_OTRL = "https://w3id.org/oseg/ont/otrl"
-BASE_IRI_TSDC = "https://w3id.org/oseg/ont/tsdc"
+BASE_IRI_OKH = "http://w3id.org/oseg/ont/okh"
+BASE_IRI_OKH_META = "http://w3id.org/oseg/ont/okhmeta"
+BASE_IRI_OKH_KRAWLER = "http://w3id.org/oseg/ont/okhkrawl"
+BASE_IRI_OTRL = "http://w3id.org/oseg/ont/otrl"
+BASE_IRI_TSDC = "http://w3id.org/oseg/ont/tsdc"
+BASE_IRI_TSDC_REQUIREMENTS = "http://w3id.org/oseg/ont/tsdc/requirements"
 
 OKH = rdflib.Namespace(f"{BASE_IRI_OKH}#")
-OKH_META = rdflib.Namespace(f"{BASE_IRI_OKH_META}#")
+OKHMETA = rdflib.Namespace(f"{BASE_IRI_OKH_META}#")
+OKHKRAWL = rdflib.Namespace(f"{BASE_IRI_OKH_KRAWLER}#")
 OTRL = rdflib.Namespace(f"{BASE_IRI_OTRL}#")
 TSDC = rdflib.Namespace(f"{BASE_IRI_TSDC}#")
+TSDCR = rdflib.Namespace(f"{BASE_IRI_TSDC_REQUIREMENTS}#")
+"The okh:okhv version written by this serializer"
+OKHV: str = "X.X.X"
 
 
 class RDFSerializer(Serializer):
@@ -41,15 +50,75 @@ class RDFSerializer(Serializer):
 
     def serialize(self, fetch_result: FetchResult, project: Project) -> str:
         try:
-            graph = self._make_graph(project)
+            graph = self._make_graph(fetch_result, project)
 
             serialized = str(graph.serialize(format="turtle").encode("utf-8"))
         except Exception as err:
             raise SerializerError(f"failed to serialize RDF: {err}") from err
         return serialized
 
+    @classmethod
+    def _add_data_set(cls, graph: rdflib.Graph, namespace: rdflib.Namespace, fetch_result: FetchResult,
+                      project: Project) -> rdflib.Namespace:
+        name = cls._title_case(project.name + "_DataSet")
+
+        subj: URIRef = namespace[name]
+        cls.add(graph, subj, rdflib.RDF.type, OKH.Dataset)
+        cls.add(graph, subj, rdflib.RDFS.label, "Covers all the data in this namespace")
+
+        data_provider: URIRef
+        hosting_id = fetch_result.data_set.hosting_unit_id.hosting_id
+        match hosting_id:
+            case HostingId.APPROPEDIA_ORG:
+                data_provider = OKHKRAWL.dataProviderAppropedia
+            case HostingId.CODEBERG_ORG:
+                data_provider = OKHKRAWL.dataProviderCodeberg
+            case HostingId.GITHUB_COM:
+                data_provider = OKHKRAWL.dataProviderGithub
+            case HostingId.GITLAB_COM:
+                data_provider = OKHKRAWL.dataProviderGitlab
+            case HostingId.GITLAB_OPENSOURCEECOLOGY_DE:
+                data_provider = OKHKRAWL.dataProviderGitlabOpenSourceEcologyGermany
+            case HostingId.OSHWA_ORG:
+                data_provider = OKHKRAWL.dataProviderOshwa
+            case HostingId.THINGIVERSE_COM:
+                data_provider = OKHKRAWL.dataProviderThingiverse
+            case _:
+                raise SerializerError(f"unknown hosting id: {hosting_id}")
+        cls.add(graph, subj, OKH.dataProvider, data_provider)
+
+        data_sourcing_procedure_iri: URIRef
+        sourcing_procedure = fetch_result.data_set.crawling_meta.sourcing_procedure
+        match sourcing_procedure:
+            case SourcingProcedure.API:
+                data_sourcing_procedure_iri = OKHKRAWL.dataSourcingProcedureApi
+            case SourcingProcedure.MANIFEST:
+                data_sourcing_procedure_iri = OKHKRAWL.dataSourcingProcedureGeneratedManifest
+            case SourcingProcedure.GENERATED_MANIFEST:
+                data_sourcing_procedure_iri = OKHKRAWL.dataSourcingProcedureManifest
+            case SourcingProcedure.DIRECT:
+                data_sourcing_procedure_iri = OKHKRAWL.dataSourcingProcedureDirect
+            case _:
+                raise SerializerError(f"unknown data sourcing procedure: {sourcing_procedure}")
+        cls.add(graph, subj, OKH.dataSourcingProcedure, data_sourcing_procedure_iri)
+
+        cls.add(graph, subj, OKH.okhv, OKHV)
+
+        manifest_file_subject = cls._add_file(
+            graph=graph,
+            namespace=namespace,
+            project=project,
+            key="manifest_file",
+            entity_name="ManifestFile",
+            rdf_type=OKH.ManifestFile,
+        )
+        if manifest_file_subject:
+            cls.add(graph, subj, OKH.hasManifestFile, manifest_file_subject)
+
+        return subj
+
     @staticmethod
-    def _make_project_namespace(project) -> rdflib.Namespace:
+    def _make_project_namespace(project: Project) -> rdflib.Namespace:
         parts = urlparse(project.repo)
         base = urlunparse(components=(
             parts.scheme,
@@ -91,24 +160,25 @@ class RDFSerializer(Serializer):
         return without_dash
 
     @staticmethod
-    def add(graph: rdflib.Graph, subject, predicate, object, datatype=None):
-        if object is not None:
-            if isinstance(object, str) and object.startswith("http") and validators.url(object):
-                object = rdflib.URIRef(object)
-            elif isinstance(object, datetime):
-                object = rdflib.Literal(object.isoformat())
-            elif not isinstance(object, (rdflib.URIRef, rdflib.Literal)):
-                if datatype:
-                    object = rdflib.Literal(object, datatype=datatype)
+    def add(graph: rdflib.Graph, subject: URIRef, predicate: URIRef, object: str | URIRef | rdflib.Literal | None, datatype: URIRef | None = None):
+        if object:
+            if not isinstance(object, (URIRef, rdflib.Literal)):
+                if isinstance(object, str) and object.startswith("http") and validators.url(object):
+                    object = rdflib.URIRef(object)
+                elif isinstance(object, datetime):
+                    object = rdflib.Literal(object.isoformat())
                 else:
-                    object = rdflib.Literal(object)
+                    if datatype:
+                        object = rdflib.Literal(str(object), datatype=datatype)
+                    else:
+                        object = rdflib.Literal(str(object))
             graph.add((subject, predicate, object))
 
     @classmethod
-    def add_file(cls, graph, subject, file):
-        if file.path is not None:
-            cls.add(graph, subject, OKH.relativePath, file.path)
-        if file.url is not None:
+    def _add_file_link(cls, graph: rdflib.Graph, subject: URIRef, file: File):
+        if file.path:
+            cls.add(graph, subject, OKH.relativePath, str(file.path))
+        if file.url:
             cls.add(
                 graph, subject, OKH.url, file.url
             )  # TODO Maybe use file.permaURL instead here, because according to the spec/Ontology as of Dec. 2022), this is supposed to be a permanent/frozen URL -> NO, change the spec! We removed permaURL, and rather want to have a frozen and a separate, unfrozen version of the whole manifest.
@@ -163,7 +233,7 @@ class RDFSerializer(Serializer):
             cls.add(graph, part_subject, OKH.manufacturingProcess, part.manufacturing_process)
 
             if part.mass:
-                cls.add(graph, part_subject, OKH.hasMass, part.mass, XSD.float)
+                cls.add(graph, part_subject, OKH.hasMass, part.mass, rdflib.XSD.float)
 
             if part.outer_dimensions is not None:
                 outer_dimensions = namespace[f"{part_name}_OuterDimensions"]
@@ -177,49 +247,49 @@ class RDFSerializer(Serializer):
                 cls.add(graph, part_subject, OKH.tsdc, URIRef(f"{BASE_IRI_TSDC}#{part.tsdc}"))
 
             # source
-            if part.source is not None:
-                source_subject = namespace[f"{part_name}_source"]
-                cls.add(graph, part_subject, OKH.source, source_subject)
-                cls.add(graph, source_subject, rdflib.RDF.type, OKH.File)
-                cls.add(graph, source_subject, rdflib.RDFS.label,
-                        f"Source File of {part.name} of {project.name} {project.version}")
-                cls.add_file(graph, source_subject, part.source)
+            for i, file in enumerate(part.source):
+                subj = cls._add_file_info(graph,
+                                          namespace,
+                                          file,
+                                          entity_name=f"{part_name}_source{i + 1}",
+                                          parent_name=project.name)
+                cls.add(graph, part_subject, OKH.source, subj)
 
             # export
             for i, file in enumerate(part.export):
-                if file is None:
-                    continue
-                export_subject = namespace[f"{part_name}_export{i + 1}"]
-                cls.add(graph, part_subject, OKH.export, export_subject)
-                cls.add(graph, export_subject, rdflib.RDF.type, OKH.File)
-                cls.add(graph, export_subject, rdflib.RDFS.label,
-                        f"Export File of {part.name} of {project.name} {project.version}")
-                cls.add_file(graph, export_subject, file)
+                subj = cls._add_file_info(graph,
+                                          namespace,
+                                          file,
+                                          entity_name=f"{part_name}_export{i + 1}",
+                                          parent_name=project.name)
+                cls.add(graph, part_subject, OKH.export, subj)
 
             # auxiliary
             for i, file in enumerate(part.auxiliary):
-                auxiliary_subject = namespace[f"{part_name}_auxiliary{i + 1}"]
-                cls.add(graph, part_subject, OKH.auxiliary, auxiliary_subject)
-                cls.add(graph, auxiliary_subject, rdflib.RDF.type, OKH.File)
-                cls.add(graph, auxiliary_subject, rdflib.RDFS.label,
-                        f"Auxiliary File of {part.name} of {project.name} {project.version}")
-                cls.add_file(graph, auxiliary_subject, file)
+                subj = cls._add_file_info(graph,
+                                          namespace,
+                                          file,
+                                          entity_name=f"{part_name}_auxiliary{i + 1}",
+                                          parent_name=project.name)
+                cls.add(graph, part_subject, OKH.auxiliary, subj)
 
             # image
-            if part.image is not None:
-                image_subject = namespace[f"{part_name}_image"]
-                cls.add(graph, part_subject, OKH.hasImage, image_subject)
-                cls.add(graph, image_subject, rdflib.RDF.type, OKH.Image)
-                cls.add(graph, image_subject, rdflib.RDFS.label,
-                        f"Image of {part.name} of {project.name} {project.version}")
-                cls.add_file(graph, image_subject, part.image)
+            for i, file in enumerate(part.image):
+                subj = cls._add_file_info(graph,
+                                          namespace,
+                                          file,
+                                          entity_name=f"{part_name}_image{i + 1}",
+                                          parent_name=project.name,
+                                          rdf_type=OKH.Image)
+                cls.add(graph, part_subject, OKH.hasImage, subj)
 
             part_subjects.append(part_subject)
 
         return part_subjects
 
     @classmethod
-    def _add_module(cls, graph, namespace: rdflib.Namespace, project: Project) -> rdflib.URIRef:
+    def _add_project(cls, graph: rdflib.Graph, namespace: rdflib.Namespace, fetch_result: FetchResult,
+                     project: Project) -> rdflib.URIRef:
         module_subject = namespace['Project']
         cls.add(graph, module_subject, rdflib.RDF.type, OKH.Module)
 
@@ -227,20 +297,11 @@ class RDFSerializer(Serializer):
         # NOTE That is not how this works. It would have to link to an RDF subject (by IRI) that represents the same module but un-frozen/non-permanent. IT would likely be in an other file.
         #cls.add(graph, module_subject, OKH.versionOf, project.repo)
         cls.add(graph, module_subject, OKH.repo, project.repo)
-        cls.add(graph, module_subject, OKH.dataSource, project.data_set.source)
 
         cls.add(graph, module_subject, OKH.repoHost, urlparse(project.repo).hostname)
         cls.add(graph, module_subject, OKH.version, project.version)
         cls.add(graph, module_subject, OKH.release, project.release)
-        if project.license.is_spdx:
-            cls.add(graph, module_subject, OKH.spdxLicense, project.license.id)
-        else:
-            if project.license.reference_url is None:
-                alt_license = project.license.id
-            else:
-                alt_license = project.license.reference_url[:-5]
-            cls.add(graph, module_subject, OKH.alternativeLicense,
-                    alt_license)  # FIXME: should be the license ID not the reference url, but it breaks the frontend
+        cls.add(graph, module_subject, OKH.license, project.license.id())
         cls.add(graph, module_subject, OKH.licensor, project.licensor)
         cls.add(graph, module_subject, OKH.organization, project.organization)
         # cls.add(graph, module_subject, OKH.contributorCount, None)  # TODO see if GitHub API can do this
@@ -252,6 +313,8 @@ class RDFSerializer(Serializer):
         cls.add(graph, module_subject, OKH.technologyReadinessLevel, cls._make_OTRL(project))
         cls.add(graph, module_subject, OKH.function, project.function)
         cls.add(graph, module_subject, OKH.cpcPatentClass, project.cpc_patent_class)
+        for attestation in project.attestation:
+            cls.add(graph, module_subject, OKH.attestation, attestation, datatype=rdflib.XSD.anyURI)
         if project.tsdc is not None:
             # TODO Parse TsDCs, and check if part.tsdc is a valid tsdc, but maybe do that earlier in the process, not here, while serializing
             cls.add(graph, module_subject, OKH.tsdc, URIRef(f"{BASE_IRI_TSDC}#{project.tsdc}"))
@@ -259,7 +322,6 @@ class RDFSerializer(Serializer):
         # FIXME: yeah, this is not how this works
         # cls.add(graph, module_subject, OKH.export, [file.path for file in project.export])
         # cls.add(graph, module_subject, OKH.source, [file.path for file in project.source])
-        cls.add(graph, module_subject, OKH.dataSourcingProcedure, project.data_sourcing_procedure)
 
         # NOTE We do not create a standard to then allow platform specific data again,
         #      and definitely not by introducing arbitrary properties
@@ -299,33 +361,57 @@ class RDFSerializer(Serializer):
     #     return entity, l
 
     @classmethod
-    def _add_info_file(cls, graph, namespace: rdflib.Namespace, project, key, entity_name, rdf_type) -> URIRef | None:
+    def _add_file_info(cls,
+                       graph,
+                       namespace: rdflib.Namespace,
+                       file: File,
+                       entity_name: str,
+                       parent_name: str | None,
+                       rdf_type: URIRef = OKH.File) -> URIRef:
+        subj: URIRef = namespace[entity_name]
+        cls.add(graph, subj, rdflib.RDF.type, rdf_type)
+        cls.add(graph, subj, rdflib.RDFS.label, f'{entity_name} of {parent_name}' if parent_name else entity_name)
+        cls._add_file_link(graph, subj, file)
+        return subj
+
+    @classmethod
+    def _add_file(cls,
+                  graph,
+                  namespace: rdflib.Namespace,
+                  project: Project,
+                  key: str,
+                  entity_name: str,
+                  rdf_type: URIRef = OKH.File) -> URIRef | None:
         parent_name = f"{project.name} {project.version}"
         file = getattr(project, key) if hasattr(project, key) else None
         if file is None:
             return None
 
-        subject: URIRef = namespace[entity_name]
-        cls.add(graph, subject, rdflib.RDF.type, rdf_type)
-        cls.add(graph, subject, rdflib.RDFS.label, f"{entity_name} of {parent_name}")
-        cls.add_file(graph, subject, file)
-        return subject
+        return cls._add_file_info(graph, namespace, file, entity_name, parent_name, rdf_type)
 
     @classmethod
-    def _make_graph(cls, project) -> rdflib.Graph:
-        graph = rdflib.Graph()
+    def _make_graph(cls, fetch_result: FetchResult, project: Project) -> rdflib.Graph:
+        graph: rdflib.Graph = rdflib.Graph()
         graph.bind("okh", OKH)
+        graph.bind("okhkrawl", OKHKRAWL)
         graph.bind("otrl", OTRL)
         graph.bind("tsdc", TSDC)
+        # graph.bind("tsdcr", TSDCR)
         graph.bind("rdfs", rdflib.RDFS)
         graph.bind("owl", rdflib.OWL)
+        graph.bind("xsd", rdflib.XSD)
 
         namespace = cls._make_project_namespace(project)
         graph.bind("", namespace)
 
-        module_subject = cls._add_module(graph, namespace, project)
+        # NOTE The data-set is the top of the data tree within a manifest,
+        #      similar to an `owl:Ontology` in case of a vocabulary.
+        data_set_subj = cls._add_data_set(graph, namespace, fetch_result, project)
 
-        readme_subject = cls._add_info_file(
+        module_subject = cls._add_project(graph, namespace, fetch_result, project)
+        cls.add(graph, data_set_subj, rdflib.VOID.rootResource, module_subject)
+
+        readme_subject = cls._add_file(
             graph=graph,
             namespace=namespace,
             project=project,
@@ -336,19 +422,7 @@ class RDFSerializer(Serializer):
         if readme_subject is not None:
             cls.add(graph, module_subject, OKH.hasReadme, readme_subject)
 
-        manifest_file_subject = cls._add_info_file(
-            graph=graph,
-            namespace=namespace,
-            project=project,
-            key="manifest_file",
-            entity_name="ManifestFile",
-            rdf_type=OKH.ManifestFile,
-        )
-        if manifest_file_subject is not None:
-            cls.add(graph, manifest_file_subject, OKH.okhv, project.okhv)
-            cls.add(graph, module_subject, OKH.hasManifestFile, manifest_file_subject)
-
-        image_subject = cls._add_info_file(
+        image_subject = cls._add_file(
             graph=graph,
             namespace=namespace,
             project=project,
@@ -359,7 +433,7 @@ class RDFSerializer(Serializer):
         if image_subject is not None:
             cls.add(graph, module_subject, OKH.hasImage, image_subject)
 
-        bom_subject = cls._add_info_file(
+        bom_subject = cls._add_file(
             graph=graph,
             namespace=namespace,
             project=project,
@@ -370,7 +444,7 @@ class RDFSerializer(Serializer):
         if bom_subject is not None:
             cls.add(graph, module_subject, OKH.hasBoM, bom_subject)
 
-        manufacturing_instructions_subject = cls._add_info_file(
+        manufacturing_instructions_subject = cls._add_file(
             graph=graph,
             namespace=namespace,
             project=project,
@@ -381,7 +455,7 @@ class RDFSerializer(Serializer):
         if manufacturing_instructions_subject is not None:
             cls.add(graph, module_subject, OKH.hasManufacturingInstructions, manufacturing_instructions_subject)
 
-        user_manual_subject = cls._add_info_file(
+        user_manual_subject = cls._add_file(
             graph=graph,
             namespace=namespace,
             project=project,

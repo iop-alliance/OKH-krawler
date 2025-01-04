@@ -7,6 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from krawl.log import get_child_logger
+from krawl.model.hosting_unit import HostingUnitId
 from krawl.normalizer.file_handler import FileHandler
 from krawl.util import extract_path
 
@@ -52,7 +53,7 @@ class GitHubFileHandler(FileHandler):
         # log.warning('XXX Extracted slug is: "%s"', slug)
         return slug
 
-    def gen_proj_info(self, manifest_raw: dict) -> dict:
+    def gen_proj_info(self, hosting_unit_id: HostingUnitId, manifest_raw: dict) -> dict:
         repo_url = manifest_raw.get("repo")
         if repo_url is None:
             raise ValueError("No repo URL in manifest")
@@ -74,7 +75,7 @@ class GitHubFileHandler(FileHandler):
         # log.warning('XXX Extracted version is: "%s"', version)
         return not self._is_dev_branch(proj_info, version)
 
-    def to_url(self, proj_info: dict, relative_path: str, frozen: bool) -> str:
+    def to_url(self, proj_info: dict, relative_path: str | Path, frozen: bool) -> str:
         base = BASE_URL
         slug = proj_info['slug']
         version = proj_info['version']

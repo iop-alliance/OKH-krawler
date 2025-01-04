@@ -10,14 +10,18 @@ import mimetypes
 import pathlib
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import cast
 
 from krawl.dict_utils import DictUtils
+from krawl.recursive_type import RecDict
 from krawl.fetcher.result import FetchResult
+from krawl.fetcher.thingiverse import Hit, ThingFile
 from krawl.file_formats import get_type_from_extension
 from krawl.log import get_child_logger
 from krawl.model import licenses
 from krawl.model.data_set import DataSet
 from krawl.model.file import File
+from krawl.model.agent import Person
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer, strip_html
 
@@ -57,7 +61,7 @@ class ThingiverseNormalizer(Normalizer):
         mimetypes.init()
 
     def normalize(self, fetch_result: FetchResult) -> Project:
-        raw: dict = fetch_result.data.content
+        raw: Hit = cast(object, fetch_result.data.content)
         data_set: DataSet = fetch_result.data_set
 
         data_set.hosting_unit_id = data_set.hosting_unit_id.derive(
@@ -66,22 +70,24 @@ class ThingiverseNormalizer(Normalizer):
         )
         fetch_result.data_set = data_set
 
-        fetch_result.data_set.crawling_meta.created_at = datetime.fromisoformat(raw['added'])
-        fetch_result.data_set.crawling_meta.last_visited = raw[
-            "lastVisited"]  # TODO Maybe not a good idea to set this like that?
+        fetch_result.data_set.crawling_meta.created_at = raw['added'] #datetime.fromisoformat(raw['added'])
+        fetch_result.data_set.crawling_meta.last_visited = raw["lastVisited"] #datetime.fromisoformat(raw["lastVisited"])  # TODO Maybe not a good idea to set this like that?
+
+        creator = Person(name=raw['creator']['first_name'] + ' ' + raw['creator']['last_name'],
+                         url=raw['creator']['public_url'])
         project = Project(name=raw['name'],
                           repo=raw['public_url'],
-                          version=raw['modified'],
+                          version=str(raw['modified']),
                           license=self._license(raw),
-                          licensor=data_set.hosting_unit_id.owner)
+                          licensor=[creator])
         project.function = self._function(raw)
         project.documentation_language = self._language(project.function)
         project.technology_readiness_level = "OTRL-4"
         project.documentation_readiness_level = "ODRL-3"
 
         project.image = self._images(project, raw)
-        project.export = [self._file(project, file) for file in self._filter_files_by_category(raw["files"], "export")]
-        project.source = [self._file(project, file) for file in self._filter_files_by_category(raw["files"], "source")]
+        project.export = [self._file(file) for file in self._filter_files_by_category(raw["files"], "export")]
+        project.source = [self._file(file) for file in self._filter_files_by_category(raw["files"], "source")]
         return project
 
     @classmethod
@@ -170,22 +176,21 @@ class ThingiverseNormalizer(Normalizer):
         return images
 
     @classmethod
-    def _file(cls, project: Project, raw_file: dict) -> File | None:
-        if raw_file is None:
-            return None
-
-        type = mimetypes.guess_type(raw_file.get("direct_url"))
+    def _file(cls, thing_file: ThingFile) -> File:
+        direct_url: str | None = thing_file.get("direct_url")
+        type = mimetypes.guess_type(direct_url) if direct_url else (None, None)
 
         file = File()
-        file.path = raw_file.get("direct_url")
-        file.name = raw_file.get("name")
+        file.path = None
+        file.name = thing_file.get("name")
         # file.mime_type = type[0] if type[0] is not None else "text/plain"
         file.mime_type = type[0]  # might be None
-        file.url = raw_file.get("public_url")
+        file.url = direct_url
         file.frozen_url = None
-        file.created_at = datetime.strptime(raw_file.get("date"), "%Y-%m-%d %H:%M:%S")
-        file.last_changed = datetime.strptime(raw_file.get("date"), "%Y-%m-%d %H:%M:%S")
+        thing_file_date = thing_file.get("date")
+        file.created_at = datetime.strptime(thing_file_date, "%Y-%m-%d %H:%M:%S") if thing_file_date else None
+        file.last_changed = file.created_at
         file.last_visited = datetime.now(timezone.utc)
-        file.license = project.license
-        file.licensor = project.licensor
+        file.license = None
+        file.licensor = None
         return file

@@ -20,7 +20,7 @@ from krawl.fetcher.util import convert_okh_v1_dict_to_losh
 from krawl.log import get_child_logger
 from krawl.model.data_set import DataSet
 from krawl.model.file import File
-from krawl.model.hosting_unit import HostingUnitIdForge
+from krawl.model.hosting_unit import HostingUnitId, HostingUnitIdForge
 from krawl.model.licenses import get_by_id_or_name as get_license
 from krawl.model.outer_dimensions import OuterDimensions, OuterDimensionsOpenScad
 from krawl.model.part import Part
@@ -29,22 +29,137 @@ from krawl.model.software import Software
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.normalizer import Normalizer
 from krawl.normalizer.file_handler import FileHandler
+from krawl.recursive_type import RecDict
 from krawl.util import extract_path as krawl_util_extract_path
 from krawl.util import is_url
 
 log = get_child_logger("manifest")
 
 
+class _ProjFilesInfo:
+
+    def __init__(self,
+                 hosting_unit_id: HostingUnitId,
+                 manifest_contents_raw: RecDict,
+                 file_handler: FileHandler | None = None):
+        self._file_handler = file_handler
+        self._fh_proj_info: dict | None = None
+        self._hosting_unit_id: HostingUnitId = hosting_unit_id
+
+        if self._file_handler is not None:
+            self._fh_proj_info = self._file_handler.gen_proj_info(self._hosting_unit_id, manifest_contents_raw)
+
+    def _files(self, raw_files: dict) -> list[File]:
+        if raw_files is None or not isinstance(raw_files, list):
+            return []
+        files = []
+        for raw_file in raw_files:
+            files.append(self._file(raw_file))
+        return files
+
+    def _pre_parse_file(self, raw_file: str) -> dict:
+        frozen_url: str | None
+        if is_url(raw_file):
+            # is URL
+            url = raw_file
+            if self._file_handler is None:
+                # NOTE We assume, that all platforms we do not support FileHandler for -
+                #      i.e. we do not support frozen and non-frozen URLs for -
+                #      use (only) non-frozen URLs.
+                frozen_url = None
+                path = self.extract_path(url)
+            else:
+                if self._fh_proj_info is None:
+                    raise ParserError(
+                        "Through the code logic of this software, it should be impossible to get here -> programmer error! (1)"
+                    )
+                path = Path(self._file_handler.extract_path(self._fh_proj_info, url))
+                if self._file_handler.is_frozen_url(self._fh_proj_info, url):
+                    frozen_url = url
+                    url = self._file_handler.to_url(self._fh_proj_info, path, False)
+                else:
+                    frozen_url = self._file_handler.to_url(self._fh_proj_info, path, True)
+        else:
+            # is path relative to/within project/repo
+            path = Path(raw_file)
+            if path.is_absolute():
+                raise ValueError(
+                    f"File path contained in manifest for project {self._hosting_unit_id} is absolute, which is invalid!: '{raw_file}'"
+                )
+            # path = str(path)
+            if self._file_handler is None:
+                url = self._hosting_unit_id.create_download_url(path)
+                # NOTE Same as above assume, that all platforms we do not support FileHandler for -
+                frozen_url = None
+            else:
+                if self._fh_proj_info is None:
+                    raise ParserError(
+                        "Through the code logic of this software, it should be impossible to get here -> programmer error! (2"
+                    )
+                url = self._file_handler.to_url(self._fh_proj_info, path, False)
+                frozen_url = self._file_handler.to_url(self._fh_proj_info, path, True)
+        return { # TODO Make this a class (or use an existing one, if we already have it)
+            "path": path,
+            "url": url,
+            "frozen-url": frozen_url,
+        }
+
+    @classmethod
+    def extract_path(cls, url: str) -> Path:
+        """Figures out whether the argument is a URL (or a relative path).
+
+        Args:
+            url (str): Should represent a hosting platforms URL
+        """
+        try:
+            _hosting_id, path = HostingUnitIdForge.from_url(url)
+            return path
+        except ValueError:
+            return krawl_util_extract_path(url)
+
+    def _file(self, raw_file: dict) -> File | None:
+        if raw_file is None:
+            return None
+
+        if isinstance(raw_file, str):
+            try:
+                file_dict = self._pre_parse_file(raw_file)
+            except ValueError as err:
+                log.error(f"Failed pre-parsing raw file: {err}")
+                return None
+        elif isinstance(raw_file, dict):
+            file_dict = raw_file
+        else:
+            raise TypeError(f"Unsupported type for file: {type(raw_file)}")
+
+        file = File()
+        file.path = DictUtils.to_path(file_dict.get("path"))
+        file.name = str(file.path.with_suffix("")) if file.path and file.path.name else None
+        file.mime_type = DictUtils.to_string(file_dict.get("mime-type"))
+
+        url = DictUtils.to_string(file_dict.get("url"))
+        if url and validators.url(url):
+            file.url = url
+        frozen_url = DictUtils.to_string(file_dict.get("frozen-url"))
+        if frozen_url and validators.url(frozen_url):
+            file.frozen_url = frozen_url
+
+        file.created_at = DictUtils.to_string(file_dict.get("created-at"))
+        file.last_changed = DictUtils.to_string(file_dict.get("last-changed"))
+        file.last_visited = datetime.now(timezone.utc)
+        file.license = get_license(DictUtils.to_string(file_dict.get("license")))
+        file.licensor = DictUtils.to_string(file_dict.get("licensor"))
+
+        return file
+
+
 class ManifestNormalizer(Normalizer):
 
-    def __init__(self, file_handler: FileHandler = None):
-        self.file_handler = file_handler
-        self.fh_proj_info: dict = None
-        self.manifest_path: str = None
-        self.file_dl_base_url: str = None
+    def __init__(self, file_handler: FileHandler | None = None):
+        self._file_handler = file_handler
 
     def normalize(self, fetch_result: FetchResult) -> Project:
-        raw: dict = fetch_result.data.content
+        raw: RecDict = fetch_result.data.content
         data_set: DataSet = fetch_result.data_set
 
         okhv = raw.get("okhv", None)
@@ -52,24 +167,24 @@ class ManifestNormalizer(Normalizer):
             # We assume it is OKH v1
             raw = convert_okh_v1_dict_to_losh(raw)
 
-        hosting_unit_id, path = self._evaluate_hosting_id(raw, data_set)
+        hosting_unit_id, _path = self._evaluate_hosting_id(raw, data_set)
 
         log.debug("normalizing manifest of '%s'", hosting_unit_id)
 
-        self.file_dl_base_url = hosting_unit_id.create_download_url(path)
+        # _ProjFilesInfo
+        # self.file_dl_base_url = hosting_unit_id.create_download_url(path)
         self.manifest_path = data_set.crawling_meta.manifest
 
-        if self.file_handler is not None:
-            self.fh_proj_info = self.file_handler.gen_proj_info(raw)
+        pnc = _ProjNormCont(raw, self._file_handler)
 
         project = Project(
             name=DictUtils.to_string(raw.get("name")),
             repo=DictUtils.to_string(raw.get("repo")),
             version=DictUtils.to_string(raw.get("version")),
-            release=DictUtils.to_string(raw.get("release")),
             license=get_license(DictUtils.to_string(raw.get("license"))),
             licensor=DictUtils.to_string(raw.get("licensor")),
         )
+        project.release=DictUtils.to_string(raw.get("release"))
         project.organization = DictUtils.to_string(raw.get("organization"))
         project.readme = self._file(raw.get("readme"))
         project.contribution_guide = self._file(raw.get("contribution-guide"))
@@ -181,108 +296,6 @@ class ManifestNormalizer(Normalizer):
             s.licensor = DictUtils.to_string(rs.get("licensor"))
             software.append(s)
         return software
-
-    def _files(self, raw_files: dict) -> list[File]:
-        if raw_files is None or not isinstance(raw_files, list):
-            return []
-        files = []
-        for raw_file in raw_files:
-            files.append(self._file(raw_file))
-        return files
-
-    @classmethod
-    def extract_path(cls, url: str) -> str:
-        """Figures out whether the argument is a URL (or a relative path).
-
-        Args:
-            url (str): Should represent a hosting platforms URL
-        """
-        try:
-            _hosting_id, path = HostingUnitIdForge.from_url(url)
-            return path
-        except ValueError:
-            return krawl_util_extract_path(url)
-
-    def _pre_parse_file(self, raw_file: str) -> dict:
-        if is_url(raw_file):
-            # is URL
-            if self.file_handler is None:
-                url = raw_file
-                # NOTE We assume, that all platforms we do not support FileHandler for -
-                #      i.e. we do not support frozen and non-frozen URLs for -
-                #      use (only) non-frozen URLs.
-                frozen_url = None
-                path = self.extract_path(url)
-            else:
-                path = self.file_handler.extract_path(self.fh_proj_info, url)
-                if self.file_handler.is_frozen_url(self.fh_proj_info, url):
-                    frozen_url = url
-                    url = self.file_handler.to_url(self.fh_proj_info, path, False)
-                else:
-                    frozen_url = self.file_handler.to_url(self.fh_proj_info, path, True)
-        else:
-            # is path relative to/within project/repo
-            path = Path(raw_file)
-            if path.is_absolute():
-                raise ValueError(
-                    f"Manifest file path at '{self.manifest_path}' is absolute, which is invalid!: '{raw_file}'")
-            path = str(path)
-            if self.file_handler is None:
-                url = f"{self.file_dl_base_url}{path}"
-                # NOTE Same as above assume, that all platforms we do not support FileHandler for -
-                frozen_url = None
-            else:
-                url = self.file_handler.to_url(self.fh_proj_info, path, False)
-                frozen_url = self.file_handler.to_url(self.fh_proj_info, path, True)
-        return { # TODO Make this a class (or use an existing one, if we already have it)
-            "path": path,
-            "url": url,
-            "frozen-url": frozen_url,
-        }
-
-    def _file(self, raw_file: dict) -> File | None:
-        if raw_file is None:
-            return None
-
-        if isinstance(raw_file, str):
-            try:
-                file_dict = self._pre_parse_file(raw_file)
-            except ValueError as err:
-                log.error(f"Failed pre-parsing raw file: {err}")
-                return None
-        elif isinstance(raw_file, dict):
-            file_dict = raw_file
-        else:
-            raise TypeError(f"Unsupported type for file: {type(raw_file)}")
-
-        file = File()
-        file.path = DictUtils.to_path(file_dict.get("path"))
-        # pth = file_dict.get("path")
-        # log.debug(f"pth: {type(pth)} - '{pth}'")
-        # log.debug(f"type(DictUtils.to_path): {type(DictUtils.to_path)}")
-        # log.debug(f"type(DictUtils.to_path): {type(DictUtils.to_path)} - '{DictUtils.to_path}'")
-        # log.debug(f"type(DictUtils.to_path_ZZZ): {type(DictUtils.to_path)}")
-        # log.debug(f"type(DictUtils.clean_name): {type(DictUtils.clean_name)}")
-        # import sys
-        # sys.exit(99)
-        # file.path = DictUtils.to_path(pth)
-        file.name = str(file.path.with_suffix("")) if file.path and file.path.name else None
-        file.mime_type = DictUtils.to_string(file_dict.get("mime-type"))
-
-        url = DictUtils.to_string(file_dict.get("url"))
-        if url and validators.url(url):
-            file.url = url
-        frozen_url = DictUtils.to_string(file_dict.get("frozen-url"))
-        if frozen_url and validators.url(frozen_url):
-            file.frozen_url = frozen_url
-
-        file.created_at = DictUtils.to_string(file_dict.get("created-at"))
-        file.last_changed = DictUtils.to_string(file_dict.get("last-changed"))
-        file.last_visited = datetime.now(timezone.utc)
-        file.license = get_license(DictUtils.to_string(file_dict.get("license")))
-        file.licensor = DictUtils.to_string(file_dict.get("licensor"))
-
-        return file
 
     @classmethod
     def _outer_dimensions(cls, raw_outer_dimensions: Any) -> OuterDimensions | None:
