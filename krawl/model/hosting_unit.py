@@ -307,14 +307,16 @@ class HostingUnitIdWebById(HostingUnitId):
             case HostingId.APPROPEDIA_ORG:
                 # example: <https://www.appropedia.org/Open_Source_Digitally_Replicable_Lab-Grade_Scales>
                 if len(path_parts) > 1:
-                    raise ParserError(f"Project URLs on platform {hosting_id} only have one path part.")
+                    raise ParserError(
+                        f"Project URLs on platform {hosting_id} only have one path part, but got '{url}'.")
                 project_id = path_parts[0]
                 path = None
 
             case HostingId.OSHWA_ORG:
                 # example: <https://certification.oshwa.org/br000010.html>
                 if len(path_parts) > 1:
-                    raise ParserError(f"Project URLs on platform {hosting_id} only have one path part.")
+                    raise ParserError(
+                        f"Project URLs on platform {hosting_id} only have one path part, but got '{url}'.")
                 project_id = path_parts[0].replace(".html", "")
                 path = None
 

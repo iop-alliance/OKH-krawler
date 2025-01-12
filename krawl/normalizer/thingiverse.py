@@ -10,20 +10,21 @@ import mimetypes
 import pathlib
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import cast
 
 from krawl.dict_utils import DictUtils
-from krawl.recursive_type import RecDict
 from krawl.fetcher.result import FetchResult
 from krawl.fetcher.thingiverse import Hit, ThingFile
 from krawl.file_formats import get_type_from_extension
 from krawl.log import get_child_logger
 from krawl.model import licenses
-from krawl.model.data_set import DataSet
-from krawl.model.file import File
 from krawl.model.agent import Person
+# from krawl.model.data_set import DataSet
+from krawl.model.file import File, Image, ImageTag
+from krawl.model.licenses import License
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer, strip_html
+
+# from krawl.recursive_type import RecDict
 
 log = get_child_logger("thingiverse")
 
@@ -61,17 +62,21 @@ class ThingiverseNormalizer(Normalizer):
         mimetypes.init()
 
     def normalize(self, fetch_result: FetchResult) -> Project:
-        raw: Hit = cast(object, fetch_result.data.content)
-        data_set: DataSet = fetch_result.data_set
+        raw: Hit = fetch_result.data.content
 
-        data_set.hosting_unit_id = data_set.hosting_unit_id.derive(
-            owner=self._creator(raw),
-            repo=raw['public_url'],
-        )
-        fetch_result.data_set = data_set
+        # data_set: DataSet = fetch_result.data_set
+        # data_set.hosting_unit_id = data_set.hosting_unit_id.derive(
+        #     owner=self._creator(raw),
+        #     repo=raw['public_url'],
+        # )
+        # fetch_result.data_set = data_set
 
-        fetch_result.data_set.crawling_meta.created_at = raw['added'] #datetime.fromisoformat(raw['added'])
-        fetch_result.data_set.crawling_meta.last_visited = raw["lastVisited"] #datetime.fromisoformat(raw["lastVisited"])  # TODO Maybe not a good idea to set this like that?
+        fetch_result.data_set.crawling_meta.created_at = DictUtils.to_datetime(raw['added'])
+        last_visited = DictUtils.to_datetime(raw["lastVisited"])
+        # last_visited = DictUtils.to_datetime(raw.lastVisited)
+        if last_visited:
+            # TODO Maybe not a good idea to set this like that?
+            fetch_result.data_set.crawling_meta.last_visited = last_visited
 
         creator = Person(name=raw['creator']['first_name'] + ' ' + raw['creator']['last_name'],
                          url=raw['creator']['public_url'])
@@ -119,22 +124,30 @@ class ThingiverseNormalizer(Normalizer):
         return found_files
 
     @classmethod
-    def _license(cls, raw: dict):
-        raw_license = DictUtils.get_key(raw, "license")
-
-        if not raw_license:
+    def _license_from_str(cls, tv_license_str: str | None) -> License | None:
+        if not tv_license_str:
             return None
 
-        if raw_license in ('None', 'Other'):
+        if tv_license_str in ('None', 'Other'):
             return None
 
-        mapped_license = LICENSE_MAPPING.get(raw_license)
+        mapped_license = LICENSE_MAPPING.get(tv_license_str)
 
         if not mapped_license:
             return None
 
         maybe_spdx_id = mapped_license[1]
         return licenses.get_by_id_or_name(maybe_spdx_id)
+
+    @classmethod
+    def _license_raw(cls, raw: dict):
+        raw_license = DictUtils.get_key(raw, "license")
+        return cls._license_from_str(raw_license)
+
+    @classmethod
+    def _license(cls, hit: Hit):
+        raw_license = hit["license"]
+        return cls._license_from_str(raw_license)
 
     @classmethod
     def _function(cls, raw: dict) -> str | None:
@@ -144,9 +157,9 @@ class ThingiverseNormalizer(Normalizer):
         return None
 
     @classmethod
-    def _image(cls, project: Project, images: list[File], url: str, raw: dict) -> None:
+    def _image(cls, project: Project, images: list[Image], url: str, raw: dict) -> None:
         if url and not url == BROKEN_IMAGE_URL:
-            file = File()
+            file = Image()
             file.path = Path(url)
             file.name = raw.get("name", None)
             file.url = url
@@ -157,13 +170,13 @@ class ThingiverseNormalizer(Normalizer):
                 file.created_at = added_fmtd
                 file.last_changed = added_fmtd
             file.last_visited = datetime.now(timezone.utc)
-            file.license = project.license
-            file.licensor = project.licensor
+            # file.license = project.license
+            # file.licensor = project.licensor
             images.append(file)
 
     @classmethod
-    def _images(cls, project: Project, raw: dict) -> list[File]:
-        images = []
+    def _images(cls, project: Project, raw: dict) -> list[Image]:
+        images: list[Image] = []
 
         thumbnail_url = raw.get("thumbnail", None)
         cls._image(project, images, thumbnail_url, raw)
@@ -191,6 +204,6 @@ class ThingiverseNormalizer(Normalizer):
         file.created_at = datetime.strptime(thing_file_date, "%Y-%m-%d %H:%M:%S") if thing_file_date else None
         file.last_changed = file.created_at
         file.last_visited = datetime.now(timezone.utc)
-        file.license = None
-        file.licensor = None
+        # file.license = None
+        # file.licensor = None
         return file

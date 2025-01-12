@@ -6,9 +6,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from krawl.model.agent import Agent, Organization
-from krawl.model.file import File
+from krawl.model.agent import Agent, AgentRef, Organization
+from krawl.model.file import File, Image
 from krawl.model.licenses import License
+from krawl.model.outer_dimensions import OuterDimensions
 from krawl.model.part import Part
 from krawl.model.project_id import ProjectId
 from krawl.model.software import Software
@@ -25,14 +26,14 @@ class Project:  # pylint: disable=too-many-instance-attributes
 
     name: str
     repo: str
-    version: str
     license: License
-    licensor: list[Agent] = field(default_factory=list)
+    licensor: list[Agent | AgentRef] = field(default_factory=list)
+    version: str | None = None
     release: str | None = None
-    organization: Organization | None = None
+    organization: list[Organization | AgentRef] = field(default_factory=list)
     readme: File | None = None
     contribution_guide: File | None = None
-    image: list[File] = field(default_factory=list)
+    image: list[Image] = field(default_factory=list)
     documentation_language: str | None = None
     technology_readiness_level: str | None = None
     documentation_readiness_level: str | None = None
@@ -45,10 +46,13 @@ class Project:  # pylint: disable=too-many-instance-attributes
     bom: File | None = None
     manufacturing_instructions: File | None = None
     user_manual: File | None = None
+    mass: float | None = None
+    outer_dimensions: OuterDimensions | None = None
     part: list[Part] = field(default_factory=list)
     software: list[Software] = field(default_factory=list)
     source: list[File] = field(default_factory=list)
     export: list[File] = field(default_factory=list)
+    auxiliary: list[File] = field(default_factory=list)
 
     @property
     def id(self) -> ProjectId:

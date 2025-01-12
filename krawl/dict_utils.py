@@ -8,6 +8,7 @@ Utilities for dictionaries, useful for manifest containing dicts.\
 from __future__ import annotations
 
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +34,36 @@ class DictUtils:
             return value
         if isinstance(value, (int, float)):
             return str(value)
+        return None
+
+    @staticmethod
+    def to_string_list(value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, set):
+            value = list(value)
+        if isinstance(value, list):
+            items: list[str] = []
+            for itm in value:
+                itm_str = DictUtils.to_string(itm)
+                if itm_str:
+                    items.append(itm_str)
+            return items
+        else:
+            raise TypeError
+
+    @staticmethod
+    def to_datetime(value: Any) -> datetime | None:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            datetime_str: str = value
+            try:
+                return datetime.fromisoformat(datetime_str)
+            except Exception:
+                return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S%z")
+        if isinstance(value, int):
+            return datetime.fromtimestamp(value)
         return None
 
     @staticmethod
@@ -76,15 +107,11 @@ class DictUtils:
         return None
 
     @staticmethod
-    def clean_name(value: Any) -> str | None:
-        if value is None:
-            return None
-        if isinstance(value, str):
-            no_special = re.sub('[^0-9a-zA-Z_]', '_', value)
-            no_double_underscore = re.sub('__+', '_', no_special)
-            trimmed = re.sub('_$', '', re.sub('^_', '', no_double_underscore))
-            return trimmed
-        return None
+    def clean_name(value: str) -> str:
+        no_special = re.sub('[^0-9a-zA-Z_]', '_', value)
+        no_double_underscore = re.sub('__+', '_', no_special)
+        trimmed = re.sub('_$', '', re.sub('^_', '', no_double_underscore))
+        return trimmed
 
     @staticmethod
     def ensure_unique_clean_names(parts: list):

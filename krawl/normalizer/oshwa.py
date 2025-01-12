@@ -7,13 +7,15 @@
 from __future__ import annotations
 
 from krawl.dict_utils import DictUtils
+from krawl.errors import ParserError
 from krawl.fetcher.result import FetchResult
 from krawl.log import get_child_logger
 from krawl.model import licenses
+from krawl.model.agent import Agent, Organization, Person
 from krawl.model.data_set import DataSet
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer, strip_html
-from krawl.recursive_type import RecDictStr
+from krawl.recursive_type import RecDict
 
 log = get_child_logger("oshwa")
 
@@ -46,7 +48,9 @@ CATEGORIES_CPC_MAPPING = {
 class OshwaNormalizer(Normalizer):
 
     def normalize(self, fetch_result: FetchResult) -> Project:
-        raw: RecDictStr = fetch_result.data.content
+        if not isinstance(fetch_result.data.content, dict):
+            raise ParserError("Developer error; Wrong content data-type for OSHWA fetch content")
+        raw: RecDict = fetch_result.data.content
         data_set: DataSet = fetch_result.data_set
         # project.meta.source = meta["id"].hosting_id
         # # project.meta.owner = meta["id"].owner
@@ -55,12 +59,25 @@ class OshwaNormalizer(Normalizer):
 
         log.debug("normalizing project metadata '%s'", data_set.hosting_unit_id)
         log.debug("project metadata '%s'", raw)
+
+        # licensor_str: str = DictUtils.get_key(raw, "responsibleParty")
+        responsiblePartyType: str | None = raw.get('responsiblePartyType')
+        licensor_cls: type[Agent]
+        match responsiblePartyType:
+            case "Company" | "Organization":
+                licensor_cls = Organization
+            case "Individual" | None:
+                licensor_cls = Person
+            case _:
+                raise ParserError(f"Unknown OSHWA ResponsiblePartyType: {responsiblePartyType}")
+        licensor = licensor_cls(name=raw['responsibleParty'], email=raw.get('publicContact'))
+
         project = Project(
             name=DictUtils.get_key(raw, "projectName"),
             repo=self._repo(raw),
-            version=DictUtils.get_key(raw, "projectVersion", default="1.0.0"),  # TODO Bad default
             license=self._license(raw),
-            licensor=DictUtils.get_key(raw, "responsibleParty"),
+            licensor=[licensor],
+            version=DictUtils.to_string(raw.get("projectVersion")),
         )
 
         project.function = self._function(raw)
@@ -105,28 +122,32 @@ class OshwaNormalizer(Normalizer):
         return None
 
     @classmethod
-    def _license(cls, raw: dict):
+    def _license(cls, raw: dict) -> licenses.License:
         raw_license = DictUtils.get_key(raw, "hardwareLicense")
 
         if not raw_license:
-            return None
+            return licenses.__unknown_license__
 
         if raw_license == "Other":
             raw_license = DictUtils.get_key(raw, "documentationLicense")
 
         if not raw_license or raw_license in ["None", "Other"]:
-            return None
+            return licenses.__unknown_license__
 
-        return licenses.get_by_id_or_name(LICENSE_MAPPING.get(raw_license, raw_license))
+        mapped_license: licenses.License | None = licenses.get_by_id_or_name(
+            LICENSE_MAPPING.get(raw_license, raw_license))
+        if mapped_license:
+            return mapped_license
+        return licenses.__unknown_license__
 
     @classmethod
-    def _function(cls, raw: dict):
+    def _function(cls, raw: dict) -> str | None:
         raw_description = raw.get("projectDescription")
         if not raw_description:
-            return ""
+            return None
         description = strip_html(raw_description).strip().replace("\r\n", "\n")
         return description
 
     @classmethod
-    def _repo(cls, raw: dict):
+    def _repo(cls, raw: dict) -> str:
         return f"https://certification.oshwa.org/{raw['oshwaUid'].lower()}.html"

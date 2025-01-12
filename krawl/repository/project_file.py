@@ -10,6 +10,7 @@ from pathlib import Path
 from pathvalidate import sanitize_filename
 
 from krawl.config import Config
+from krawl.fetcher.result import FetchResult
 from krawl.log import get_child_logger
 from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
@@ -80,13 +81,13 @@ class ProjectRepositoryFile(ProjectRepository):
     #         id = str(p.relative_to(self._workdir).with_suffix(""))
     #         yield self.load(id)
 
-    def store(self, project: Project) -> None:
+    def store(self, fetch_result: FetchResult, project: Project) -> None:
         for format in self._formats:
             serializer, extension = self.FORMATS[format]
             file_path = self.path_for_id(project.id, extension)
             log.debug("saving '%s' to '%s'", project.id, str(file_path))
             file_path.parent.mkdir(parents=True, exist_ok=True)
-            serialized = serializer.serialize(project)
+            serialized = serializer.serialize(fetch_result, project)
             file_path.write_text(serialized)
 
     # def contains(self, id: str) -> bool:

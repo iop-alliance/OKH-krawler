@@ -8,6 +8,7 @@ from __future__ import annotations
 from collections.abc import Generator
 from enum import StrEnum
 
+from krawl.fetcher.result import FetchResult
 from krawl.model.hosting_id import HostingId
 from krawl.model.project import Project
 from krawl.model.project_id import ProjectId
@@ -30,7 +31,8 @@ class ProjectRepository:
     def load_all(self, id: ProjectId) -> Generator[Project]:
         raise NotImplementedError()
 
-    def store(self, project: Project) -> None:
+    # def store(self, project: Project) -> None:
+    def store(self, fetch_result: FetchResult, project: Project) -> None:
         raise NotImplementedError()
 
     def contains(self, id: ProjectId) -> bool:

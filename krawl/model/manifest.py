@@ -4,9 +4,14 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from enum import StrEnum
 
+import tomli
+import yaml
+
+from krawl.fetcher.util import recuperate_invalid_yaml_manifest
 from krawl.recursive_type import RecDict
 
 
@@ -35,6 +40,15 @@ class ManifestFormat(StrEnum):
             return ["yaml"]
         return []
 
+    def is_rdf(self) -> bool:
+        match self:
+            case ManifestFormat.TURTLE | ManifestFormat.JSON_LD:
+                return True
+            case ManifestFormat.JSON | ManifestFormat.TOML | ManifestFormat.YAML:
+                return False
+            case _:
+                raise NotImplementedError
+
 
 @dataclass(slots=True, frozen=True)
 class Manifest:
@@ -45,3 +59,22 @@ class Manifest:
 
     def is_valid(self) -> bool:
         return bool(self.content) and bool(self.format)
+
+    def as_dict(self) -> RecDict:
+        if self.format.is_rdf():
+            raise ValueError(f"Can't convert format '{self.format}' to dict; it is already RDF.")
+        if isinstance(self.content, dict):
+            return self.content
+        content_bytes_orig = self.content.encode('utf-8') if isinstance(self.content, str) else self.content
+        deserialized: RecDict
+        match self.format:
+            case ManifestFormat.JSON:
+                deserialized = json.loads(content_bytes_orig)
+            case ManifestFormat.TOML:
+                deserialized = tomli.loads(content_bytes_orig.decode('utf-8'))
+            case ManifestFormat.YAML:
+                content_bytes_valid = recuperate_invalid_yaml_manifest(content_bytes_orig)
+                deserialized = yaml.safe_load(content_bytes_valid)
+            case _:
+                raise NotImplementedError
+        return deserialized

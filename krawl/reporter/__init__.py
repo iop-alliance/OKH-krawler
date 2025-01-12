@@ -10,7 +10,6 @@ from enum import StrEnum
 from krawl.fetcher.event import FailedFetch, FetchListener
 from krawl.fetcher.result import FetchResult
 from krawl.model.hosting_unit import HostingUnitId
-from krawl.model.project import Project
 
 
 class Status(StrEnum):
@@ -29,7 +28,7 @@ class Reporter(FetchListener):
             hosting_unit_id: HostingUnitId,
             status: Status,
             reasons: list[str] | None = None,
-            project: Project | None = None) -> None:
+            fetch_result: FetchResult | None = None) -> None:
         """Add an entry to the report."""
         raise NotImplementedError()
 
@@ -41,7 +40,7 @@ class Reporter(FetchListener):
         self.close()
 
     def fetched(self, fetch_result: FetchResult) -> None:
-        self.add(fetch_result.data_set.hosting_unit_id, Status.OK)
+        self.add(fetch_result.data_set.hosting_unit_id, Status.OK, fetch_result=fetch_result)
 
     def failed_fetch(self, failed_fetch: FailedFetch) -> None:
         self.add(failed_fetch.hosting_unit_id, Status.FAILED, [str(failed_fetch.error)])

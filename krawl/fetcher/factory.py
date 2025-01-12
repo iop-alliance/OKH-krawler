@@ -12,12 +12,17 @@ from krawl.config import Config
 from krawl.errors import FetcherError
 from krawl.fetcher import Fetcher, appropedia, github, oshwa, thingiverse
 from krawl.fetcher.event import FetchListener
+# from krawl.cli.command.fetch import NormalizationListener
 from krawl.fetcher.result import FetchResult
 from krawl.model.hosting_id import HostingId
 from krawl.model.project_id import ProjectId
+from krawl.normalizer.factory import NormalizerFactory
 from krawl.repository import FetcherStateRepository
 from krawl.repository.fetch_result_repository import FetchResultRepository
 from krawl.repository.fetch_result_repository_workdir import FetchResultRepositoryWorkdir
+from krawl.serializer.factory import Serializer
+from krawl.serializer.rdf_serializer import RDFSerializer
+from krawl.serializer.toml_serializer import TOMLSerializer
 
 _fetcher_classes = {
     appropedia.__hosting_id__: appropedia.AppropediaFetcher,
@@ -25,6 +30,22 @@ _fetcher_classes = {
     oshwa.__hosting_id__: oshwa.OshwaFetcher,
     thingiverse.__hosting_id__: thingiverse.ThingiverseFetcher,
 }
+
+
+class NormalizationListener(FetchListener):
+
+    def __init__(self, fetch_result_repository: FetchResultRepository) -> None:
+        self.normalizer_factory = NormalizerFactory()
+        self.serializer_toml: Serializer = TOMLSerializer()
+        self.serializer_rdf: Serializer = RDFSerializer()
+        self.fetch_result_repository: FetchResultRepository = fetch_result_repository
+
+    def fetched(self, fetch_result: FetchResult) -> None:
+        project = self.normalizer_factory.get(
+            fetch_result.data_set.hosting_unit_id.hosting_id()).normalize(fetch_result)
+        toml: str = self.serializer_toml.serialize(fetch_result, project)
+        ttl: str = self.serializer_rdf.serialize(fetch_result, project)
+        self.fetch_result_repository.store_final(fetch_result, toml, ttl)
 
 
 class FetcherFactory:
@@ -101,9 +122,11 @@ class FetcherFactory:
 
     def _init_fetchers(self, repository_config: Config, state_repository, fetchers_config: Config,
                        enabled: list[HostingId]):
-        fetch_listener: FetchResultRepository = FetchResultRepositoryWorkdir(repository_config.file)
+        fetch_result_repository: FetchResultRepository = FetchResultRepositoryWorkdir(repository_config.file)
         for hosting_id, fetcher_class in _fetcher_classes.items():
             if hosting_id in enabled:
                 fetcher = fetcher_class(state_repository, fetchers_config[hosting_id])
-                fetcher.add_fetch_listener(fetch_listener)
+                fetcher.add_fetch_listener(fetch_result_repository)
                 self._fetchers[hosting_id] = fetcher
+
+        self.add_fetch_listener(NormalizationListener(fetch_result_repository))

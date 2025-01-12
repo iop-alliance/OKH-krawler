@@ -15,16 +15,21 @@ from krawl.errors import ParserError
 class OuterDimensionsOpenScad:
     """OuterDimensions data model, using the deprecated OpenSCAD model."""
 
-    openscad: str = None  # example: "cube(size = [400,350,150])"
-    unit: str = None  # example: "mm"
+    openscad: str  # example: "cube(size = [400,350,150])"
+    unit: str  # example: "mm"
 
     @classmethod
-    def from_dict(cls, data: dict) -> OuterDimensions:
+    def from_dict(cls, data: dict) -> OuterDimensionsOpenScad:
         if data is None:
             return None
-        outer_dimensions = cls()
-        outer_dimensions.openscad = DictUtils.to_float(data.get("openscad", None))
-        outer_dimensions.unit = DictUtils.to_float(data.get("unit", None))
+        openscad = DictUtils.to_string(data.get("openscad", None))
+        unit = DictUtils.to_string(data.get("unit", None))
+        if not openscad or not unit:
+            raise ParserError("Both openscad and")
+        outer_dimensions = cls(
+            openscad=openscad,
+            unit=unit,
+        )
         if not outer_dimensions.is_valid():
             raise ParserError(f"Not all required fields for {cls} are present: {data}")
         return outer_dimensions
@@ -38,20 +43,24 @@ class OuterDimensions:
     """OuterDimensions data model.
     All dimensions are measured in [mm] (millimeter)."""
 
-    width: float = None
-    height: float = None
-    depth: float = None
+    width: float
+    height: float
+    depth: float
 
     @classmethod
     def from_dict(cls, data: dict) -> OuterDimensions:
         if data is None:
             return None
-        outer_dimensions = cls()
-        outer_dimensions.width = DictUtils.to_float(data.get("width", None))
-        outer_dimensions.height = DictUtils.to_float(data.get("height", None))
-        outer_dimensions.depth = DictUtils.to_float(data.get("depth", None))
-        if not outer_dimensions.is_valid():
+        width = DictUtils.to_float(data.get("width", None))
+        height = DictUtils.to_float(data.get("height", None))
+        depth = DictUtils.to_float(data.get("depth", None))
+        if not width or not height or not depth:
             raise ParserError(f"Not all required fields for {cls} are present: {data}")
+        outer_dimensions = cls(
+            width=width,
+            height=height,
+            depth=depth,
+        )
         return outer_dimensions
 
     @classmethod
@@ -61,8 +70,8 @@ class OuterDimensions:
         dims_str = dims_bare_str.split(",")
         if len(dims_str) != 3:
             raise ParserError(f"Unknown OpenSCAD shape: {old.openscad}")
-        multiplier: int = None
-        match old.unit:
+        multiplier: int
+        match old.unit.lower():
             case "mm" | "millimeter":
                 multiplier = 1
             case "cm" | "centimeter":
@@ -72,11 +81,8 @@ class OuterDimensions:
             case _:
                 raise ParserError(f"Unknown OpenSCAD unit: {old.unit}")
         dims_bare = [float(dim) * multiplier for dim in dims_str]
-        cls(
+        return cls(
             width=dims_bare[0],
             height=dims_bare[1],
             depth=dims_bare[2],
         )
-
-    def is_valid(self) -> bool:
-        return (self.width and self.height and self.depth)

@@ -14,6 +14,10 @@ from krawl.errors import SerializerError
 def _orjson_manual_type_mapper(value) -> str:
     if isinstance(value, Path):
         return str(value)
+    if isinstance(value, set):
+        value = list(value)
+        value.sort()
+        return value
     raise TypeError
 
 

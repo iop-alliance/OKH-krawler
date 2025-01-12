@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-import toml
+import tomli
 
 from krawl.errors import DeserializerError
 from krawl.fetcher.result import FetchResult
@@ -29,7 +29,7 @@ class TOMLDeserializer(Deserializer):
         try:
             if isinstance(serialized, bytes):
                 serialized = serialized.decode(encoding="UTF-8", errors="ignore")
-            deserialized = toml.loads(serialized)
+            deserialized = tomli.loads(serialized)
         except Exception as err:
             raise DeserializerError(f"failed to deserialize TOML: {err}") from err
 
@@ -37,4 +37,4 @@ class TOMLDeserializer(Deserializer):
             raise DeserializerError("invalid format")
         if enrich:
             deserialized.update(enrich)
-        return normalizer.normalize(deserialized)
+        return (fetch_result, normalizer.normalize(deserialized))

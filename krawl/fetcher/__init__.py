@@ -109,7 +109,7 @@ class Fetcher:
         """
         raise NotOverriddenError()
 
-    def fetch_all(self, start_over=True) -> Generator[FetchResult]:
+    def fetch_all(self, start_over: bool = True) -> Generator[FetchResult]:
         """Find and fetch metadata of all relevant projects on the platform.
 
         Args:
@@ -118,6 +118,7 @@ class Fetcher:
                 Defaults to True.
 
         Yields:
-            Generator[FetchResult]: The next project found and fetched.
+            FetchResult
+                The next project found and fetched
         """
         raise NotOverriddenError()

@@ -78,9 +78,9 @@ class FetcherXCommand(KrawlCommand):
             reporter = FileReporter(report_path)
         else:
             reporter = DummyReporter()
+        fetcher_factory.add_fetch_listener(reporter)
 
         # perform the deed
-        fetcher_factory.add_fetch_listener(reporter)
         fetcher = fetcher_factory.get(self._hosting_id)
         log.info("fetching all projects from %s", self._hosting_id)
         for _fetch_result in fetcher.fetch_all(start_over=start_over):

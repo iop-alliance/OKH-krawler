@@ -7,18 +7,18 @@ from __future__ import annotations
 from ..model.hosting_id import HostingId, HostingType
 from . import Normalizer, github, manifest, oshwa, thingiverse
 
+_normalizers = {
+    HostingType.APPROPEDIA: manifest.ManifestNormalizer(),
+    HostingType.GIT_HUB: manifest.ManifestNormalizer(github.GitHubFileHandler()),
+    HostingType.OSHWA: oshwa.OshwaNormalizer(),
+    HostingType.THINGIVERSE: thingiverse.ThingiverseNormalizer(),
+}
+
 
 class NormalizerFactory:
 
-    def create(self, hosting_id: HostingId) -> Normalizer:
-        match hosting_id.type():
-            case HostingType.APPROPEDIA:
-                return manifest.ManifestNormalizer()
-            case HostingType.GIT_HUB:
-                return manifest.ManifestNormalizer(github.GitHubFileHandler())
-            case HostingType.OSHWA:
-                return oshwa.OshwaNormalizer()
-            case HostingType.THINGIVERSE:
-                return thingiverse.ThingiverseNormalizer()
-            case _:
-                raise NotImplementedError(f"Missing `create()` impl for enum variant {hosting_id.type()}")
+    def get(self, hosting_id: HostingId) -> Normalizer:
+        normalizer = _normalizers.get(hosting_id.type())
+        if normalizer:
+            return normalizer
+        raise NotImplementedError(f"Missing `get()` impl for enum variant {hosting_id.type()}")

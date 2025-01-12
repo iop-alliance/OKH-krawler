@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
+from krawl.fetcher.result import FetchResult
 from krawl.model.hosting_unit import HostingUnitId
-from krawl.model.project import Project
 from krawl.reporter import Reporter, Status
 
 
@@ -17,7 +17,7 @@ class DummyReporter(Reporter):
             hosting_unit_id: HostingUnitId,
             status: Status,
             reasons: list[str] | None = None,
-            project: Project | None = None) -> None:
+            fetch_result: FetchResult | None = None) -> None:
         pass
 
     def close(self) -> None:

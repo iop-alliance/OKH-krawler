@@ -18,15 +18,15 @@ from krawl.errors import ParserError
 from krawl.fetcher.result import FetchResult
 from krawl.fetcher.util import convert_okh_v1_dict_to_losh
 from krawl.log import get_child_logger
+from krawl.model.agent import Agent, AgentRef, Organization, Person
 from krawl.model.data_set import DataSet
-from krawl.model.file import File
+from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_unit import HostingUnitId, HostingUnitIdForge
 from krawl.model.licenses import get_by_id_or_name as get_license
 from krawl.model.outer_dimensions import OuterDimensions, OuterDimensionsOpenScad
 from krawl.model.part import Part
 from krawl.model.project import Project
 from krawl.model.software import Software
-from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.normalizer import Normalizer
 from krawl.normalizer.file_handler import FileHandler
 from krawl.recursive_type import RecDict
@@ -49,12 +49,12 @@ class _ProjFilesInfo:
         if self._file_handler is not None:
             self._fh_proj_info = self._file_handler.gen_proj_info(self._hosting_unit_id, manifest_contents_raw)
 
-    def _files(self, raw_files: dict) -> list[File]:
+    def files(self, raw_files: dict) -> list[File]:
         if raw_files is None or not isinstance(raw_files, list):
             return []
         files = []
         for raw_file in raw_files:
-            files.append(self._file(raw_file))
+            files.append(self.file(raw_file))
         return files
 
     def _pre_parse_file(self, raw_file: str) -> dict:
@@ -70,9 +70,9 @@ class _ProjFilesInfo:
                 path = self.extract_path(url)
             else:
                 if self._fh_proj_info is None:
-                    raise ParserError(
-                        "Through the code logic of this software, it should be impossible to get here -> programmer error! (1)"
-                    )
+                    raise ParserError("Through the code logic of this software,"
+                                      " it should be impossible to get here"
+                                      " -> programmer error! (1)")
                 path = Path(self._file_handler.extract_path(self._fh_proj_info, url))
                 if self._file_handler.is_frozen_url(self._fh_proj_info, url):
                     frozen_url = url
@@ -83,9 +83,8 @@ class _ProjFilesInfo:
             # is path relative to/within project/repo
             path = Path(raw_file)
             if path.is_absolute():
-                raise ValueError(
-                    f"File path contained in manifest for project {self._hosting_unit_id} is absolute, which is invalid!: '{raw_file}'"
-                )
+                raise ValueError(f"File path contained in manifest for project {self._hosting_unit_id} is absolute,"
+                                 f" which is invalid!: '{raw_file}'")
             # path = str(path)
             if self._file_handler is None:
                 url = self._hosting_unit_id.create_download_url(path)
@@ -93,31 +92,30 @@ class _ProjFilesInfo:
                 frozen_url = None
             else:
                 if self._fh_proj_info is None:
-                    raise ParserError(
-                        "Through the code logic of this software, it should be impossible to get here -> programmer error! (2"
-                    )
+                    raise ParserError("Through the code logic of this software,"
+                                      " it should be impossible to get here"
+                                      " -> programmer error! (2)")
                 url = self._file_handler.to_url(self._fh_proj_info, path, False)
                 frozen_url = self._file_handler.to_url(self._fh_proj_info, path, True)
-        return { # TODO Make this a class (or use an existing one, if we already have it)
+        return {
             "path": path,
             "url": url,
             "frozen-url": frozen_url,
         }
 
-    @classmethod
-    def extract_path(cls, url: str) -> Path:
-        """Figures out whether the argument is a URL (or a relative path).
+    def extract_path(self, url: str) -> Path | None:
+        """Figures out whether the argument is a URL (or a relative path). # TODO FIXME Wrong!
 
         Args:
             url (str): Should represent a hosting platforms URL
         """
         try:
-            _hosting_id, path = HostingUnitIdForge.from_url(url)
+            _hosting_id, path = type(self._hosting_unit_id).from_url(url)
             return path
-        except ValueError:
+        except (ValueError, ParserError):
             return krawl_util_extract_path(url)
 
-    def _file(self, raw_file: dict) -> File | None:
+    def file(self, raw_file: dict | str | None) -> File | None:
         if raw_file is None:
             return None
 
@@ -144,11 +142,11 @@ class _ProjFilesInfo:
         if frozen_url and validators.url(frozen_url):
             file.frozen_url = frozen_url
 
-        file.created_at = DictUtils.to_string(file_dict.get("created-at"))
-        file.last_changed = DictUtils.to_string(file_dict.get("last-changed"))
+        file.created_at = DictUtils.to_datetime(file_dict.get("created-at"))
+        file.last_changed = DictUtils.to_datetime(file_dict.get("last-changed"))
         file.last_visited = datetime.now(timezone.utc)
-        file.license = get_license(DictUtils.to_string(file_dict.get("license")))
-        file.licensor = DictUtils.to_string(file_dict.get("licensor"))
+        # file.license = get_license(DictUtils.to_string(file_dict.get("license")))
+        # file.licensor = DictUtils.to_string(file_dict.get("licensor"))
 
         return file
 
@@ -158,8 +156,14 @@ class ManifestNormalizer(Normalizer):
     def __init__(self, file_handler: FileHandler | None = None):
         self._file_handler = file_handler
 
+    def extract_required_str(self, raw: dict, key: str) -> str:
+        value: str | None = DictUtils.to_string(raw.get(key))
+        if not value:
+            raise ParserError(f"Manifest is missing required key: {key}")
+        return value
+
     def normalize(self, fetch_result: FetchResult) -> Project:
-        raw: RecDict = fetch_result.data.content
+        raw: RecDict = fetch_result.data.as_dict()
         data_set: DataSet = fetch_result.data_set
 
         okhv = raw.get("okhv", None)
@@ -167,68 +171,73 @@ class ManifestNormalizer(Normalizer):
             # We assume it is OKH v1
             raw = convert_okh_v1_dict_to_losh(raw)
 
-        hosting_unit_id, _path = self._evaluate_hosting_id(raw, data_set)
+        # hosting_unit_id, _path = self._evaluate_hosting_id(raw, data_set)
+        hosting_unit_id = fetch_result.data_set.hosting_unit_id
 
         log.debug("normalizing manifest of '%s'", hosting_unit_id)
 
         # _ProjFilesInfo
         # self.file_dl_base_url = hosting_unit_id.create_download_url(path)
-        self.manifest_path = data_set.crawling_meta.manifest
+        # self.manifest_path = data_set.crawling_meta.manifest
 
-        pnc = _ProjNormCont(raw, self._file_handler)
+        self.files_info = _ProjFilesInfo(hosting_unit_id, raw, self._file_handler)
 
+        license = get_license(self.extract_required_str(raw, "license"))
+        licensor = self._agents(raw.get("license"))
+        if not license:
+            raise ParserError("Missing required key 'license' in manifest (or parsing of it failed)")
         project = Project(
-            name=DictUtils.to_string(raw.get("name")),
-            repo=DictUtils.to_string(raw.get("repo")),
-            version=DictUtils.to_string(raw.get("version")),
-            license=get_license(DictUtils.to_string(raw.get("license"))),
-            licensor=DictUtils.to_string(raw.get("licensor")),
+            name=self.extract_required_str(raw, "name"),
+            repo=self.extract_required_str(raw, "repo"),
+            license=license,
+            licensor=licensor,
         )
-        project.release=DictUtils.to_string(raw.get("release"))
-        project.organization = DictUtils.to_string(raw.get("organization"))
-        project.readme = self._file(raw.get("readme"))
-        project.contribution_guide = self._file(raw.get("contribution-guide"))
-        project.image = self._files(raw.get("image"))
+        project.version = DictUtils.to_string(raw.get("version"))
+        project.release = DictUtils.to_string(raw.get("release"))
+        project.organization = self._organizations(raw.get("organization"))
+        project.readme = self.files_info.file(raw.get("readme"))
+        project.contribution_guide = self.files_info.file(raw.get("contribution-guide"))
+        project.image = self._images(raw.get("image"))
         project.function = DictUtils.to_string(raw.get("function"))
         project.documentation_language = self._language(raw.get("documentation-language"))
         project.technology_readiness_level = DictUtils.to_string(raw.get("technology-readiness-level"))
         project.documentation_readiness_level = DictUtils.to_string(raw.get("documentation-readiness-level"))
-        project.attestation = DictUtils.to_string(raw.get("attestation"))
-        project.publication = DictUtils.to_string(raw.get("publication"))
-        project.standard_compliance = DictUtils.to_string(raw.get("standard-compliance"))
+        project.attestation = DictUtils.to_string_list(raw.get("attestation"))
+        project.publication = DictUtils.to_string_list(raw.get("publication"))
+        project.standard_compliance = DictUtils.to_string_list(raw.get("standard-compliance"))
         project.cpc_patent_class = DictUtils.to_string(raw.get("cpc-patent-class"))
         project.tsdc = DictUtils.to_string(raw.get("tsdc"))
-        project.bom = self._file(raw.get("bom"))
-        project.manufacturing_instructions = self._file(raw.get("manufacturing-instructions"))
-        project.user_manual = self._file(raw.get("user-manual"))
+        project.bom = self.files_info.file(raw.get("bom"))
+        project.manufacturing_instructions = self.files_info.file(raw.get("manufacturing-instructions"))
+        project.user_manual = self.files_info.file(raw.get("user-manual"))
         project.outer_dimensions = self._outer_dimensions(raw.get("outer-dimensions"))
         project.part = self._parts(raw.get("part"))
-        project.software = self._software(raw.get("software"))
-        project.sourcing_procedure = raw.get("data-sourcing-procedure", SourcingProcedure.MANIFEST)
+        project.software = self._software(hosting_unit_id, raw.get("software"))
+        # project.sourcing_procedure = raw.get("data-sourcing-procedure", SourcingProcedure.MANIFEST)
 
         return project
 
-    @classmethod
-    def _evaluate_hosting_id(cls, raw: dict, data_set: DataSet) -> (HostingUnitIdForge, Path):
+    def _evaluate_hosting_id(self, raw: dict, data_set: DataSet) -> tuple[HostingUnitId, Path | None]:
         # try to use release URL, if exists
         release_url = DictUtils.to_string(raw.get("release"))
         if release_url:
             try:
-                return HostingUnitIdForge.from_url(release_url)
+                return type(self.files_info._hosting_unit_id).from_url(release_url)
             except ParserError:
                 pass
 
         # try to use repo URL and version info
-        repo_url = DictUtils.to_string(raw.get("repo"))
-        version = DictUtils.to_string(raw.get("version"))
-        if repo_url and version:
-            try:
-                hosting_unit_id = HostingUnitIdForge.from_url_no_path(repo_url)
-                # hosting_id.ref = f"v{version}"
-                hosting_unit_id = hosting_unit_id.derive(ref=version)
-                return hosting_unit_id, None
-            except ValueError:
-                pass
+        if isinstance(self.files_info._hosting_unit_id, HostingUnitIdForge):
+            repo_url = DictUtils.to_string(raw.get("repo"))
+            version = DictUtils.to_string(raw.get("version"))
+            if repo_url and version:
+                try:
+                    hosting_unit_id = HostingUnitIdForge.from_url_no_path(repo_url)
+                    # hosting_id.ref = f"v{version}"
+                    hosting_unit_id = hosting_unit_id.derive(ref=version)
+                    return hosting_unit_id, None
+                except ValueError:
+                    pass
 
         # # try to use meta information
         # try:
@@ -243,7 +252,7 @@ class ManifestNormalizer(Normalizer):
         # except ValueError:
         #     pass
 
-        return None
+        raise ValueError(f"Unable to determine hosting unit ID from raw data: {raw}")
 
     @classmethod
     def _host(cls, raw: dict) -> str | None:
@@ -260,20 +269,136 @@ class ManifestNormalizer(Normalizer):
             return host
         return None
 
+    def _image_slots(self, raw: Any) -> set[ImageSlot]:
+        slots: set[ImageSlot] = set()
+        if raw is None:
+            return slots
+        if isinstance(raw, list):
+            for raw_item in raw:
+                if isinstance(raw_item, str):
+                    tag = ImageSlot(raw_item)
+                    slots.add(tag)
+        return slots
+
+    def _image_tags(self, raw: Any) -> set[ImageTag]:
+        tags: set[ImageTag] = set()
+        if raw is None:
+            return tags
+        if isinstance(raw, list):
+            for raw_item in raw:
+                if isinstance(raw_item, str):
+                    tag = ImageTag(raw_item)
+                    tags.add(tag)
+        return tags
+
+    def _agent(self, raw: Any) -> Agent | AgentRef | None:
+        agent: Person | AgentRef | None = None
+        if not raw:
+            return agent
+        if isinstance(raw, str):
+            agent = Person(name=raw)
+        elif isinstance(raw, dict):
+            if "iri" in raw:
+                agent = AgentRef(
+                    iri=raw["iri"],
+                    type=raw["type"],
+                )
+            else:
+                agent = Person(
+                    name=raw["name"],
+                    email=raw["email"],
+                    # organization=raw["organization"],
+                    url=raw["url"],
+                )
+        return agent
+
+    def _agents(self, raw: Any) -> list[Agent | AgentRef]:
+        agents: list[Agent | AgentRef] = []
+        if raw is None:
+            return agents
+        if isinstance(raw, list):
+            for raw_item in raw:
+                agent = self._agent(raw_item)
+                if agent:
+                    agents.append(agent)
+        else:
+            agent = self._agent(raw)
+            if agent:
+                agents.append(agent)
+        return agents
+
+    def _organization(self, raw: Any) -> Organization | AgentRef | None:
+        agent: Organization | AgentRef | None = None
+        if not raw:
+            return agent
+        if isinstance(raw, str):
+            agent = Organization(name=raw)
+        elif isinstance(raw, dict):
+            if "iri" in raw:
+                agent = AgentRef(
+                    iri=raw["iri"],
+                    type=raw["type"],
+                )
+            else:
+                agent = Organization(
+                    name=raw["name"],
+                    email=raw["email"],
+                    # organization=raw["organization"],
+                    url=raw["url"],
+                )
+        return agent
+
+    def _organizations(self, raw: Any) -> list[Organization | AgentRef]:
+        organizations: list[Organization | AgentRef] = []
+        if raw is None:
+            return organizations
+        if isinstance(raw, list):
+            for raw_item in raw:
+                organization = self._organization(raw_item)
+                if organization:
+                    organizations.append(organization)
+        else:
+            organization = self._organization(raw)
+            if organization:
+                organizations.append(organization)
+        return organizations
+
+    def _images(self, raw: Any) -> list[Image]:
+        images: list[Image] = []
+        if raw is None:
+            return images
+        if isinstance(raw, list):
+            for raw_item in raw:
+                image_file = self.files_info.file(raw_item)
+                if not image_file:
+                    continue
+                image = Image.from_file(image_file)
+                if isinstance(raw_item, dict):
+                    image.slots = self._image_slots(raw_item.get("slots"))
+                    image.tags = self._image_tags(raw_item.get("tags"))
+                images.append(image)
+        else:
+            raise TypeError(f"Unsupported type for images: {type(raw)}")
+        return images
+
     def _parts(self, raw_parts: Any) -> list[Part]:
         if raw_parts is None or not isinstance(raw_parts, list):
             return []
         parts = []
         for raw_part in raw_parts:
-            part = Part()
-            part.name = DictUtils.to_string(raw_part.get("name"))
-            part.name_clean = DictUtils.clean_name(part.name)
-            part.image = self._file(raw_part.get("image"))
-            part.source = self._file(raw_part.get("source"))
-            part.export = self._files(raw_part.get("export"))
-            part.license = get_license(DictUtils.to_string(raw_part.get("license")))
-            part.licensor = DictUtils.to_string(raw_part.get("licensor"))
-            part.documentation_language = self._language(raw_part.get("documentation-language"))
+            name = DictUtils.to_string(raw_part.get("name"))
+            if not name:
+                raise ParserError("Part is missing required property 'name'")
+            part = Part(
+                name=name,
+                name_clean=DictUtils.clean_name(name),
+            )
+            part.image = self._images(raw_part.get("image"))
+            part.source = self.files_info.files(raw_part.get("source"))
+            part.export = self.files_info.files(raw_part.get("export"))
+            # part.license = get_license(DictUtils.to_string(raw_part.get("license")))
+            # part.licensor = DictUtils.to_string(raw_part.get("licensor"))
+            # part.documentation_language = self._language(raw_part.get("documentation-language"))
             part.material = DictUtils.to_string(raw_part.get("material"))
             part.manufacturing_process = DictUtils.to_string(raw_part.get("manufacturing-process"))
             part.mass = DictUtils.to_float(raw_part.get("mass"))
@@ -283,18 +408,29 @@ class ManifestNormalizer(Normalizer):
         DictUtils.ensure_unique_clean_names(parts)
         return parts
 
-    def _software(self, raw_software: Any) -> list[Part]:
-        if raw_software is None or not isinstance(raw_software, list):
-            return []
-        software = []
-        for rs in raw_software:
-            s = Software()
-            s.release = DictUtils.to_string(rs.get("name"))
-            s.installation_guide = self._file(rs.get("installation-guide"))
-            s.documentation_language = self._language(rs.get("documentation-language"))
-            s.license = get_license(DictUtils.to_string(rs.get("license")))
-            s.licensor = DictUtils.to_string(rs.get("licensor"))
-            software.append(s)
+    def _software_from_dict(self, hosting_unit_id: HostingUnitId, raw_software: dict) -> Software:
+        installation_guide = self.files_info.file(raw_software.get("installation-guide"))
+        if not installation_guide:
+            raise ParserError(
+                f"Software entry in manifest {hosting_unit_id} is missing required property installation guide")
+        sw = Software(installation_guide=installation_guide)
+        sw.release = DictUtils.to_string(raw_software.get("name"))
+        # sw.documentation_language = self._language(rs.get("documentation-language"))
+        # sw.license = get_license(DictUtils.to_string(rs.get("license")))
+        # sw.licensor = DictUtils.to_string(rs.get("licensor"))
+        return sw
+
+    def _software(self, hosting_unit_id: HostingUnitId, raw_software: Any) -> list[Software]:
+        software: list[Software] = []
+        if raw_software is None:
+            return software
+        if isinstance(raw_software, list):
+            for rs in raw_software:
+                sw = self._software_from_dict(hosting_unit_id, rs)
+                software.append(sw)
+        elif isinstance(raw_software, dict):
+            sw = self._software_from_dict(hosting_unit_id, raw_software)
+            software.append(sw)
         return software
 
     @classmethod

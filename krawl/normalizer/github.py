@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from krawl.dict_utils import DictUtils
 from krawl.log import get_child_logger
 from krawl.model.hosting_unit import HostingUnitId
 from krawl.normalizer.file_handler import FileHandler
@@ -27,19 +28,22 @@ class GitHubFileHandler(FileHandler):
         # self.version = version
         # self.dev_branch = dev_branch
 
-    def _extract_version(self, _proj_info: dict, url: str) -> str:
+    def _extract_version(self, _proj_info: dict, url: str) -> str | None:
         url_path = extract_path(url)
-        path_parts = Path(url_path).relative_to("/").parts
-        # log.warning('XXX Reconcatenated path parts: "%s"', '#'.join(path_parts))
+        if not url_path:
+            return None
+        path_parts = url_path.relative_to("/").parts
+        # log.warning('XXX Re-concatenated path parts: "%s"', '#'.join(path_parts))
         if len(path_parts) <= self.pre_vers_path_parts:
             log.error("Invalid file path in URL for this platform; too few parts: '%s'", url)
             return None
         return path_parts[self.pre_vers_path_parts]
 
-    def gen_proj_info_raw(self, slug: str, version: str, dev_branch: str | None) -> dict:
+    def gen_proj_info_raw(self, slug: str, version: str | None, dev_branch: str | None) -> dict:
         proj_info = {}
         proj_info['slug'] = slug
-        proj_info['version'] = version
+        if version:
+            proj_info['version'] = version
         if dev_branch:
             proj_info['dev_branch'] = dev_branch
         return proj_info
@@ -48,7 +52,9 @@ class GitHubFileHandler(FileHandler):
         if url is None:
             return None
         url_path = extract_path(url)
-        path_parts = Path(url_path).relative_to("/").parts
+        if not url_path:
+            return None
+        path_parts = url_path.relative_to("/").parts
         slug = '/'.join(path_parts[:self.slug_parts])
         # log.warning('XXX Extracted slug is: "%s"', slug)
         return slug
@@ -60,7 +66,7 @@ class GitHubFileHandler(FileHandler):
         slug = self._extract_slug(repo_url)
         if slug is None:
             raise ValueError(f"Unable to extract slug from repo URL '{repo_url}'")
-        version = manifest_raw.get("version")
+        version = DictUtils.to_string(manifest_raw.get("version"))
         dev_branch = None  # TODO Maybe try to extract this from a files URL, if URLs are used ...
         return self.gen_proj_info_raw(slug, version, dev_branch)
 
@@ -72,6 +78,8 @@ class GitHubFileHandler(FileHandler):
 
     def is_frozen_url(self, proj_info: dict, url: str) -> bool:
         version = self._extract_version(proj_info, url)
+        if not version:
+            return False
         # log.warning('XXX Extracted version is: "%s"', version)
         return not self._is_dev_branch(proj_info, version)
 
@@ -84,5 +92,7 @@ class GitHubFileHandler(FileHandler):
 
     def extract_path(self, proj_info: dict, url: str) -> str:
         url_path = extract_path(url)
-        path_parts = Path(url_path).relative_to("/").parts
+        if not url_path:
+            return ""
+        path_parts = url_path.relative_to("/").parts
         return '/'.join(path_parts[self.pre_vers_path_parts:])

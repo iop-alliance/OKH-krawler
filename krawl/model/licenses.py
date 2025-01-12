@@ -33,7 +33,7 @@ class LicenseType(StrEnum):
         return self.name
 
     @classmethod
-    def from_string(cls, type_: str):
+    def from_string(cls, type_: str | None) -> LicenseType:
         type_ = type_ or "unknown"
         type_ = type_.lower()
         try:
@@ -41,13 +41,14 @@ class LicenseType(StrEnum):
         except ValueError:
             return cls.UNKNOWN
 
-    @classmethod
-    def is_open(cls):
-        match cls:
-            case cls.WEAK | cls.STRONG | cls.PERMISSIVE:
+    def is_open(self) -> bool:
+        match self:
+            case self.WEAK | self.STRONG | self.PERMISSIVE:
                 return True
-            case _:
+            case self.UNKNOWN | self.PROPRIETARY:
                 return False
+            case _:
+                raise NotImplementedError
 
 
 @dataclass(slots=True, frozen=True)
@@ -76,7 +77,7 @@ def _normalize_name(name: str) -> str:
     return str(unicodedata.normalize('NFKD', name).casefold().encode('ascii', 'ignore')).strip()
 
 
-def _init_licenses():
+def _init_licenses() -> tuple[dict[str, License], dict[str, str]]:
     """Load the licenses and blocklist the included assets files.
 
     The lists originate from:
@@ -175,11 +176,13 @@ def get_by_id_or_name_required(id_or_name: str) -> License:
     )
 
 
-def get_by_id_or_name(id_or_name: str) -> License | None:
-    try:
-        return get_by_id_or_name_required(id_or_name)
-    except ValueError:
-        return None
+def get_by_id_or_name(id_or_name: str | None) -> License | None:
+    if id_or_name:
+        try:
+            return get_by_id_or_name_required(id_or_name)
+        except ValueError:
+            pass
+    return None
 
 
 def get_spdx_by_id_or_name(id_or_name: str) -> str | None:
@@ -192,3 +195,24 @@ def get_spdx_by_id_or_name(id_or_name: str) -> str | None:
 
 # preload the license on import
 _licenses, _name_to_id = _init_licenses()
+
+__unknown_license__: License = License(
+    _id="LicenseRef-NOASSERTION",
+    name="No license statement is present; This equals legally to All Rights Reserved (== proprietary)",
+    reference_url="https://en.wikipedia.org/wiki/All_rights_reserved",
+    type_=LicenseType.UNKNOWN,
+    is_spdx=False,
+    is_osi_approved=False,
+    is_fsf_libre=False,
+    is_blocked=True,
+)
+__proprietary_license__: License = License(
+    _id="LicenseRef-AllRightsReserved",
+    name="All Rights Reserved (== proprietary)",
+    reference_url="https://en.wikipedia.org/wiki/All_rights_reserved",
+    type_=LicenseType.PROPRIETARY,
+    is_spdx=False,
+    is_osi_approved=False,
+    is_fsf_libre=False,
+    is_blocked=True,
+)

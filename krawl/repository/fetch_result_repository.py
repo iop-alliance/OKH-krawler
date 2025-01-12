@@ -13,11 +13,14 @@ class FetchResultRepository(FetchListener):
 
     CONFIG_SCHEMA: dict
 
-    def store(self, fetch_result: FetchResult) -> None:
+    def store_fetched(self, fetch_result: FetchResult) -> None:
+        raise NotImplementedError()
+
+    def store_final(self, fetch_result: FetchResult, normalized_content: str, rdf_content: str) -> None:
         raise NotImplementedError()
 
     def fetched(self, fetch_result: FetchResult) -> None:
-        self.store(fetch_result)
+        self.store_fetched(fetch_result)
 
     def failed_fetch(self, failed_fetch: FailedFetch) -> None:
         pass

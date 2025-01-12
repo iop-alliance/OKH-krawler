@@ -78,23 +78,22 @@ class HostingId(StrEnum):
     OSHWA_ORG = "oshwa.org"  # "certification.oshwa.org"
     THINGIVERSE_COM = "thingiverse.com"
 
-    @classmethod
-    def type(cls) -> HostingType:
-        match cls:
-            case cls.APPROPEDIA_ORG:
+    def type(self) -> HostingType:
+        match self:
+            case self.APPROPEDIA_ORG:
                 platform_type = HostingType.APPROPEDIA
-            case cls.CODEBERG_ORG:
+            case self.CODEBERG_ORG:
                 platform_type = HostingType.FORGE_JO
-            case cls.GITHUB_COM:
+            case self.GITHUB_COM:
                 platform_type = HostingType.GIT_HUB
-            case cls.GITLAB_COM:
+            case self.GITLAB_COM:
                 platform_type = HostingType.GIT_LAB
-            case cls.OSHWA_ORG:
+            case self.OSHWA_ORG:
                 platform_type = HostingType.OSHWA
-            case cls.THINGIVERSE_COM:
+            case self.THINGIVERSE_COM:
                 platform_type = HostingType.THINGIVERSE
             case _:
-                raise NotImplementedError(f"Missing `cls.type()` impl for enum variant {cls}")
+                raise NotImplementedError(f"Missing `self.type()` impl for enum variant {self}")
 
         return platform_type
 

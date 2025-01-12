@@ -12,12 +12,11 @@ from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from time import sleep
-from typing import TypeAlias
+from typing import TypeAlias, TypedDict
 
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
-from typing import TypedDict
 
 from krawl.config import Config
 from krawl.errors import FetcherError, ParserError
@@ -55,13 +54,15 @@ t_url: TypeAlias = str
 t_string: TypeAlias = str
 t_datetime: TypeAlias = str
 
+
 class ThingiverseThingSearch(TypedDict):
-    "This maps precisely to the Thingiverse API response of a thing - thing search."
+    """This maps precisely to the Thingiverse API response of a thing - thing search."""
     total: int
     hits: list[Hit]
 
+
 class Person(TypedDict):
-    "This maps precisely to the Thingiverse API response of a thing - person."
+    """This maps precisely to the Thingiverse API response of a thing - person."""
     id: int
     name: t_string
     first_name: t_string
@@ -82,39 +83,45 @@ class Person(TypedDict):
     is_featured: bool
     is_verified: bool
 
+
 class ImageSize(TypedDict):
-    "This maps precisely to the Thingiverse API response of a thing - image size."
+    """This maps precisely to the Thingiverse API response of a thing - image size."""
     type: t_string
     size: t_string
     url: t_url
 
+
 class Image(TypedDict):
-    "This maps precisely to the Thingiverse API response of a thing - image."
+    """This maps precisely to the Thingiverse API response of a thing - image."""
     id: int
     url: t_url
     name: t_string
     sizes: list[ImageSize]
     added: t_datetime
 
+
 class Tag(TypedDict):
-    "This maps precisely to the Thingiverse API response of a thing - tag."
+    """This maps precisely to the Thingiverse API response of a thing - tag."""
     name: t_string
     url: t_url
     count: int
     things_url: t_url
     absolute_url: t_string
 
+
 class ZipFile(TypedDict):
-    "This maps precisely to the Thingiverse API response of a thing - zip file."
+    """This maps precisely to the Thingiverse API response of a thing - zip file."""
     name: t_string
     url: t_url
 
+
 class ZipData(TypedDict):
-    "This maps precisely to the Thingiverse API response of a thing - zip data."
+    """This maps precisely to the Thingiverse API response of a thing - zip data."""
     files: list[ZipFile]
 
+
 class Hit(TypedDict):
-    "This maps precisely to the Thingiverse API response of a thing - hit."
+    """This maps precisely to the Thingiverse API response of a thing - hit."""
     id: int
     name: t_string
     thumbnail: t_url
@@ -176,7 +183,7 @@ class Hit(TypedDict):
 
 
 class ThingFile(TypedDict):
-    "This maps precisely to the Thingiverse API response of a file - file."
+    """This maps precisely to the Thingiverse API response of a file - file."""
     id: int
     name: t_string
     size: int
@@ -190,8 +197,6 @@ class ThingFile(TypedDict):
     formatted_size: t_string
     download_count: int
     direct_url: t_url
-
-
 
 
 @dataclass(slots=True)
@@ -288,7 +293,7 @@ class ThingiverseFetcher(Fetcher):
             raw_project["files"] = thing_files
 
             data_set = DataSet(
-                okhv="OKH-LOSHv1.0",  # FIXME Not good, not right# FIXME Not good, not right
+                okhv="OKH-LOSHv1.0",  # FIXME Not good, not right
                 crawling_meta=CrawlingMeta(
                     sourcing_procedure=__sourcing_procedure__,
                     # created_at: datetime = None

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from krawl.model.file import File
+from krawl.model.file import File, Image
 from krawl.model.outer_dimensions import OuterDimensions
 
 
@@ -14,15 +14,16 @@ from krawl.model.outer_dimensions import OuterDimensions
 class Part:  # pylint: disable=too-many-instance-attributes
     """Part data model."""
 
+    name_clean: str
     name: str | None = None
-    name_clean: str = None
-    image: list[File] = field(default_factory=list)
+    image: list[Image] = field(default_factory=list)
     source: list[File] = field(default_factory=list)
     export: list[File] = field(default_factory=list)
     auxiliary: list[File] = field(default_factory=list)
-    license: str = None
-    licensor: str = None
-    documentation_language: str = None
+    # NOTE We don't want these here, as we want to promote file-level licensing information to be handled exclusively with REUSE/SPDX
+    # license: str = None
+    # licensor: str = None
+    # documentation_language: str = None
     material: str | None = None
     manufacturing_process: str | None = None
     mass: float | None = None

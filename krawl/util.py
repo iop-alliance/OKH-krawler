@@ -7,9 +7,24 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from urllib.parse import urlparse
+import urllib.parse
+from pathlib import Path
 
 import validators
+
+_p_space = re.compile('[ \t\r\n]+')
+
+
+def clean_path(orig_path: Path) -> Path:
+    clean_parts: list[str] = []
+    for part in orig_path.parts:
+        part_clean: str
+        if False:
+            part_clean = _p_space.sub('_', part)
+        else:
+            part_clean = url_encode(part)
+        clean_parts.append(part_clean)
+    return Path(*clean_parts)
 
 
 def slugify(value):
@@ -38,11 +53,15 @@ def is_url(str: str) -> bool:
     return validators.url(str)
 
 
-def extract_path(url: str) -> str:
+def extract_path(url: str) -> Path | None:
     """Extracts the path part from a URL.
 
     Args:
         url (str): A regular URL
     """
-    parsed_url = urlparse(url)
-    return parsed_url.path
+    parsed_url = urllib.parse.urlparse(url)
+    return Path(parsed_url.path) if parsed_url.path else None
+
+
+def url_encode(raw_url_part: str) -> str:
+    return urllib.parse.quote_plus(raw_url_part)

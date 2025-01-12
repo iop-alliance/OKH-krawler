@@ -28,7 +28,7 @@ class TOMLSerializer(Serializer):
     def serialize(self, fetch_result: FetchResult, project: Project) -> str:
         try:
             # serialized = toml.dumps(project.as_dict())
-            project_json = self.json_serializer.serialize(project)
+            project_json = self.json_serializer.serialize(fetch_result, project)
             serialized = toml.dumps(json.loads(project_json))
         except Exception as err:
             raise SerializerError(f"failed to serialize TOML: {err}") from err

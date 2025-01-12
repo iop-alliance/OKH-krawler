@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import urllib.parse
 from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -30,6 +29,7 @@ from krawl.model.project_id import ProjectId
 from krawl.model.sourcing_procedure import SourcingProcedure
 # from krawl.model.project import Project
 from krawl.repository import FetcherStateRepository
+from krawl.util import url_encode
 
 __long_name__: str = "appropedia"
 __hosting_id__: HostingId = HostingId.APPROPEDIA_ORG
@@ -142,10 +142,6 @@ class AppropediaFetcher(Fetcher):
             "User-Agent": config.user_agent,
         })
 
-    @staticmethod
-    def url_encode(raw_url_part: str) -> str:
-        return urllib.parse.quote_plus(raw_url_part)
-
     def _download_manifest(self, url) -> bytes:
         # self._file_rate_limit.apply()
         log.debug("downloading manifest file '%s'", url)
@@ -158,14 +154,22 @@ class AppropediaFetcher(Fetcher):
                 err_desc = '(=> does not exist) ' if response.status_code == 404 else ''
                 raise NotFound("Tried to download manifest, but failed with HTTP status code"
                                f" {response.status_code}{err_desc} here: '{url}'")
+        # print("############")
+        # print(url)
+        # print("############")
+        # print(response.content)
+        # print("############")
+        # if "Prosthetics" in url:
+        #     raise SystemExit(44)
         return response.content
 
     def __fetch_one(self, fetcher_state: _FetcherState, hosting_unit_id: HostingUnitIdWebById,
                     last_visited: datetime) -> FetchResult:
         try:
             log.debug('hosting_unit_id.project_id: "%s"', hosting_unit_id.project_id)
-            log.debug('hosting_unit_id.project_id (URL-encoded): "%s"', self.url_encode(hosting_unit_id.project_id))
-            manifest_dl_url = f"https://www.appropedia.org/scripts/generateOpenKnowHowManifest.php?title={self.url_encode(hosting_unit_id.project_id)}"
+            log.debug('hosting_unit_id.project_id (URL-encoded): "%s"', url_encode(hosting_unit_id.project_id))
+            encoded_project_id: str = url_encode(hosting_unit_id.project_id)
+            manifest_dl_url = f"https://www.appropedia.org/scripts/generateOpenKnowHowManifest.php?title={encoded_project_id}"
             okh_v1_contents = self._download_manifest(manifest_dl_url)
             raw_project = okh_v1_contents
 
@@ -220,8 +224,15 @@ class AppropediaFetcher(Fetcher):
 
     def _download_projects_index(self) -> dict:
         response = self._session.get(
-            url=
-            "https://www.appropedia.org/w/api.php?action=query&format=json&list=categorymembers&cmlimit=max&cmtitle=Category:Projects",
+            # url="https://www.appropedia.org/w/api.php?action=query&format=json&list=categorymembers&cmlimit=max&cmtitle=Category:Projects",
+            url="https://www.appropedia.org/w/api.php",
+            params={
+                "action": "query",
+                "format": "json",
+                "list": "categorymembers",
+                "cmlimit": "max",
+                "cmtitle": "Category:Projects"
+            },
             headers={
                 'Accept': 'application/json',
             },

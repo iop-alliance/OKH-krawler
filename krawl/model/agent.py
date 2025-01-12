@@ -8,6 +8,24 @@ from dataclasses import dataclass
 
 
 @dataclass(slots=True)
+class AgentRef:
+    """A Person or Organization as an RDF reference."""
+
+    iri: str
+    """RDF IRI to the agent individual, for example:
+
+    - `myorg:janeDoe`
+    - `myhouse:joeDoe`"""
+    type: str
+    """RDF/OWL IRI to the `rdf:type` of the agent, for example:
+
+    - `dcterms:Agent`
+    - `foaf:Person`
+    - `schema:Organization`
+    - `schema:Person`"""
+
+
+@dataclass(slots=True)
 class Agent:
     """A Person or Organization."""
 

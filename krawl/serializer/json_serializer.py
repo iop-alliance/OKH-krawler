@@ -19,4 +19,4 @@ class JsonSerializer(Serializer):
 
     def serialize(self, fetch_result: FetchResult, project: Project) -> str:
         return json_serialize(
-            project)  # FIXME nonononono.. not so fast! missing data-set nad fetch result and such stuff
+            project)  # FIXME nonononono.. not so fast! missing data-set and fetch result and such stuff

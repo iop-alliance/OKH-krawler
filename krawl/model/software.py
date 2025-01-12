@@ -13,8 +13,8 @@ from krawl.model.file import File
 class Software:
     """Software data model."""
 
-    installation_guide: File = None
-    documentation_language: str = None
-    license: str = None
-    licensor: str = None
+    installation_guide: File
+    documentation_language: str | None = None
+    license: str | None = None
+    licensor: str | None = None
     release: str | None = None
