@@ -4,10 +4,15 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from krawl.dict_utils import DictUtils
 from krawl.errors import ParserError
+
+_re_cube = re.compile(
+    r"cube\(size=\[(?P<width>[0-9]*(\.[0-9]*)?),(?P<height>[0-9]*(\.[0-9]*)?),(?P<depth>[0-9]*(\.[0-9]*)?)\]\)")
+_re_cylinder = re.compile(r"cylinder\(h=(?P<height>[0-9]*(\.[0-9]*)?),r=(?P<radius>[0-9]*(\.[0-9]*)?)\)")
 
 
 @dataclass(slots=True)
@@ -21,21 +26,18 @@ class OuterDimensionsOpenScad:
     @classmethod
     def from_dict(cls, data: dict) -> OuterDimensionsOpenScad:
         if data is None:
-            return None
-        openscad = DictUtils.to_string(data.get("openscad", None))
+            raise ParserError(f"No data supplied to be parsed into {cls}")
+        openscad = DictUtils.to_string(data.get("openSCAD", None))
+        if not openscad:
+            openscad = DictUtils.to_string(data.get("openscad", None))
         unit = DictUtils.to_string(data.get("unit", None))
         if not openscad or not unit:
-            raise ParserError("Both openscad and")
+            raise ParserError(f"Not all required fields for {cls} are present: {data}")
         outer_dimensions = cls(
             openscad=openscad,
             unit=unit,
         )
-        if not outer_dimensions.is_valid():
-            raise ParserError(f"Not all required fields for {cls} are present: {data}")
         return outer_dimensions
-
-    def is_valid(self) -> bool:
-        return not (self.openscad is None or self.unit is None)
 
 
 @dataclass(slots=True)
@@ -66,10 +68,27 @@ class OuterDimensions:
     @classmethod
     def from_openscad(cls, old: OuterDimensionsOpenScad) -> OuterDimensions:
         shape = old.openscad.replace(" ", "").replace("\t", "")
-        dims_bare_str = shape.removeprefix("cube(size=[").removesuffix("]")
-        dims_str = dims_bare_str.split(",")
-        if len(dims_str) != 3:
-            raise ParserError(f"Unknown OpenSCAD shape: {old.openscad}")
+
+        width: float
+        height: float
+        depth: float
+        match_res = _re_cube.match(shape)
+        if match_res:
+            width = float(match_res.group("width"))
+            height = float(match_res.group("height"))
+            depth = float(match_res.group("depth"))
+        else:
+            match_res = _re_cylinder.match(shape)
+            if match_res:
+                height = float(match_res.group("height"))
+                radius = float(match_res.group("radius"))
+                width = radius
+                depth = radius
+            else:
+                raise ParserError(f"Unknown OpenSCAD shape '{old.openscad}';"
+                                  " We currently only support single cubes,"
+                                  " so a valid example would be 'cube(size=[400,350,150])'.")
+
         multiplier: int
         match old.unit.lower():
             case "mm" | "millimeter":
@@ -80,9 +99,9 @@ class OuterDimensions:
                 multiplier = 1000
             case _:
                 raise ParserError(f"Unknown OpenSCAD unit: {old.unit}")
-        dims_bare = [float(dim) * multiplier for dim in dims_str]
+
         return cls(
-            width=dims_bare[0],
-            height=dims_bare[1],
-            depth=dims_bare[2],
+            width=width * multiplier,
+            height=height * multiplier,
+            depth=depth * multiplier,
         )

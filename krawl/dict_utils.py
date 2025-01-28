@@ -40,6 +40,8 @@ class DictUtils:
     def to_string_list(value: Any) -> list[str]:
         if value is None:
             return []
+        if isinstance(value, str):
+            value = [value]
         if isinstance(value, set):
             value = list(value)
         if isinstance(value, list):

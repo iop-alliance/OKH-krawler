@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from krawl.model.file import File
 
@@ -13,8 +13,8 @@ from krawl.model.file import File
 class Software:
     """Software data model."""
 
-    installation_guide: File
-    documentation_language: str | None = None
+    release: str
+    installation_guide: File | None = None
+    documentation_language: list[str] | None = field(default_factory=list)
     license: str | None = None
     licensor: str | None = None
-    release: str | None = None

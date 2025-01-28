@@ -9,13 +9,15 @@ from __future__ import annotations
 from collections.abc import Generator
 
 from krawl.config import Config
-from krawl.errors import FetcherError
+from krawl.errors import FetcherError, NormalizerError
 from krawl.fetcher import Fetcher, appropedia, github, oshwa, thingiverse
 from krawl.fetcher.event import FetchListener
 # from krawl.cli.command.fetch import NormalizationListener
 from krawl.fetcher.result import FetchResult
+from krawl.log import get_child_logger
 from krawl.model.hosting_id import HostingId
 from krawl.model.project_id import ProjectId
+from krawl.normalizer import Normalizer
 from krawl.normalizer.factory import NormalizerFactory
 from krawl.repository import FetcherStateRepository
 from krawl.repository.fetch_result_repository import FetchResultRepository
@@ -23,6 +25,8 @@ from krawl.repository.fetch_result_repository_workdir import FetchResultReposito
 from krawl.serializer.factory import Serializer
 from krawl.serializer.rdf_serializer import RDFSerializer
 from krawl.serializer.toml_serializer import TOMLSerializer
+
+log = get_child_logger("fetcher-factory")
 
 _fetcher_classes = {
     appropedia.__hosting_id__: appropedia.AppropediaFetcher,
@@ -41,8 +45,12 @@ class NormalizationListener(FetchListener):
         self.fetch_result_repository: FetchResultRepository = fetch_result_repository
 
     def fetched(self, fetch_result: FetchResult) -> None:
-        project = self.normalizer_factory.get(
-            fetch_result.data_set.hosting_unit_id.hosting_id()).normalize(fetch_result)
+        normalizer: Normalizer = self.normalizer_factory.get(fetch_result.data_set.hosting_unit_id.hosting_id())
+        try:
+            project = normalizer.normalize(fetch_result)
+        except NormalizerError as err:
+            log.warning("Failed to normalize fetch result '%s': %s", fetch_result.data_set.hosting_unit_id, err)
+            return
         toml: str = self.serializer_toml.serialize(fetch_result, project)
         ttl: str = self.serializer_rdf.serialize(fetch_result, project)
         self.fetch_result_repository.store_final(fetch_result, toml, ttl)

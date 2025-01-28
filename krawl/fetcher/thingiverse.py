@@ -6,13 +6,12 @@
 
 from __future__ import annotations
 
-import json
 import math
 from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from time import sleep
-from typing import TypeAlias, TypedDict
+from typing import Any
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -33,6 +32,7 @@ from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.repository import FetcherStateRepository
+from krawl.shared.thingiverse import Hit, ThingSearch, BATCH_SIZE, RETRY_CODES
 
 __long_name__: str = "thingiverse"
 __hosting_id__: HostingId = HostingId.THINGIVERSE_COM
@@ -49,154 +49,6 @@ __dataset_license__: License = License(
 )
 __dataset_creator__: Organization = Organization(name="Thingiverse", url="https://www.thingiverse.com")
 log = get_child_logger(__long_name__)
-
-t_url: TypeAlias = str
-t_string: TypeAlias = str
-t_datetime: TypeAlias = str
-
-
-class ThingiverseThingSearch(TypedDict):
-    """This maps precisely to the Thingiverse API response of a thing - thing search."""
-    total: int
-    hits: list[Hit]
-
-
-class Person(TypedDict):
-    """This maps precisely to the Thingiverse API response of a thing - person."""
-    id: int
-    name: t_string
-    first_name: t_string
-    last_name: t_string
-    url: t_url
-    public_url: t_url
-    thumbnail: t_url
-    count_of_followers: int
-    count_of_following: int
-    count_of_designs: int
-    make_count: int
-    accepts_tips: bool
-    is_following: bool
-    location: t_string
-    cover: t_url
-    is_admin: bool
-    is_moderator: bool
-    is_featured: bool
-    is_verified: bool
-
-
-class ImageSize(TypedDict):
-    """This maps precisely to the Thingiverse API response of a thing - image size."""
-    type: t_string
-    size: t_string
-    url: t_url
-
-
-class Image(TypedDict):
-    """This maps precisely to the Thingiverse API response of a thing - image."""
-    id: int
-    url: t_url
-    name: t_string
-    sizes: list[ImageSize]
-    added: t_datetime
-
-
-class Tag(TypedDict):
-    """This maps precisely to the Thingiverse API response of a thing - tag."""
-    name: t_string
-    url: t_url
-    count: int
-    things_url: t_url
-    absolute_url: t_string
-
-
-class ZipFile(TypedDict):
-    """This maps precisely to the Thingiverse API response of a thing - zip file."""
-    name: t_string
-    url: t_url
-
-
-class ZipData(TypedDict):
-    """This maps precisely to the Thingiverse API response of a thing - zip data."""
-    files: list[ZipFile]
-
-
-class Hit(TypedDict):
-    """This maps precisely to the Thingiverse API response of a thing - hit."""
-    id: int
-    name: t_string
-    thumbnail: t_url
-    url: t_url
-    public_url: t_url
-    creator: Person
-    added: t_datetime
-    modified: t_datetime
-    is_published: int
-    is_wip: int
-    is_featured: bool
-    is_nsfw: bool
-    is_ai: bool
-    like_count: int
-    is_liked: bool
-    collect_count: int
-    is_collected: bool
-    comment_count: int
-    is_watched: bool
-    default_image: Image
-    description: t_string
-    instructions: t_string | None
-    description_html: t_string
-    instructions_html: t_string
-    details: t_string
-    details_parts: list[dict]
-    edu_details: t_string | None
-    edu_details_parts: list[dict]
-    license: t_string
-    allows_derivatives: bool
-    files_url: t_url
-    images_url: t_url
-    likes_url: t_url
-    ancestors_url: t_url
-    derivatives_url: t_url
-    tags_url: t_string
-    tags: list[Tag]
-    categories_url: t_url
-    file_count: int
-    is_purchased: int
-    app_id: int | None
-    download_count: int
-    view_count: int
-    education: dict
-    remix_count: int
-    make_count: int
-    app_count: int
-    root_comment_count: int
-    moderation: t_string | None
-    is_derivative: bool
-    ancestors: list
-    can_comment: bool
-    type_name: t_string
-    is_banned: bool
-    is_comments_disabled: bool
-    needs_moderation: int
-    is_decoy: int
-    zip_data: ZipData
-
-
-class ThingFile(TypedDict):
-    """This maps precisely to the Thingiverse API response of a file - file."""
-    id: int
-    name: t_string
-    size: int
-    url: t_url
-    public_url: t_url
-    download_url: t_url
-    threejs_url: t_url
-    thumbnail: t_url
-    default_image: Image
-    date: t_datetime
-    formatted_size: t_string
-    download_count: int
-    direct_url: t_url
 
 
 @dataclass(slots=True)
@@ -245,9 +97,6 @@ class ThingiverseFetcher(Fetcher):
     - Requests: <https://www.thingiverse.com/developers/swagger>
     - Legal: <https://www.thingiverse.com/legal/api>
     """
-    RETRY_CODES = [429, 500, 502, 503, 504]
-    BATCH_SIZE = 30
-    # BATCH_SIZE = 1
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=__long_name__, default_timeout=10, access_token=True)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
@@ -262,7 +111,7 @@ class ThingiverseFetcher(Fetcher):
         retry = Retry(
             total=config.retries,
             backoff_factor=15,
-            status_forcelist=self.RETRY_CODES,
+            status_forcelist=RETRY_CODES,
         )
 
         self._session = requests.Session()
@@ -280,20 +129,26 @@ class ThingiverseFetcher(Fetcher):
         try:
             thing_id = hosting_unit_id.project_id
             log.info("Try to fetch thing with id %s", thing_id)
+            # raw_project: dict[str, Any] = {}
             # Documentation for this call:
             # <https://www.thingiverse.com/developers/swagger#/Thing/get_things__thing_id_>
-            raw_project = self._do_request(f"https://api.thingiverse.com/things/{thing_id}")
+            raw_thing: Hit = self._do_request(f"https://api.thingiverse.com/things/{thing_id}")
+            # raw_project["thing"] = raw_thing
+            raw_project: Hit = raw_thing
 
-            log.info("Convert thing %s...", raw_project.get('name'))
+            log.info("Convert thing (%s) '%s' ...", thing_id, raw_thing.get('name'))
 
-            # Documentation for this call:
-            # <https://www.thingiverse.com/developers/swagger#/Thing/get_things__thing_id__files>
-            thing_files = self._do_request(f"https://api.thingiverse.com/things/{thing_id}/files")
-
-            raw_project["files"] = thing_files
+            # NOTE We do not need this, because while this gives us a LOT of info
+            #      about each file in the project,
+            #      The essential info - and really all we need -
+            #      is already in `Hit.zip`.
+            # # Documentation for this call:
+            # # <https://www.thingiverse.com/developers/swagger#/Thing/get_things__thing_id__files>
+            # raw_files: list[ThingFile] = self._do_request(f"https://api.thingiverse.com/things/{thing_id}/files")
+            # raw_project["files"] = raw_files
 
             data_set = DataSet(
-                okhv="OKH-LOSHv1.0",  # FIXME Not good, not right
+                okhv_fetched="OKH-LOSHv1.0",  # FIXME Not good, not right
                 crawling_meta=CrawlingMeta(
                     sourcing_procedure=__sourcing_procedure__,
                     # created_at: datetime = None
@@ -307,9 +162,11 @@ class ThingiverseFetcher(Fetcher):
                 creator=__dataset_creator__,
             )
 
+            # fetch_result = FetchResult(data_set=data_set,
+            #                            data=Manifest(content=json.dumps(raw_project, indent=2),
+            #                                          format=ManifestFormat.JSON))
             fetch_result = FetchResult(data_set=data_set,
-                                       data=Manifest(content=json.dumps(raw_project, indent=2),
-                                                     format=ManifestFormat.JSON))
+                                       data=Manifest(content=raw_project, format=ManifestFormat.JSON))
 
             # project = self._normalizer.normalize(raw_project)
             # if not project:
@@ -359,15 +216,16 @@ class ThingiverseFetcher(Fetcher):
         projects_counter: int = 0
         fetcher_state = _FetcherState.load(self._state_repository, start_over=start_over)
 
-        page_id = math.floor(fetcher_state.next_fetch / self.BATCH_SIZE) + 1
-        page_thing_index = fetcher_state.next_fetch - ((page_id - 1) * self.BATCH_SIZE)
+        page_id = math.floor(fetcher_state.next_fetch / BATCH_SIZE) + 1
+        page_thing_index = fetcher_state.next_fetch - ((page_id - 1) * BATCH_SIZE)
         # Documentation for this call:
         # <https://www.thingiverse.com/developers/swagger#/Search/get_search__term___type_things>
-        data = self._do_request(
+        page_id = 1
+        data: ThingSearch = self._do_request(
             "https://api.thingiverse.com/search",
             {
                 "type": "things",
-                "per_page": self.BATCH_SIZE,
+                "per_page": BATCH_SIZE,
                 "page": page_id,
                 'sort': 'newest',
                 # Only show Things posted before this date.
@@ -375,6 +233,7 @@ class ThingiverseFetcher(Fetcher):
                 # For more details, see:
                 # <https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math>
                 # "posted_before": "<some-date-in-the-right-format>",
+                # "posted_before": "2025-05-29",
                 # Only show Things posted after this date.
                 # Can be a concrete date or "math" like: +1h
                 # For more details, see:
@@ -389,7 +248,7 @@ class ThingiverseFetcher(Fetcher):
                 # "license": "cc-nc-nd", # Bad
                 # "license": "pd0",
                 # "license": "gpl",
-                "license": "lgpl",
+                # "license": "lgpl",
                 # "license": "bsd",
                 # "license": "none", # Bad
                 # "license": "nokia",  # Bad
@@ -398,9 +257,10 @@ class ThingiverseFetcher(Fetcher):
 
         log.info("Found things (total): %s", data["total"])
         log.info("Found things (len(hits)): %d", len(data["hits"]))
-        log.debug("-----------------------")
-        log.debug("All received data: %s", str(data))
-        log.debug("-----------------------")
+        # log.debug("-----------------------")
+        # log.debug("All received data: %s", str(data))
+        # log.debug("-----------------------")
+        raise SystemExit(37)
         # first_thing_id = data["hits"][0]["id"]
         # last_thing_id = data["hits"][-1]["id"]
         # log.info("First thing ID: %d", first_thing_id)
@@ -412,12 +272,15 @@ class ThingiverseFetcher(Fetcher):
         last_visited = datetime.now(timezone.utc)
 
         for hit_idx in range(page_thing_index, len(data["hits"])):
-            raw_project = data["hits"][hit_idx]
-            thing_id = raw_project["id"]
+            raw_project: dict[str, Any] = {}
+            thing: Hit = data["hits"][hit_idx]
+            raw_project["thing"] = thing
+            thing_id: int = thing["id"]
+            thing_id_str: str = str(thing_id)
             # fetched_things_ids.append(thing_id)
             # next_total_hit_index += 1
             try:
-                hosting_unit_id = HostingUnitIdWebById(_hosting_id=__hosting_id__, project_id=thing_id)
+                hosting_unit_id = HostingUnitIdWebById(_hosting_id=__hosting_id__, project_id=thing_id_str)
                 fetch_result = self.__fetch_one(fetcher_state, hosting_unit_id, last_visited)
                 log.debug("yield fetch result #%d: %s", projects_counter, hosting_unit_id)
                 projects_counter += 1

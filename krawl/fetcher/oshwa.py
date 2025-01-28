@@ -85,7 +85,7 @@ class OshwaFetcher(Fetcher):
             #     )
 
             data_set = DataSet(
-                okhv="OKH-LOSHv1.0",  # FIXME Not good, not right
+                okhv_fetched="OKH-LOSHv1.0",  # FIXME Not good, not right
                 crawling_meta=CrawlingMeta(
                     sourcing_procedure=__sourcing_procedure__,
                     # created_at: datetime = None

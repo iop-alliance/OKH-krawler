@@ -34,7 +34,7 @@ class Project:  # pylint: disable=too-many-instance-attributes
     readme: File | None = None
     contribution_guide: File | None = None
     image: list[Image] = field(default_factory=list)
-    documentation_language: str | None = None
+    documentation_language: list[str] = field(default_factory=list)
     technology_readiness_level: str | None = None
     documentation_readiness_level: str | None = None
     attestation: list[str] = field(default_factory=list)
@@ -44,7 +44,7 @@ class Project:  # pylint: disable=too-many-instance-attributes
     cpc_patent_class: str | None = None
     tsdc: str | None = None
     bom: File | None = None
-    manufacturing_instructions: File | None = None
+    manufacturing_instructions: list[File] = field(default_factory=list)
     user_manual: File | None = None
     mass: float | None = None
     outer_dimensions: OuterDimensions | None = None

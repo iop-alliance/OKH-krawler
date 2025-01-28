@@ -66,12 +66,12 @@ class GitHubFileHandler(FileHandler):
         slug = self._extract_slug(repo_url)
         if slug is None:
             raise ValueError(f"Unable to extract slug from repo URL '{repo_url}'")
-        version = DictUtils.to_string(manifest_raw.get("version"))
+        version = DictUtils.to_string(manifest_raw.get("version", "HEAD"))
         dev_branch = None  # TODO Maybe try to extract this from a files URL, if URLs are used ...
         return self.gen_proj_info_raw(slug, version, dev_branch)
 
     def _is_dev_branch(self, proj_info: dict, version: str) -> bool:
-        extracted_dev_branch = proj_info['dev_branch']
+        extracted_dev_branch = proj_info.get('dev_branch')
         if extracted_dev_branch is None:
             return version in DEFAULT_DEV_BRANCHES
         return version == extracted_dev_branch

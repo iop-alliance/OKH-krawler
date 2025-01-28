@@ -59,7 +59,8 @@ class DataSet:  # pylint: disable=too-many-instance-attributes
     """Meta data about one source of data
     (e.g. one repo, one hosted project or one manifest file)."""
 
-    okhv: str
+    okhv_fetched: str
+    """The OKH-version the original (fetched/crawled) data follows"""
     crawling_meta: CrawlingMeta
     hosting_unit_id: HostingUnitId
     """info about the repository on the hosting platform"""

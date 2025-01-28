@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import re
 import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -17,9 +18,23 @@ from typing import Any
 
 from krawl.log import get_child_logger
 
-_licenses: dict[str, License]
-_name_to_id: dict[str, str]
+_licenses_internal: dict[str, License]
+_name_to_id_internal: dict[str, str]
 log = get_child_logger("licenses")
+
+_re_id_with_exception = re.compile(r"^(?P<id>[^ \t]+)[ \t]+WITH[ \t](?P<exception>[^ \t]+)$")
+
+
+def _licenses() -> dict[str, License]:
+    if not _licenses_internal or _licenses_internal == {}:
+        raise ValueError("licenses not initialized")
+    return _licenses_internal
+
+
+def _name_to_id() -> dict[str, str]:
+    if not _name_to_id_internal or _name_to_id_internal == {}:
+        raise ValueError("name_to_id_internal not initialized")
+    return _name_to_id_internal
 
 
 class LicenseType(StrEnum):
@@ -74,7 +89,7 @@ class License:  # pylint: disable=too-many-instance-attributes
 
 
 def _normalize_name(name: str) -> str:
-    return str(unicodedata.normalize('NFKD', name).casefold().encode('ascii', 'ignore')).strip()
+    return unicodedata.normalize('NFKD', name).casefold().encode('ascii', 'ignore').decode('ascii').strip()
 
 
 def _init_licenses() -> tuple[dict[str, License], dict[str, str]]:
@@ -145,29 +160,43 @@ def _merge_dicts(x: Mapping[Any, Any], y: Mapping[Any, Any]) -> dict[Any, Any]:
 
 
 def get_licenses() -> list:
-    return list(_licenses.values())
+    return list(_licenses().values())
 
 
 def get_blocked():
-    return filter(lambda lic: lic.is_blocked, _licenses.values())
+    return filter(lambda lic: lic.is_blocked, _licenses().values())
 
 
 def get_by_id(id: str) -> License | None:
     normalized = _normalize_name(id)
-    if normalized in _licenses:
-        return _licenses[normalized]
-    return None
+    return _licenses().get(normalized)
 
 
 def get_by_id_or_name_required(id_or_name: str) -> License:
     if not id_or_name:
         raise ValueError("id_or_name is required")
+    if id_or_name.startswith(("LicenseRef-", "DocumentRef-")):
+        return License(
+            _id=id_or_name,
+            name=id_or_name.replace("LicenseRef-", "").replace("DocumentRef-", ""),
+            reference_url=f"file://LICENSES/{id_or_name}.txt",
+        )
+    match_res = _re_id_with_exception.match(id_or_name)
+    if match_res:
+        id_or_name = match_res.group("id")
+    exitx: bool = True  #id_or_name == "CC-BY-SA-4.0"
     normalized = _normalize_name(id_or_name)
-    if normalized in _licenses:
-        return _licenses[normalized]
-    if normalized in _name_to_id:
-        return _licenses[_name_to_id[normalized]]
+    lic: License | None = _licenses().get(normalized)
+    if lic:
+        return lic
+    lic_id: str | None = _name_to_id().get(normalized)
+    if lic_id:
+        lic = _licenses().get(lic_id)
+        if lic:
+            return lic
     log.warn(f'WARN: Non-SPDX license detected: "{id_or_name}"')
+    if exitx:
+        raise SystemExit(1)
 
     return License(
         _id=f'LicenseRef-{id_or_name}',
@@ -194,7 +223,7 @@ def get_spdx_by_id_or_name(id_or_name: str) -> str | None:
 
 
 # preload the license on import
-_licenses, _name_to_id = _init_licenses()
+_licenses_internal, _name_to_id_internal = _init_licenses()
 
 __unknown_license__: License = License(
     _id="LicenseRef-NOASSERTION",

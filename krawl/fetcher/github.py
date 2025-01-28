@@ -309,7 +309,7 @@ class GitHubFetcher(Fetcher):
             #     log.debug("YAML (v1) Manifest converted to TOML (LOSH)!")
 
             data_set = DataSet(
-                okhv="OKH-LOSHv1.0",  # FIXME Not good, not right
+                okhv_fetched="OKH-LOSHv1.0",  # FIXME Not good, not right
                 crawling_meta=CrawlingMeta(
                     sourcing_procedure=__sourcing_procedure__,
                     # created_at: datetime = None
@@ -344,11 +344,15 @@ class GitHubFetcher(Fetcher):
             self._failed_fetch(FailedFetch(hosting_unit_id=hosting_unit_id, error=err))
             raise err
 
-    def fetch(self, project_id: ProjectId) -> FetchResult:
+    def _parse_project_url(self, url: str) -> tuple[HostingUnitIdForge, Path | None]:
         try:
-            hosting_unit_id, path_raw = HostingUnitIdForge.from_url(project_id.uri)
+            hosting_unit_id, path_raw = HostingUnitIdForge.from_url(url)
         except ParserError as err:
-            raise FetcherError(f"Invalid GitHub manifest file URL: '{project_id.uri}'") from err
+            raise FetcherError(f"Invalid GitHub manifest file URL: '{url}'") from err
+        return hosting_unit_id, path_raw
+
+    def fetch(self, project_id: ProjectId) -> FetchResult:
+        hosting_unit_id, path_raw = self._parse_project_url(project_id.uri)
 
         if path_raw:
             path = Path(path_raw)
@@ -453,8 +457,14 @@ class GitHubFetcher(Fetcher):
             # figure out what the links are in the default repo -> accessible later on
             for raw_found_file in raw_found_files:
                 raw_url = raw_found_file["html_url"]
+                url_file_name = Path(Path(raw_url).name)
+                if not is_accepted_manifest_file_name(url_file_name):
+                    log.warning(f"Not an accepted manifest file name: '{url_file_name}'")
                 # parsed_url = urlparse(raw_url)
-                hosting_id, path = HostingUnitIdForge.from_url(raw_url)
+                try:
+                    hosting_unit_id, path = self._parse_project_url(raw_url)
+                except FetcherError as err:
+                    log.warning(f"Skipping project file, because: {err}")
                 # path = Path(raw_url.path)
                 # path_parts = path.parts
                 # owner = path_parts[1]
@@ -469,7 +479,7 @@ class GitHubFetcher(Fetcher):
                 # )
 
                 try:
-                    yield self.__fetch_one(hosting_id, path or __default_manifest_path__)
+                    yield self.__fetch_one(hosting_unit_id, path or __default_manifest_path__)
                 except FetcherError as err:
                     log.debug(f"skipping file, because: {err}")
 

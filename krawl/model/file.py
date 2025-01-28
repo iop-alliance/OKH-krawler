@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import mimetypes
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
@@ -25,13 +26,32 @@ class File:  # pylint: disable=too-many-instance-attributes
     created_at: datetime | None = None
     last_visited: datetime | None = None
     last_changed: datetime | None = None
-    # NOTE We don;t want these here, as we want to promote file-level licensing information to be handled exclusively with REUSE/SPDX
+    # NOTE We don't want these here, as we want to promote file-level licensing information to be handled exclusively with REUSE/SPDX
     # license: str | None = None
     # licensor: str | None = None
 
     @property
-    def extension(self):
-        return self.path.suffix[1:].lower() if self.path else ""
+    def extension(self) -> str:
+        ext: str = ""
+        if self.path:
+            ext = self.path.suffix[1:].lower()
+        elif self.url:
+            ext = Path(self.url).suffix.split(".")[-1].lower()
+        return ext
+
+    def evaluate_mime_type(self) -> str | None:
+        mime_type: str | None = None  # or "text/plain"?
+        if self.mime_type:
+            mime_type = self.mime_type
+        else:
+            pathish: Path | None = None
+            if self.path:
+                pathish = self.path
+            elif self.url:
+                pathish = Path(self.url)
+            if pathish:
+                mime_type, _encoding = mimetypes.guess_type(pathish)
+        return mime_type
 
     # @classmethod
     # def from_dict(cls, data: dict) -> File | None:
@@ -178,3 +198,6 @@ class Image(File):  # pylint: disable=too-many-instance-attributes
             # licensor=file.licensor
         )
         return image
+
+
+mimetypes.init()

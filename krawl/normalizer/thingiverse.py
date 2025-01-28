@@ -6,99 +6,81 @@
 
 from __future__ import annotations
 
-import mimetypes
 import pathlib
 from datetime import datetime, timezone
-from pathlib import Path
+from typing import Any
 
 from krawl.dict_utils import DictUtils
 from krawl.fetcher.result import FetchResult
-from krawl.fetcher.thingiverse import Hit, ThingFile
 from krawl.file_formats import get_type_from_extension
 from krawl.log import get_child_logger
 from krawl.model import licenses
 from krawl.model.agent import Person
-# from krawl.model.data_set import DataSet
-from krawl.model.file import File, Image, ImageTag
+from krawl.model.file import File, Image
 from krawl.model.licenses import License
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer, strip_html
-
-# from krawl.recursive_type import RecDict
+from krawl.shared.thingiverse import BROKEN_IMAGE_URL, LICENSE_MAPPING, Hit, ThingFile
 
 log = get_child_logger("thingiverse")
-
-# Maps Thingiverse license names to (search_id, SPDX-Id).
-# If SPDX-Id is None, the license is not Open Source.
-LICENSE_MAPPING = {
-    "Creative Commons - Attribution": ("cc", "CC-BY-4.0"),
-    "Creative Commons - Attribution - Share Alike": ("cc-sa", "CC-BY-SA-4.0"),
-    "Creative Commons - Attribution - No Derivatives": ("cc-nd", None),
-    "Creative Commons - Attribution - Non-Commercial": ("cc-nc", None),
-    "Creative Commons - Attribution - Non-Commercial - Share Alike": ("cc-nc-sa", None),
-    "Creative Commons - Attribution - Non-Commercial - No Derivatives": ("cc-nc-nd", None),
-    "Creative Commons - Share Alike": ("cc-sa", "CC-BY-SA-4.0"),
-    "Creative Commons - No Derivatives": ("cc-nd", None),
-    "Creative Commons - Non-Commercial": ("cc-nc", None),
-    "Creative Commons - Non Commercial - Share alike": ("cc-nc-sa", None),
-    "Creative Commons - Non Commercial - No Derivatives": ("cc-nc-nd", None),
-    "Creative Commons - Public Domain Dedication": ("pd0", "CC0-1.0"),
-    "Public Domain": ("public", "CC0-1.0"),
-    "GNU - GPL": ("gpl", "GPL-3.0-or-later"),
-    "GNU - LGPL": ("lgpl", "LGPL-3.0-or-later"),
-    "BSD": ("bsd", "BSD-4-Clause"),
-    "BSD License": ("bsd", "BSD-4-Clause"),
-    "Nokia": ("nokia", None),
-    "All Rights Reserved": ("none", None),
-    "Other": (None, None),
-    "None": (None, None),
-}
-BROKEN_IMAGE_URL = 'https://cdn.thingiverse.com/'
 
 
 class ThingiverseNormalizer(Normalizer):
 
-    def __init__(self):
-        mimetypes.init()
-
     def normalize(self, fetch_result: FetchResult) -> Project:
-        raw: Hit = fetch_result.data.content
+        if not isinstance(fetch_result.data.content, dict):
+            raise ValueError(
+                f"Thingiverse content expected to be of type dict, but got {type(fetch_result.data.content)}")
+        raw: dict[str, Any] = fetch_result.data.content
+        # thing: Hit = raw['thing']
+        # files: list[ThingFile] = raw['files']
+        thing: Hit = raw
+        # print("$$$$$$$$$$$$$")
+        # print(type(things))
+        # print("$$$$$$$$$$$$$")
+        # print(things)
+        # print("$$$$$$$$$$$$$")
+        # thing: Hit = things['hits'][0]
 
         # data_set: DataSet = fetch_result.data_set
         # data_set.hosting_unit_id = data_set.hosting_unit_id.derive(
         #     owner=self._creator(raw),
-        #     repo=raw['public_url'],
+        #     repo=thing['public_url'],
         # )
         # fetch_result.data_set = data_set
 
-        fetch_result.data_set.crawling_meta.created_at = DictUtils.to_datetime(raw['added'])
-        last_visited = DictUtils.to_datetime(raw["lastVisited"])
-        # last_visited = DictUtils.to_datetime(raw.lastVisited)
-        if last_visited:
-            # TODO Maybe not a good idea to set this like that?
-            fetch_result.data_set.crawling_meta.last_visited = last_visited
+        fetch_result.data_set.crawling_meta.created_at = DictUtils.to_datetime(thing['added'])
+        # last_visited = DictUtils.to_datetime(thing["lastVisited"])
+        # # last_visited = DictUtils.to_datetime(raw.lastVisited)
+        # if last_visited:
+        #     # TODO Maybe not a good idea to set this like that?
+        #     fetch_result.data_set.crawling_meta.last_visited = last_visited
 
-        creator = Person(name=raw['creator']['first_name'] + ' ' + raw['creator']['last_name'],
-                         url=raw['creator']['public_url'])
-        project = Project(name=raw['name'],
-                          repo=raw['public_url'],
-                          version=str(raw['modified']),
-                          license=self._license(raw),
+        name: str = thing['creator']['first_name'] + ' ' + thing['creator']['last_name']
+        creator = Person(name=name.strip(), url=thing['creator']['public_url'])
+        project = Project(name=thing['name'],
+                          repo=thing['public_url'],
+                          version=str(thing['modified']),
+                          license=self._license(thing),
                           licensor=[creator])
-        project.function = self._function(raw)
-        project.documentation_language = self._language(project.function)
+        project.function = self._function(thing)
+        project.documentation_language = self._language_from_description(project.function)
         project.technology_readiness_level = "OTRL-4"
         project.documentation_readiness_level = "ODRL-3"
 
-        project.image = self._images(project, raw)
-        project.export = [self._file(file) for file in self._filter_files_by_category(raw["files"], "export")]
-        project.source = [self._file(file) for file in self._filter_files_by_category(raw["files"], "source")]
+        project.image = self._images(project, thing)
+        project.export = [
+            self._file(file) for file in self._filter_files_by_category(thing['zip_data']['files'], "export")
+        ]
+        project.source = [
+            self._file(file) for file in self._filter_files_by_category(thing['zip_data']['files'], "source")
+        ]
         return project
 
     @classmethod
-    def _creator(cls, raw):
-        if raw['creator']:
-            raw_creator = raw["creator"]
+    def _creator(cls, raw_thing):
+        if raw_thing['creator']:
+            raw_creator = raw_thing["creator"]
             creator = {}
             if raw_creator["name"]:
                 creator["name"] = raw_creator["name"]
@@ -110,7 +92,7 @@ class ThingiverseNormalizer(Normalizer):
         return None
 
     @classmethod
-    def _filter_files_by_category(cls, files, category):
+    def _filter_files_by_category(cls, files: list[ThingFile], category: str) -> list[ThingFile]:
         found_files = []
         for file in files:
             file_format = get_type_from_extension(pathlib.Path(file['name']).suffix)
@@ -150,20 +132,21 @@ class ThingiverseNormalizer(Normalizer):
         return cls._license_from_str(raw_license)
 
     @classmethod
-    def _function(cls, raw: dict) -> str | None:
-        raw_description = raw.get("description")
+    def _function(cls, raw_thing: Hit) -> str | None:
+        raw_description = raw_thing.get("description")
         if raw_description:
             return strip_html(raw_description).strip()
         return None
 
     @classmethod
-    def _image(cls, project: Project, images: list[Image], url: str, raw: dict) -> None:
+    def _image(cls, project: Project, images: dict[str, Image], url: str | None, raw: dict) -> None:
         if url and not url == BROKEN_IMAGE_URL:
             file = Image()
-            file.path = Path(url)
+            file.path = None
             file.name = raw.get("name", None)
             file.url = url
             file.frozen_url = None
+            file.mime_type = file.evaluate_mime_type()
             added_raw = raw.get("added", None)
             if added_raw:
                 added_fmtd = datetime.strptime(added_raw, "%Y-%m-%dT%H:%M:%S%z")
@@ -172,34 +155,41 @@ class ThingiverseNormalizer(Normalizer):
             file.last_visited = datetime.now(timezone.utc)
             # file.license = project.license
             # file.licensor = project.licensor
-            images.append(file)
+            images[url] = file
 
     @classmethod
-    def _images(cls, project: Project, raw: dict) -> list[Image]:
-        images: list[Image] = []
+    def _images(cls, project: Project, raw_thing: Hit) -> list[Image]:
+        images: dict[str, Image] = {}
 
-        thumbnail_url = raw.get("thumbnail", None)
-        cls._image(project, images, thumbnail_url, raw)
+        thumbnail_url: str | None = raw_thing.get("thumbnail")
+        cls._image(project, images, thumbnail_url, raw_thing)
 
-        default_image_raw = raw.get("default_image", None)
+        default_image_raw = raw_thing.get("default_image", None)
         if default_image_raw:
-            url = default_image_raw.get("url", None)
+            url: str | None = default_image_raw.get("url")
             cls._image(project, images, url, default_image_raw)
 
-        return images
+        for img in raw_thing['zip_data']['images']:
+            url = img.get("url")
+            if url and url not in images:
+                cls._image(project, images, url, img)
+
+        return list(images.values())
 
     @classmethod
     def _file(cls, thing_file: ThingFile) -> File:
-        direct_url: str | None = thing_file.get("direct_url")
-        type = mimetypes.guess_type(direct_url) if direct_url else (None, None)
+        url: str | None = thing_file.get("direct_url")
+        if not url:
+            url = thing_file.get("url")
+        if not url:
+            url = thing_file.get("public_url")
 
         file = File()
         file.path = None
         file.name = thing_file.get("name")
-        # file.mime_type = type[0] if type[0] is not None else "text/plain"
-        file.mime_type = type[0]  # might be None
-        file.url = direct_url
+        file.url = url
         file.frozen_url = None
+        file.mime_type = file.evaluate_mime_type()
         thing_file_date = thing_file.get("date")
         file.created_at = datetime.strptime(thing_file_date, "%Y-%m-%d %H:%M:%S") if thing_file_date else None
         file.last_changed = file.created_at

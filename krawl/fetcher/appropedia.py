@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -36,6 +37,7 @@ __hosting_id__: HostingId = HostingId.APPROPEDIA_ORG
 __sourcing_procedure__: SourcingProcedure = SourcingProcedure.GENERATED_MANIFEST
 __dataset_license__: License = get_license_required("CC-BY-SA-4.0")
 __dataset_creator__: Organization = Organization(name="Appropedia", url="https://www.appropedia.org")
+_re_auto_translated_page_title = re.compile(r".*/[a-z]{2}$")
 log = get_child_logger(__long_name__)
 
 
@@ -167,14 +169,17 @@ class AppropediaFetcher(Fetcher):
                     last_visited: datetime) -> FetchResult:
         try:
             log.debug('hosting_unit_id.project_id: "%s"', hosting_unit_id.project_id)
-            log.debug('hosting_unit_id.project_id (URL-encoded): "%s"', url_encode(hosting_unit_id.project_id))
-            encoded_project_id: str = url_encode(hosting_unit_id.project_id)
+            encoded_project_id: str = url_encode(hosting_unit_id.project_id.replace(" ", "_"))
+            log.debug('hosting_unit_id.project_id (URL-encoded): "%s"', encoded_project_id)
             manifest_dl_url = f"https://www.appropedia.org/scripts/generateOpenKnowHowManifest.php?title={encoded_project_id}"
-            okh_v1_contents = self._download_manifest(manifest_dl_url)
+            try:
+                okh_v1_contents = self._download_manifest(manifest_dl_url)
+            except NotFound as err:
+                raise FetcherError(f"Failed to download manifest for '{hosting_unit_id.project_id}': {err}") from err
             raw_project = okh_v1_contents
 
             data_set = DataSet(
-                okhv="OKH-v1.0",  # FIXME Not good, not right
+                okhv_fetched="OKH-v1.0",  # FIXME Not good, not right
                 crawling_meta=CrawlingMeta(
                     sourcing_procedure=__sourcing_procedure__,
                     # created_at: datetime = None
@@ -231,7 +236,7 @@ class AppropediaFetcher(Fetcher):
                 "format": "json",
                 "list": "categorymembers",
                 "cmlimit": "max",
-                "cmtitle": "Category:Projects"
+                "cmtitle": "Category:Projects",
             },
             headers={
                 'Accept': 'application/json',
@@ -244,11 +249,21 @@ class AppropediaFetcher(Fetcher):
     def _get_projects_index(self) -> Generator[str]:
         project_list_json = self._download_projects_index()
         for project in project_list_json["query"]["categorymembers"]:
-            yield project["title"]
+            title: str = project["title"]
+            if not _re_auto_translated_page_title.match(title):
+                yield title
 
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
         project_ids = list(self._get_projects_index())
         project_ids.sort()
+        # print("#################################")
+        # print('\n'.join(project_ids))
+        # appro_projs_csv_path = 'appro_projs.csv'
+        # import pathlib
+        # pathlib.Path(appro_projs_csv_path).write_text('\n'.join(project_ids))
+        # print(f"Written '{appro_projs_csv_path}'.")
+        # print("#################################")
+        # raise SystemExit(56)
         total_projects = len(project_ids)
 
         proj_idx = -1
@@ -261,7 +276,11 @@ class AppropediaFetcher(Fetcher):
             log.debug("Fetching project %d/%d", proj_idx, total_projects)
 
             hosting_unit_id = HostingUnitIdWebById(_hosting_id=__hosting_id__, project_id=project_id)
+            # try:
             fetch_result = self.__fetch_one(fetcher_state, hosting_unit_id, last_visited)
+            # except FetcherError as err:
+            #     log.warning(f"Failed to fetch project '{hosting_unit_id}': {err}")
+            #     continue
             fetcher_state.store(self._state_repository)  # XXX This might be very costly
 
             yield fetch_result

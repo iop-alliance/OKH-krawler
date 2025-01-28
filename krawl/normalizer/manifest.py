@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -14,13 +15,14 @@ from urllib.parse import urlparse
 import validators
 
 from krawl.dict_utils import DictUtils
-from krawl.errors import ParserError
+from krawl.errors import ConversionError, NormalizerError, ParserError
 from krawl.fetcher.result import FetchResult
 from krawl.fetcher.util import convert_okh_v1_dict_to_losh
 from krawl.log import get_child_logger
 from krawl.model.agent import Agent, AgentRef, Organization, Person
 from krawl.model.data_set import DataSet
 from krawl.model.file import File, Image, ImageSlot, ImageTag
+from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitId, HostingUnitIdForge
 from krawl.model.licenses import get_by_id_or_name as get_license
 from krawl.model.outer_dimensions import OuterDimensions, OuterDimensionsOpenScad
@@ -35,6 +37,8 @@ from krawl.util import is_url
 
 log = get_child_logger("manifest")
 
+_user_re = re.compile(r'(?P<name>[^\[\(<]+)(\((?P<org>[^\)]*)\))?(<(?P<email>[^>]*)>)?')
+
 
 class _ProjFilesInfo:
 
@@ -46,15 +50,22 @@ class _ProjFilesInfo:
         self._fh_proj_info: dict | None = None
         self._hosting_unit_id: HostingUnitId = hosting_unit_id
 
-        if self._file_handler is not None:
+        if self._file_handler:
             self._fh_proj_info = self._file_handler.gen_proj_info(self._hosting_unit_id, manifest_contents_raw)
 
-    def files(self, raw_files: dict) -> list[File]:
-        if raw_files is None or not isinstance(raw_files, list):
-            return []
-        files = []
-        for raw_file in raw_files:
-            files.append(self.file(raw_file))
+    def files(self, raw_files: list[str] | str | None) -> list[File]:
+        files: list[File] = []
+        if raw_files is None:
+            pass
+        elif isinstance(raw_files, list):
+            for raw_file in raw_files:
+                parsed_file = self.file(raw_file)
+                if parsed_file:
+                    files.append(parsed_file)
+        elif isinstance(raw_files, str):
+            parsed_file = self.file(raw_files)
+            if parsed_file:
+                files.append(parsed_file)
         return files
 
     def _pre_parse_file(self, raw_file: str) -> dict:
@@ -131,9 +142,16 @@ class _ProjFilesInfo:
             raise TypeError(f"Unsupported type for file: {type(raw_file)}")
 
         file = File()
-        file.path = DictUtils.to_path(file_dict.get("path"))
-        file.name = str(file.path.with_suffix("")) if file.path and file.path.name else None
+        # NOTE Better not set this, as this path is not relative to the project root
+        # file.path = DictUtils.to_path(file_dict.get("path"))
+        # NOTE Better not set the file name
+        #      as the files human readable name,
+        #      as that can also always be done later, if deemed necessary.
+        #file.name = str(file.path.with_suffix("").name) if file.path and file.path.name else None
         file.mime_type = DictUtils.to_string(file_dict.get("mime-type"))
+        # In case it was not provided,
+        # this tries to evaluate it from the file extension
+        file.mime_type = file.evaluate_mime_type()
 
         url = DictUtils.to_string(file_dict.get("url"))
         if url and validators.url(url):
@@ -163,13 +181,19 @@ class ManifestNormalizer(Normalizer):
         return value
 
     def normalize(self, fetch_result: FetchResult) -> Project:
-        raw: RecDict = fetch_result.data.as_dict()
-        data_set: DataSet = fetch_result.data_set
+        try:
+            raw: RecDict = fetch_result.data.as_dict()
+        except ValueError as err:
+            raise NormalizerError(f"Failed to parse manifest: {err}") from err
+        # data_set: DataSet = fetch_result.data_set
 
-        okhv = raw.get("okhv", None)
-        if okhv is None:
+        okhv_fetched = raw.get("okhv", None)
+        if okhv_fetched is None:
             # We assume it is OKH v1
-            raw = convert_okh_v1_dict_to_losh(raw)
+            try:
+                raw = convert_okh_v1_dict_to_losh(raw)
+            except ConversionError as err:
+                raise NormalizerError(f"Failed to convert OKH v1 manifest to new version: {err}") from err
 
         # hosting_unit_id, _path = self._evaluate_hosting_id(raw, data_set)
         hosting_unit_id = fetch_result.data_set.hosting_unit_id
@@ -182,10 +206,34 @@ class ManifestNormalizer(Normalizer):
 
         self.files_info = _ProjFilesInfo(hosting_unit_id, raw, self._file_handler)
 
-        license = get_license(self.extract_required_str(raw, "license"))
-        licensor = self._agents(raw.get("license"))
+        # license_raw = self.extract_required_str(raw, "license")
+        license_raw = raw.get("license")
+        if not license_raw:
+            license_raw = raw.get("spdx-license")
+        if not license_raw:
+            license_raw = raw.get("alternative-license")
+        if not license_raw:
+            raise ParserError("Missing required key 'license' in manifest")
+        log.debug("license_raw: %s", license_raw)
+        license = get_license(license_raw)
+        log.warning(license)
         if not license:
-            raise ParserError("Missing required key 'license' in manifest (or parsing of it failed)")
+            raise ParserError("Failed parsing required key 'license' in manifest")
+        licensor_raw = raw.get("licensor")
+        # HACK Necessary until Appropedia switches to the new OKH format
+        #      (they are still on v1 as of January 2025),
+        #      which allows for multiple licensors.
+        if hosting_unit_id.hosting_id() == HostingId.APPROPEDIA_ORG:
+            if isinstance(licensor_raw, str):
+                users = [user.strip() for user in licensor_raw.split(',')]
+                user_ids = [{
+                    "name": user.replace('User:', ''),
+                    "url": f"https://www.appropedia.org/{user}",
+                } for user in users]
+                licensor_raw = user_ids
+        licensor = self._agents(licensor_raw)
+        if not licensor:
+            raise ParserError("Missing required key 'licensor' in manifest (or parsing of it failed)")
         project = Project(
             name=self.extract_required_str(raw, "name"),
             repo=self.extract_required_str(raw, "repo"),
@@ -199,7 +247,7 @@ class ManifestNormalizer(Normalizer):
         project.contribution_guide = self.files_info.file(raw.get("contribution-guide"))
         project.image = self._images(raw.get("image"))
         project.function = DictUtils.to_string(raw.get("function"))
-        project.documentation_language = self._language(raw.get("documentation-language"))
+        project.documentation_language = self._clean_language(raw.get("documentation-language"))
         project.technology_readiness_level = DictUtils.to_string(raw.get("technology-readiness-level"))
         project.documentation_readiness_level = DictUtils.to_string(raw.get("documentation-readiness-level"))
         project.attestation = DictUtils.to_string_list(raw.get("attestation"))
@@ -208,9 +256,12 @@ class ManifestNormalizer(Normalizer):
         project.cpc_patent_class = DictUtils.to_string(raw.get("cpc-patent-class"))
         project.tsdc = DictUtils.to_string(raw.get("tsdc"))
         project.bom = self.files_info.file(raw.get("bom"))
-        project.manufacturing_instructions = self.files_info.file(raw.get("manufacturing-instructions"))
+        project.manufacturing_instructions = self.files_info.files(raw.get("manufacturing-instructions"))
         project.user_manual = self.files_info.file(raw.get("user-manual"))
-        project.outer_dimensions = self._outer_dimensions(raw.get("outer-dimensions"))
+        try:
+            project.outer_dimensions = self._outer_dimensions(raw.get("outer-dimensions"))
+        except ParserError as err:
+            log.warning("Failed parsing outer-dimensions: %s", err)
         project.part = self._parts(raw.get("part"))
         project.software = self._software(hosting_unit_id, raw.get("software"))
         # project.sourcing_procedure = raw.get("data-sourcing-procedure", SourcingProcedure.MANIFEST)
@@ -255,7 +306,7 @@ class ManifestNormalizer(Normalizer):
         raise ValueError(f"Unable to determine hosting unit ID from raw data: {raw}")
 
     @classmethod
-    def _host(cls, raw: dict) -> str | None:
+    def _host(cls, raw: dict) -> str | None:  # NOTE Unused, can probably be removed
         manifest = raw["manifest"]
         host = DictUtils.to_string(manifest.get("dataHost"))
         if host:
@@ -291,24 +342,41 @@ class ManifestNormalizer(Normalizer):
                     tags.add(tag)
         return tags
 
+    def _person_from_user_str(self, user: str) -> Person:
+        # `user` is e.g:
+        # - 'Firstname Lastname'
+        # - 'Firstname Lastname <foo@bar.edu>'
+        # - 'Firstname Lastname (Some Organization) <foo@bar.edu>'
+        match_res = _user_re.match(user.strip())
+        if match_res:
+            name = match_res.group('name')
+            name = name.strip() if name else name
+            email = match_res.group('email')
+            email = email.strip() if email else email
+            return Person(
+                name=name,
+                email=email,
+            )
+        return Person(name=user)
+
     def _agent(self, raw: Any) -> Agent | AgentRef | None:
         agent: Person | AgentRef | None = None
         if not raw:
             return agent
         if isinstance(raw, str):
-            agent = Person(name=raw)
+            agent = self._person_from_user_str(raw)
         elif isinstance(raw, dict):
             if "iri" in raw:
                 agent = AgentRef(
-                    iri=raw["iri"],
-                    type=raw["type"],
+                    iri=self.extract_required_str(raw, "iri"),
+                    type=self.extract_required_str(raw, "type"),
                 )
             else:
                 agent = Person(
-                    name=raw["name"],
-                    email=raw["email"],
-                    # organization=raw["organization"],
-                    url=raw["url"],
+                    name=self.extract_required_str(raw, "name"),
+                    email=raw.get("email"),
+                    # organization=raw.get("organization"),
+                    url=raw.get("url"),
                 )
         return agent
 
@@ -336,15 +404,15 @@ class ManifestNormalizer(Normalizer):
         elif isinstance(raw, dict):
             if "iri" in raw:
                 agent = AgentRef(
-                    iri=raw["iri"],
-                    type=raw["type"],
+                    iri=self.extract_required_str(raw, "iri"),
+                    type=self.extract_required_str(raw, "type"),
                 )
             else:
                 agent = Organization(
-                    name=raw["name"],
-                    email=raw["email"],
-                    # organization=raw["organization"],
-                    url=raw["url"],
+                    name=self.extract_required_str(raw, "name"),
+                    email=raw.get("email"),
+                    # organization=raw.get("organization"),
+                    url=raw.get("url"),
                 )
         return agent
 
@@ -367,6 +435,8 @@ class ManifestNormalizer(Normalizer):
         images: list[Image] = []
         if raw is None:
             return images
+        if isinstance(raw, str):
+            raw = [raw]
         if isinstance(raw, list):
             for raw_item in raw:
                 image_file = self.files_info.file(raw_item)
@@ -402,19 +472,21 @@ class ManifestNormalizer(Normalizer):
             part.material = DictUtils.to_string(raw_part.get("material"))
             part.manufacturing_process = DictUtils.to_string(raw_part.get("manufacturing-process"))
             part.mass = DictUtils.to_float(raw_part.get("mass"))
-            part.outer_dimensions = self._outer_dimensions(raw_part.get("outer-dimensions"))
+            try:
+                part.outer_dimensions = self._outer_dimensions(raw_part.get("outer-dimensions"))
+            except ParserError as err:
+                log.warning("Failed parsing outer-dimensions: %s", err)
             part.tsdc = DictUtils.to_string(raw_part.get("tsdc"))
             parts.append(part)
         DictUtils.ensure_unique_clean_names(parts)
         return parts
 
     def _software_from_dict(self, hosting_unit_id: HostingUnitId, raw_software: dict) -> Software:
-        installation_guide = self.files_info.file(raw_software.get("installation-guide"))
-        if not installation_guide:
-            raise ParserError(
-                f"Software entry in manifest {hosting_unit_id} is missing required property installation guide")
-        sw = Software(installation_guide=installation_guide)
-        sw.release = DictUtils.to_string(raw_software.get("name"))
+        release = DictUtils.to_string(raw_software.get("release"))
+        if not release:
+            raise ParserError(f"Software entry in manifest {hosting_unit_id} is missing required property 'release'")
+        sw = Software(release=release)
+        sw.installation_guide = self.files_info.file(raw_software.get("installation-guide"))
         # sw.documentation_language = self._language(rs.get("documentation-language"))
         # sw.license = get_license(DictUtils.to_string(rs.get("license")))
         # sw.licensor = DictUtils.to_string(rs.get("licensor"))
@@ -436,11 +508,16 @@ class ManifestNormalizer(Normalizer):
     @classmethod
     def _outer_dimensions(cls, raw_outer_dimensions: Any) -> OuterDimensions | None:
         if not isinstance(raw_outer_dimensions, dict):
-            return None
+            raise ParserError("Can only parse dict as outer dimensions")
         try:
             return OuterDimensions.from_dict(raw_outer_dimensions)
         except ParserError as err:
             try:
                 return OuterDimensions.from_openscad(OuterDimensionsOpenScad.from_dict(raw_outer_dimensions))
-            except ParserError:
-                raise err
+            except ParserError as err2:
+                raise ParserError("Failed to parse outer dimensions, both as new and as old format:"
+                                  f"\n- '{err}'\n- '{err2}'")
+
+
+# __test_od_data = {'unit': 'm', 'openSCAD': '13'}
+# OuterDimensions.from_openscad(OuterDimensionsOpenScad.from_dict(__test_od_data))

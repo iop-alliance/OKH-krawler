@@ -67,14 +67,17 @@ class Manifest:
             return self.content
         content_bytes_orig = self.content.encode('utf-8') if isinstance(self.content, str) else self.content
         deserialized: RecDict
-        match self.format:
-            case ManifestFormat.JSON:
-                deserialized = json.loads(content_bytes_orig)
-            case ManifestFormat.TOML:
-                deserialized = tomli.loads(content_bytes_orig.decode('utf-8'))
-            case ManifestFormat.YAML:
-                content_bytes_valid = recuperate_invalid_yaml_manifest(content_bytes_orig)
-                deserialized = yaml.safe_load(content_bytes_valid)
-            case _:
-                raise NotImplementedError
+        try:
+            match self.format:
+                case ManifestFormat.JSON:
+                    deserialized = json.loads(content_bytes_orig)
+                case ManifestFormat.TOML:
+                    deserialized = tomli.loads(content_bytes_orig.decode('utf-8'))
+                case ManifestFormat.YAML:
+                    content_bytes_valid = recuperate_invalid_yaml_manifest(content_bytes_orig)
+                    deserialized = yaml.safe_load(content_bytes_valid)
+                case _:
+                    raise NotImplementedError
+        except Exception as err:
+            raise ValueError(f"Failed to convert manifest content to dict: {err}") from err
         return deserialized

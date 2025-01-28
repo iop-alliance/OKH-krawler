@@ -20,16 +20,20 @@ from krawl.recursive_type import RecDict
 log = get_child_logger("oshwa")
 
 LICENSE_MAPPING = {
-    "CC-BY-4.0": "CC-BY-4.0",
-    "CC0-1.0": "CC0-1.0",
-    "MIT": "MIT",
     "BSD-2-Clause": "BSD-2-Clause",
-    "CC-BY-SA-4.0": "CC-BY-SA-4.0",
+    "CC 0": "CC0-1.0",
+    "CC BY": "CC-BY-4.0",
     "CC BY-SA": "CC-BY-SA-4.0",
+    "CC-BY-4.0": "CC-BY-4.0",
+    "CC-BY-SA-4.0": "CC-BY-SA-4.0",
+    "CC0-1.0": "CC0-1.0",
+    "CERN": "CERN-OHL-1.2",
+    "CERN OHL": "CERN-OHL-1.2",
+    "GPL": "GPL-3.0-or-later",
     "GPL-3.0": "GPL-3.0-only",
     "OHL": "TAPR-OHL-1.0",
-    "CERN OHL": "CERN-OHL-1.2",
-    "CERN": "CERN-OHL-1.2",
+    "Solderpad": "Apache-2.0 WITH SHL-2.1",
+    "TAPR": "TAPR-OHL-1.0",
 }
 CATEGORIES_CPC_UNMAPPABLE = [
     "Agriculture", "Arts", "Education", "Electronics", "Environmental", "IOT", "Manufacturing", "Other", "Science",
@@ -81,7 +85,7 @@ class OshwaNormalizer(Normalizer):
         )
 
         project.function = self._function(raw)
-        project.documentation_language = self._language(project.function)
+        project.documentation_language = self._language_from_description(project.function)
         project.documentation_readiness_level = "ODRL-3*"
         project.cpc_patent_class = self._classification(raw)
 
@@ -123,7 +127,7 @@ class OshwaNormalizer(Normalizer):
 
     @classmethod
     def _license(cls, raw: dict) -> licenses.License:
-        raw_license = DictUtils.get_key(raw, "hardwareLicense")
+        raw_license: str | None = DictUtils.get_key(raw, "hardwareLicense")
 
         if not raw_license:
             return licenses.__unknown_license__
@@ -134,10 +138,13 @@ class OshwaNormalizer(Normalizer):
         if not raw_license or raw_license in ["None", "Other"]:
             return licenses.__unknown_license__
 
-        mapped_license: licenses.License | None = licenses.get_by_id_or_name(
-            LICENSE_MAPPING.get(raw_license, raw_license))
+        mapped_license: str | None = LICENSE_MAPPING.get(raw_license, raw_license)
         if mapped_license:
-            return mapped_license
+            raw_license = mapped_license
+        if raw_license:
+            validated_license: licenses.License | None = licenses.get_by_id_or_name(raw_license)
+            if validated_license:
+                return validated_license
         return licenses.__unknown_license__
 
     @classmethod

@@ -51,13 +51,28 @@ class Normalizer:
         raise NotImplementedError()
 
     @classmethod
-    def _language(cls, description: str | None) -> str | None:
+    def _clean_language(cls, raw_lang: list[str] | str | None) -> list[str]:
+        langs: list[str] = []
+        if not raw_lang:
+            return langs
+        if isinstance(raw_lang, str):
+            return [raw_lang]
+        if isinstance(raw_lang, list):
+            return raw_lang
+        else:
+            raise TypeError(f"Expected list or str, got {type(raw_lang)}")
+
+    @classmethod
+    def _language_from_description(cls, description: str | None) -> list[str]:
+        langs: list[str] = []
         if not description:
-            return None
+            return langs
         try:
             lang = detect_language(description)
+            if lang == "unknown":
+                return langs
+            else:
+                langs.append(lang)
         except LangDetectException:
-            return None
-        if lang == "unknown":
-            return None
-        return lang
+            return langs
+        return langs
