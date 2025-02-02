@@ -32,7 +32,7 @@ from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.repository import FetcherStateRepository
-from krawl.shared.thingiverse import Hit, ThingSearch, BATCH_SIZE, RETRY_CODES
+from krawl.shared.thingiverse import BATCH_SIZE, RETRY_CODES, Hit, ThingSearch
 
 __long_name__: str = "thingiverse"
 __hosting_id__: HostingId = HostingId.THINGIVERSE_COM
