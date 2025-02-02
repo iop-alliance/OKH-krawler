@@ -596,20 +596,25 @@ class RDFSerializer(Serializer):
                 RDFSerializer.add(graph, subj, OKH.hasTag, okh_rdf_image_tag)
 
     @classmethod
-    def _make_graph(cls, fetch_result: FetchResult, project: Project) -> Graph:
-        graph: Graph = Graph()
-        graph.bind("mime", MIME)
-        graph.bind("okh", OKH)
-        # graph.bind("okhmeta", OKHMETA)
-        graph.bind("okhkrawl", OKHKRAWL)
-        graph.bind("otrl", OTRL)
-        graph.bind("tsdc", TSDC)
-        # graph.bind("tsdcr", TSDCR)
+    def _setup_graph(cls, graph: Graph, meta: bool = False) -> None:
+        if not meta:
+            graph.bind("mime", MIME)
+            graph.bind("okh", OKH)
+            # graph.bind("okhmeta", OKHMETA)
+            graph.bind("okhkrawl", OKHKRAWL)
+            graph.bind("otrl", OTRL)
+            graph.bind("tsdc", TSDC)
+            # graph.bind("tsdcr", TSDCR)
         graph.bind("rdfs", RDFS)
         graph.bind("owl", OWL)
         graph.bind("schema", SCHEMA)
         graph.bind("spdx", SPDX)
         graph.bind("xsd", XSD)
+
+    @classmethod
+    def _make_graph(cls, fetch_result: FetchResult, project: Project) -> Graph:
+        graph: Graph = Graph()
+        cls._setup_graph(graph, meta=False)
 
         namespace = cls._make_project_namespace(project)
         graph.bind("", namespace)
