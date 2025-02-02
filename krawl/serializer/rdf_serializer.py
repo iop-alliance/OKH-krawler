@@ -17,6 +17,7 @@ from rdflib import DCTERMS, FOAF, OWL, RDF, RDFS, VOID, XSD, Graph, Literal, Nam
 from krawl.errors import SerializerError
 from krawl.fetcher.result import FetchResult
 from krawl.model.agent import Agent, AgentRef, Organization, Person
+from krawl.model.dataset import CrawlingMeta
 from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_unit import HostingId
 from krawl.model.licenses import License
@@ -106,7 +107,8 @@ class RDFSerializer(Serializer):
         cls.add(graph, subj, ODS.dataProvider, data_provider)
 
         data_sourcing_procedure_iri: URIRef
-        sourcing_procedure = fetch_result.data_set.crawling_meta.sourcing_procedure
+        cm: CrawlingMeta = fetch_result.data_set.crawling_meta
+        sourcing_procedure = cm.sourcing_procedure
         match sourcing_procedure:
             case SourcingProcedure.API:
                 data_sourcing_procedure_iri = OKHKRAWL.dataSourcingProcedureApi
@@ -144,9 +146,9 @@ class RDFSerializer(Serializer):
         # agent_rdf_iri = cls._create_agent(graph, namespace, internal_iri_name, licensor)
         # cls.add(graph, module_subject, OKH.licensor, agent_rdf_iri)
 
-        cls.add(graph, subj, ODS.lastVisited, fetch_result.data_set.crawling_meta.last_visited)
-        cls.add(graph, subj, ODS.lastChanged, fetch_result.data_set.crawling_meta.last_changed)
-        cls.add(graph, subj, ODS.created, fetch_result.data_set.crawling_meta.created_at)
+        cls.add(graph, subj, ODS.lastVisited, cm.last_visited)
+        cls.add(graph, subj, ODS.lastChanged, cm.last_changed)
+        cls.add(graph, subj, ODS.created, cm.created_at)
 
         # data_set = DataSet(
         #     crawling_meta=CrawlingMeta(
