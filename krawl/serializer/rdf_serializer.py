@@ -17,7 +17,7 @@ from rdflib import DCTERMS, FOAF, OWL, RDF, RDFS, VOID, XSD, Graph, Literal, Nam
 from krawl.errors import SerializerError
 from krawl.fetcher.result import FetchResult
 from krawl.model.agent import Agent, AgentRef, Organization, Person
-from krawl.model.dataset import CrawlingMeta
+from krawl.model.data_set import CrawlingMeta
 from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_unit import HostingId
 from krawl.model.licenses import License
