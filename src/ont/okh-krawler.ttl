@@ -13,9 +13,6 @@
 @prefix spdxl:    <http://spdx.org/licenses/> .
 @prefix vaem:     <http://www.linkedmodel.org/schema/vaem#> .
 
-
-
-
 okh:created
   a owl:ObjectProperty ;
   a skos:Concept ;
@@ -27,11 +24,8 @@ okh:created
   schema:rangeIncludes okh:TimeStamp ;
   okhmeta:hasMetaTag okhmeta:DataGatheringTag ;
   .
-
 #   okh:lastChanged "2021-03-26T15:15:46+00:00" ;
 #   okh:lastVisited "2021-03-26T15:15:46+00:00" ;
-
-
 
 okhkrawl:okhKrawlerDataset
   a dcat:Dataset ;
