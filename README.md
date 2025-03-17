@@ -71,7 +71,7 @@ by running the following commands in the repository dir
 
 ```sh
 poetry install
-poetry shell
+eval $(poetry env activate)
 ```
 
 Within that shell,
