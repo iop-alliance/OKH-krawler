@@ -32,7 +32,7 @@ from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.repository import FetcherStateRepository
-from krawl.shared.thingiverse import BATCH_SIZE, RETRY_CODES, Hit, ThingSearch
+from krawl.shared.thingiverse import RETRY_CODES, Hit, ThingSearch
 
 __long_name__: str = "thingiverse"
 __hosting_id__: HostingId = HostingId.THINGIVERSE_COM
@@ -149,6 +149,26 @@ class ThingiverseFetcher(Fetcher):
     we store the ID, fetch-date, and state (Open Source|proprietary|deleted).
     And we store the latest ID we tried fetched, separately.
     """
+    CONFIG_SCHEMA_EXTRA: dict = {
+        "fetch-range": {
+            "type": "dict",
+            "default": {},
+            "meta": {
+                "long_name": "fetch-range",
+                "description": "The range of thing-IDs to scrape"
+            },
+            "schema": {
+                "min": {
+                    "type": "integer",
+                    "default": 0
+                },
+                "max": {
+                    "type": "integer",
+                    "default": 999999999
+                }
+            }
+        },
+    }
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=__long_name__, default_timeout=10, access_token=True)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
@@ -159,6 +179,7 @@ class ThingiverseFetcher(Fetcher):
         # self._rate_limit = {}
         self._request_counter = 0
         self._request_start_time = None
+        self.config = config
 
         retry = Retry(
             total=config.retries,
@@ -264,21 +285,14 @@ class ThingiverseFetcher(Fetcher):
 
         return response.json()
 
-    def fetch_all(self, start_over=False) -> Generator[FetchResult]:
-        projects_counter: int = 0
-        fetcher_state = _FetcherState.load(self._state_repository, start_over=start_over)
-
-        page_id = math.floor(fetcher_state.next_fetch / BATCH_SIZE) + 1
-        page_thing_index = fetcher_state.next_fetch - ((page_id - 1) * BATCH_SIZE)
+    def fetch_latest_thing_id(self) -> int:
         # Documentation for this call:
         # <https://www.thingiverse.com/developers/swagger#/Search/get_search__term___type_things>
-        page_id = 1
         data: ThingSearch = self._do_request(
-            "https://api.thingiverse.com/search",
+            "https://api.thingiverse.com/search/",
             {
                 "type": "things",
-                "per_page": BATCH_SIZE,
-                "page": page_id,
+                "per_page": 1,
                 'sort': 'newest',
                 # "license": "cc",
                 # "license": "cc-sa",
@@ -295,11 +309,30 @@ class ThingiverseFetcher(Fetcher):
                 # "license": "public",
             })
 
+        hits: list[Hit] = data["hits"]
+        if hits == []:
+            raise FetcherError("Failed to fetch the latest thing-ID")
+
+        return hits[0]["id"]
+
+    def fetch_all(self, start_over=False) -> Generator[FetchResult]:
+        projects_counter: int = 0
+        fetcher_state = _FetcherState.load(self._state_repository, start_over=start_over)
+
+        latest_thing_id: int = self.fetch_latest_thing_id()
+        min_thing_id = self.config.fetch_range.min
+        max_thing_id = min(self.config.fetch_range.max, latest_thing_id)
+        max_thing_id_src = "configured" if self.config.fetch_range.max < latest_thing_id else "latest available"
+
+        log.info("latest_thing_id: %d", latest_thing_id)
+        log.info("Actual scraping range:")
+        log.info("  min_thing_id (configured): %d", min_thing_id)
+        log.info("  max_thing_id (%s): %d", max_thing_id_src, max_thing_id)
 
         # last_thing_id = data["hits"].pop(0)["id"]
         last_visited = datetime.now(timezone.utc)
 
-        for hit_idx in range(page_thing_index, len(data["hits"])):
+        for thing_id in range(min_thing_id, max_thing_id):
             raw_project: dict[str, Any] = {}
             thing: Hit = data["hits"][hit_idx]
             raw_project["thing"] = thing
