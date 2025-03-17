@@ -280,18 +280,6 @@ class ThingiverseFetcher(Fetcher):
                 "per_page": BATCH_SIZE,
                 "page": page_id,
                 'sort': 'newest',
-                # Only show Things posted before this date.
-                # Can be a concrete date or "math" like: +1h
-                # For more details, see:
-                # <https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math>
-                # "posted_before": "<some-date-in-the-right-format>",
-                # "posted_before": "2025-05-29",
-                # Only show Things posted after this date.
-                # Can be a concrete date or "math" like: +1h
-                # For more details, see:
-                # <https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math>
-                # "posted_after": "<some-date-in-the-right-format>",
-
                 # "license": "cc",
                 # "license": "cc-sa",
                 # "license": "cc-nd", # Bad
@@ -307,18 +295,6 @@ class ThingiverseFetcher(Fetcher):
                 # "license": "public",
             })
 
-        log.info("Found things (total): %s", data["total"])
-        log.info("Found things (len(hits)): %d", len(data["hits"]))
-        # log.debug("-----------------------")
-        # log.debug("All received data: %s", str(data))
-        # log.debug("-----------------------")
-        raise SystemExit(37)
-        # first_thing_id = data["hits"][0]["id"]
-        # last_thing_id = data["hits"][-1]["id"]
-        # log.info("First thing ID: %d", first_thing_id)
-        # log.info("Last thing ID: %d", last_thing_id)
-        # log.info("Found things: %d", last_thing_id - first_thing_id)
-        # return None
 
         # last_thing_id = data["hits"].pop(0)["id"]
         last_visited = datetime.now(timezone.utc)
