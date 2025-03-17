@@ -149,6 +149,11 @@ class RDFSerializer(Serializer):
         cls.add(graph, subj, ODS.lastVisited, cm.last_visited)
         cls.add(graph, subj, ODS.lastChanged, cm.last_changed)
         cls.add(graph, subj, ODS.created, cm.created_at)
+        # cls.add(graph, subj, ODS.visitsFile, cm.visits_file)
+        # cls.add(graph, subj, ODS.dataFile, cm.TODO)  # TODO
+        # cls.add(graph, subj, ODS.hash, cm.hash)  # TODO
+
+        # cls.add
 
         # data_set = DataSet(
         #     crawling_meta=CrawlingMeta(
@@ -616,12 +621,20 @@ class RDFSerializer(Serializer):
         graph: Graph = Graph()
         cls._setup_graph(graph, meta=False)
 
+        meta_graph: Graph = Graph()
+        cls._setup_graph(meta_graph, meta=True)
+
         namespace = cls._make_project_namespace(project)
         graph.bind("", namespace)
 
         # NOTE The data-set is the top of the data tree within a manifest,
         #      similar to an `owl:Ontology` in case of a vocabulary.
-        data_set_subj = cls._add_data_set(graph, namespace, fetch_result, project)
+        #      As it will likely change more often then the actual OKH data,
+        #      because at least `lastVisited` gets updated each time we fetch it,
+        #      we store it in a separate file then the actual OKH RDF,
+        #      which only changes when the actual fetched OKH data
+        #      differs from previous fetches.
+        data_set_subj = cls._add_data_set(meta_graph, namespace, fetch_result, project)
 
         module_subject = cls._add_project(graph, namespace, fetch_result, project)
         cls.add(graph, data_set_subj, VOID.rootResource, module_subject)

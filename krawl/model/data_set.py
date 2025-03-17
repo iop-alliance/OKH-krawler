@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 
 from krawl.model.agent import Agent, Organization
 from krawl.model.hosting_unit import HostingUnitId
@@ -25,6 +26,7 @@ class CrawlingMeta:  # pylint: disable=too-many-instance-attributes
     This is `None``, for example, if data was fetched through platform API only."""
     created_at: datetime | None = None
     last_changed: datetime | None = None
+    visits_file: Path | None = None
     # history = None
     # score: float = field(default=None, init=False)
     # """internally calculated score for project importance to decide re-visit schedule"""
