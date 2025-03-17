@@ -89,13 +89,65 @@ class _FetcherState:
 
 
 class ThingiverseFetcher(Fetcher):
-    """Fetcher for projects on GitHub.com.
+    """Fetcher for projects on Thingiverse.com.
 
     REST API documentation:
 
     - General: <https://www.thingiverse.com/developers>
     - Requests: <https://www.thingiverse.com/developers/swagger>
     - Legal: <https://www.thingiverse.com/legal/api>
+
+    ## Crux
+
+    Thingiverse has no interest in us (or anyone else) to have
+    an easy way to access their meta-data.
+    For single projects, yes.
+    For all the projects, no.
+    In theory, one can get all the projects meta-data through their API.
+    In practice however,
+    we find that a lot of the advertised functionality does not work,
+    and that there are extra limits that are not documented.
+    This is all concentrated in the search API.
+    One extra limit, for example,
+    is that the maximum amount of search results available is 10'000;
+    that includes paging, no matter the page-size.
+    In theory, the search API allows to select by project 'license',
+    'posted_after' and 'posted_before' dates.
+    There one might now think, that choosing these values carefully,
+    we could shift a variable-size frame through time,
+    choosing the time-frame small enough to never surpass the 10k limit
+    in the amount of results, but no, no!
+    Because 'posted_after' and 'posted_before' are completely non-functional.
+
+    Whatever one might try to come up with,
+    they made it not work already.
+    There is one weak-spot though, that they will likely not cover:
+    Their projects are identified by ID, and these IDs are ascending, meaning:
+    The first project ever published had ID 1, the next one 2, and so on,
+    and thus ....
+
+    ## Solution
+
+    We simply get the ID of the latest project published,
+    which we *can* do with the help of their search-API,
+    and then we painstakingly go through all the (potential) project IDs
+    from 1 till that ID, trying to fetch each one.
+    Because this takes a LOT of time, due to the 1 project fetch per second rate limit,
+    we make sure to cache the results in a way that is not only easily reusable by us,
+    but potentially also other projects.
+    IDs we tried to fetch once, but turned out to be deleted projects,
+    we never have to fetch again.
+    Projects we fetched but turned out to not be Open Source,
+    we may choose to never fetch again as well,
+    or just once a year or so,
+    to check if they may have changed the license.
+
+    All the raw fetch-results are stored in a git repo,
+    exactly as we get them from the API,
+    if the project is Open Source.
+    For all the IDs we tried to fetch,
+    we store the ID, fetch-date, and state (Open Source|proprietary|deleted).
+    And we store the latest ID we tried fetched, separately.
     """
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=__long_name__, default_timeout=10, access_token=True)
 
