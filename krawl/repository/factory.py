@@ -34,7 +34,7 @@ class ProjectRepositoryFactory:
         return self._enabled
 
     @classmethod
-    def get_config_schemas(cls, proj_repo_types: list[ProjectRepositoryType] | None = None) -> dict:
+    def get_config_schemas(cls, proj_repo_types: list[ProjectRepositoryType] | None = None) -> dict[ProjectRepositoryType, dict]:
         if not proj_repo_types:
             return _repositories_schemas
         schema = {}

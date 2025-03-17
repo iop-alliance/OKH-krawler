@@ -76,7 +76,7 @@ class FetcherFactory:
         return self._enabled
 
     @classmethod
-    def get_config_schemas(cls, hosting_ids: list[HostingId] | None = None) -> dict:
+    def get_config_schemas(cls, hosting_ids: list[HostingId] | None = None) -> dict[HostingId, dict]:
         if not hosting_ids:
             return {n: c.CONFIG_SCHEMA for n, c in _fetcher_classes.items()}
         schema = {}

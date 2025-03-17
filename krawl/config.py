@@ -32,7 +32,7 @@ from .errors import ConfigError, NotOverriddenError
 
 # schema for normalization/validation
 # see: https://docs.python-cerberus.org/en/stable/index.html
-BASE_SCHEMA = {
+BASE_SCHEMA: dict = {
     "database": {
         "type": "dict",
         "default": {},
@@ -119,9 +119,11 @@ BASE_SCHEMA = {
 # represents a missing option
 missing = type("MissingType", (), {"__repr__": lambda x: "missing"})()
 
+type HostingId = str
+type ProjectRepositoryType = str
 
-def get_assembled_schema(fetchers_schema, repositories_schema):
-    full_schema = deepcopy(BASE_SCHEMA)
+def get_assembled_schema(fetchers_schema: dict[HostingId, dict], repositories_schema: dict[ProjectRepositoryType, dict]) -> dict:
+    full_schema: dict = deepcopy(BASE_SCHEMA)
     full_schema["fetchers"]["schema"].update(fetchers_schema)
     full_schema["repositories"]["schema"].update(repositories_schema)
     return full_schema
