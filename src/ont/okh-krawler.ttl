@@ -51,6 +51,34 @@ okhkrawl:okhKrawlerDataset-ttl
   dcat:mediaType <http://www.iana.org/assignments/media-types/text/turtle> ;
   .
 
+okhkrawl:NoAssertionLicense
+  a spdx:CustomLicense ;
+  spdx:comment "Use \"LicenseRef-NONE\" or \"LicenseRef-NONE\" within an SPDX license expression for this."@en ;
+  spdx:description """We use this if creative works are not explicitly given any copyright
+(which practically means: `okhkrawl:AllRightsReservedLicense`,
+even though sometimes this might not have been the intention of the author)."""@en ;
+  spdx:isOsiApproved false ;
+  spdx:isDeprecatedLicenseId false ;
+  spdx:isFsfLibre false ;
+  spdx:isOsiApproved false ;
+  spdx:licenseText "All rights reserved"@en ;
+  spdx:name "All rights reserved"@en ;
+  spdx:summary "This license ..."@en ;
+  .
+
+okhkrawl:AllRightsReservedLicense
+  a spdx:CustomLicense ;
+  spdx:comment "Use \"LicenseRef-AllRightsReserved\" within an SPDX license expression for this."@en ;
+  spdx:description """We use this on creative works explicitly marked so.
+If there is no explicit copyright, we use `okhkrawl:NoAssertionLicense` instead."""@en ;
+  spdx:isOsiApproved false ;
+  spdx:isDeprecatedLicenseId false ;
+  spdx:isFsfLibre false ;
+  spdx:isOsiApproved false ;
+  spdx:licenseText "All rights reserved"@en ;
+  spdx:name "All rights reserved"@en ;
+  .
+
 okhkrawl:dataProviderAppropedia
   a okh:DataProvider ;
   rdfs:label "Appropedia" ;
