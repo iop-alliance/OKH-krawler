@@ -37,4 +37,5 @@ class TOMLDeserializer(Deserializer):
             raise DeserializerError("invalid format")
         if enrich:
             deserialized.update(enrich)
+        fetch_result = None
         return (fetch_result, normalizer.normalize(deserialized))

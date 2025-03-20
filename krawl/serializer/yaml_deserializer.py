@@ -35,4 +35,4 @@ class YAMLDeserializer(Deserializer):
             raise DeserializerError("invalid format")
         if enrich:
             deserialized.update(enrich)
-        return normalizer.normalize(deserialized)
+        return (None, normalizer.normalize(deserialized))
