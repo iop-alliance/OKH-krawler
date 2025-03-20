@@ -31,6 +31,10 @@ class File:  # pylint: disable=too-many-instance-attributes
     # licensor: str | None = None
 
     @property
+    def valid(self) -> bool:
+        return not ((self.path is None) and (self.url is None))
+
+    @property
     def extension(self) -> str:
         ext: str = ""
         if self.path:
