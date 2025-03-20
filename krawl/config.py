@@ -119,8 +119,8 @@ BASE_SCHEMA: dict = {
 # represents a missing option
 missing = type("MissingType", (), {"__repr__": lambda x: "missing"})()
 
-type HostingId = str
-type ProjectRepositoryType = str
+HostingId: type = str
+ProjectRepositoryType: type = str
 
 def get_assembled_schema(fetchers_schema: dict[HostingId, dict], repositories_schema: dict[ProjectRepositoryType, dict]) -> dict:
     full_schema: dict = deepcopy(BASE_SCHEMA)
