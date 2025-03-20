@@ -11,6 +11,7 @@ import urllib.parse
 from pathlib import Path
 
 import validators
+from ftfy import fix_encoding
 
 _p_space = re.compile('[ \t\r\n]+')
 
@@ -61,6 +62,10 @@ def extract_path(url: str) -> Path | None:
     """
     parsed_url = urllib.parse.urlparse(url)
     return Path(parsed_url.path) if parsed_url.path else None
+
+
+def fix_str_encoding(potentially_bad_str: str) -> str:
+    return fix_encoding(potentially_bad_str)
 
 
 def url_encode(raw_url_part: str) -> str:
