@@ -88,6 +88,13 @@ class License:  # pylint: disable=too-many-instance-attributes
         return self.id()
 
 
+def _normalize_license_id(license_info_extra: dict[str, Any]) -> dict[str, Any]:
+
+    if license_info_extra.get("licenseId"):
+        license_info_extra["licenseId"] = license_info_extra["licenseId"].strip()
+    return license_info_extra
+
+
 def _normalize_name(name: str) -> str:
     return unicodedata.normalize('NFKD', name).casefold().encode('ascii', 'ignore').decode('ascii').strip()
 
@@ -111,7 +118,7 @@ def _init_licenses() -> tuple[dict[str, License], dict[str, str]]:
     with licenses_extra_file.open("r") as f:
         raw_license_extra_info: dict[str, Any] = json.load(f)
         license_extra_info: dict[str, dict[str, Any]] = {
-            _normalize_name(lic["licenseId"]): lic for lic in raw_license_extra_info["licenses"]
+            _normalize_name(lic["licenseId"]): _normalize_license_id(lic) for lic in raw_license_extra_info["licenses"]
         }
     for name in license_extra_info:
         if name in license_info:
