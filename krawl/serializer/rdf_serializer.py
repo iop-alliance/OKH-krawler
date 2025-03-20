@@ -200,7 +200,7 @@ class RDFSerializer(Serializer):
         return Namespace(base)
 
     @staticmethod
-    def _make_OTRL(project):
+    def _make_OTRL(project: Project) -> str | None:
         v = project.technology_readiness_level
         if v is None:
             return None
@@ -208,7 +208,7 @@ class RDFSerializer(Serializer):
         return otrl_manifest.replace('OTRL-', 'OTRL')
 
     @staticmethod
-    def _make_ODRL(project):
+    def _make_ODRL(project: Project) -> str | None:
         v = project.documentation_readiness_level
         if v is None:
             return None
@@ -223,13 +223,13 @@ class RDFSerializer(Serializer):
         return alpha_num
 
     @staticmethod
-    def _individual_case(s):
+    def _individual_case(s: str) -> str:
         """In RDF, the convention is for individuals to start with a lower case character."""
         title_cased = RDFSerializer._title_case(s)
         return title_cased[0].lower() + title_cased[1:]
 
     @staticmethod
-    def _camel_case(s):
+    def _camel_case(s: str) -> str:
         parts = s.split("-")
         without_dash = "".join([parts[0]] + [p.capitalize() for p in parts[1:]])
         return without_dash
@@ -274,7 +274,7 @@ class RDFSerializer(Serializer):
         # cls.add(graph, subject, ODS.lastVisited, file.last_visited) # FIXME: only add if contained in ontology
 
     @classmethod
-    def add_outer_dimensions(cls, graph, subject, outer_dimensions):
+    def add_outer_dimensions(cls, graph: Graph, subject: URIRef, outer_dimensions: OuterDimensions):
         cls.add(graph, subject, OKH.width, outer_dimensions.width)
         cls.add(graph, subject, OKH.height, outer_dimensions.height)
         cls.add(graph, subject, OKH.depth, outer_dimensions.depth)
