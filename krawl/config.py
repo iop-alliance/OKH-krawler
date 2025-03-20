@@ -196,7 +196,9 @@ def iterate_schema(schema: Mapping,
             yield (key_path + [key], rules)
 
 
-def validate(config: Mapping, schema: Mapping, middle_stage=False) -> tuple[Mapping | None, list[str]]:
+def validate(config: Mapping,
+             schema: Mapping[str, Any],
+             middle_stage=False) -> tuple[Mapping[str, Any] | None, list[str]]:
     """Normalize and validate a config against a given schema.
 
     Args:
@@ -402,7 +404,7 @@ class ConfigValidator(Validator):
 
         super()._normalize_coerce(mapping, schema)
 
-    def _normalize_default(self, mapping: Mapping, schema: Mapping, field: str) -> None:
+    def _normalize_default(self, mapping: Mapping, schema: Mapping[str, Any], field: str) -> None:
         """ {'nullable': True} """
         if self.ignore_defaults:
             return
