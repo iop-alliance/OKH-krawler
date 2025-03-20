@@ -122,7 +122,9 @@ missing = type("MissingType", (), {"__repr__": lambda x: "missing"})()
 HostingId: type = str
 ProjectRepositoryType: type = str
 
-def get_assembled_schema(fetchers_schema: dict[HostingId, dict], repositories_schema: dict[ProjectRepositoryType, dict]) -> dict:
+
+def get_assembled_schema(fetchers_schema: dict[HostingId, dict], repositories_schema: dict[ProjectRepositoryType,
+                                                                                           dict]) -> dict:
     full_schema: dict = deepcopy(BASE_SCHEMA)
     full_schema["fetchers"]["schema"].update(fetchers_schema)
     full_schema["repositories"]["schema"].update(repositories_schema)

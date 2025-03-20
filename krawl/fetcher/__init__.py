@@ -60,7 +60,11 @@ class Fetcher:
             fetch_listener.failed_fetch(evt)
 
     @classmethod
-    def _generate_config_schema(cls, long_name: str, default_timeout: int, access_token: bool, extra_schema: dict = None) -> dict:
+    def _generate_config_schema(cls,
+                                long_name: str,
+                                default_timeout: int,
+                                access_token: bool,
+                                extra_schema: dict = None) -> dict:
         inner_schema: dict = {
             "timeout": {
                 "type": "integer",

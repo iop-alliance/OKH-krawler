@@ -42,7 +42,8 @@ class KrawlCommand(Command):
                             enabled_repositories: list[ProjectRepositoryType] | None = None,
                             enabled_fetchers: list[HostingId] | None = None) -> dict:
         fetchers_schema: dict[HostingId, dict] = FetcherFactory.get_config_schemas(enabled_fetchers)
-        repositories_schema: dict[ProjectRepositoryType, dict] = ProjectRepositoryFactory.get_config_schemas(enabled_repositories)
+        repositories_schema: dict[ProjectRepositoryType,
+                                  dict] = ProjectRepositoryFactory.get_config_schemas(enabled_repositories)
         config_schema: dict = get_assembled_schema(fetchers_schema, repositories_schema)
         return config_schema
 

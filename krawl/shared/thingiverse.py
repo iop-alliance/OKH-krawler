@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from typing import TypeAlias, TypedDict
 from enum import Enum
+from typing import TypeAlias, TypedDict
 
 # from datetime import datetime, timezone
 from krawl.log import get_child_logger
@@ -191,11 +191,13 @@ class ThingFile(TypedDict):
     download_count: int
     direct_url: t_url
 
+
 class StorageThingIdState(Enum):
     """The basic state of a thing ID on the platform."""
     DELETED = 1
     PROPRIETARY = 2
     OPEN = 3
+
 
 class StorageThingMeta(TypedDict):
     """What we store for every thing ID."""
