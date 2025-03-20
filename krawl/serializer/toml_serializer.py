@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
 import toml
 
@@ -15,6 +14,9 @@ from krawl.fetcher.result import FetchResult
 from krawl.model.project import Project
 from krawl.serializer import Serializer
 from krawl.serializer.json_serializer import JsonSerializer
+from krawl.serializer.util import json_serialize
+
+# from typing import Any
 
 # def _clean_dict_entry(pair: tuple[str, Any]) -> bool:
 #     key, value = pair
@@ -84,6 +86,7 @@ class TOMLSerializer(Serializer):
         self.json_serializer = JsonSerializer()
 
     def serialize(self, fetch_result: FetchResult, project: Project) -> str:
+        project_dict_clean: dict | None = None
         try:
             # serialized = toml.dumps(project.as_dict())
             project_json_serialized: str = self.json_serializer.serialize(fetch_result, project)
@@ -95,6 +98,10 @@ class TOMLSerializer(Serializer):
                 )
             serialized = toml.dumps(project_dict_clean)
         except Exception as err:
+            serialized_json: str | None = None
+            if project_dict_clean is not None:
+                json_serialize(project_dict_clean)
             raise SerializerError(
-                f"Failed to serialize TOML for project '{fetch_result.data_set.hosting_unit_id}': {err}") from err
+                f"Failed to serialize TOML for project '{fetch_result.data_set.hosting_unit_id}': {err}\ndata:\n{serialized_json}"
+            ) from err
         return serialized
