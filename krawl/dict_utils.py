@@ -16,6 +16,12 @@ from typing import Any
 class DictUtils:
 
     @staticmethod
+    def ensure_unquoted(orig: str | None) -> str | None:
+        if orig is not None and len(orig) >= 2 and  orig[0] in ['"', "'"] and orig[0] == orig[-1]:
+            return orig[1:-1]
+        return orig
+
+    @staticmethod
     def get_key(obj, *key, default=None):
         last = obj
         for k in key:
@@ -27,7 +33,7 @@ class DictUtils:
         return last
 
     @staticmethod
-    def to_string(value: Any) -> str | None:
+    def to_string_raw(value: Any) -> str | None:
         if value is None:
             return None
         if isinstance(value, str):
@@ -35,6 +41,10 @@ class DictUtils:
         if isinstance(value, (int, float)):
             return str(value)
         return None
+
+    @staticmethod
+    def to_string(value: Any) -> str | None:
+        return DictUtils.ensure_unquoted(DictUtils.to_string_raw(value))
 
     @staticmethod
     def to_string_list(value: Any) -> list[str]:
