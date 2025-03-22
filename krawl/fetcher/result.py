@@ -19,4 +19,4 @@ class FetchResult:
     data_set: DataSet
     """Meta-data about the crawl"""
     data: Manifest
-    """The actually main content of the crawl; yummy, yummy data!"""
+    """The main content of the crawl; yummy, yummy data!"""

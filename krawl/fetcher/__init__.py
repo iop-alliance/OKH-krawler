@@ -62,9 +62,9 @@ class Fetcher:
     @classmethod
     def _generate_config_schema(cls,
                                 long_name: str,
-                                default_timeout: int,
-                                access_token: bool,
-                                extra_schema: dict = None) -> dict:
+                                default_timeout: int = 10,
+                                access_token: bool | None = None,
+                                extra_schema: dict | None = None) -> dict:
         inner_schema: dict = {
             "timeout": {
                 "type": "integer",
