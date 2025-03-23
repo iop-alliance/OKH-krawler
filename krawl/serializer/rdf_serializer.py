@@ -731,17 +731,6 @@ class RDFSerializer(Serializer):
         if readme_subject is not None:
             cls.add(graph, module_subject, OKH.hasReadme, readme_subject)
 
-        # image_subject = cls._add_file(
-        #     graph=graph,
-        #     namespace=namespace,
-        #     project=project,
-        #     key="image",
-        #     entity_name="image",
-        #     rdf_type=OKH.Image,
-        #     extras_handler=cls.image_extras_handler,
-        # )
-        # cls.add(graph, module_subject, OKH.hasImage, image_subject)
-
         bom_subject = cls._add_file(
             graph=graph,
             namespace=namespace,
@@ -759,16 +748,6 @@ class RDFSerializer(Serializer):
                                       entity_name=cls._individual_case(f"project_manufacturingInstructions{i + 1}"),
                                       parent_name=project.name)
             cls.add(graph, module_subject, OKH.hasManufacturingInstructions, subj)
-        # manufacturing_instructions_subject = cls._add_file(
-        #     graph=graph,
-        #     namespace=namespace,
-        #     project=project,
-        #     key="manufacturing_instructions",
-        #     entity_name="manufacturingInstructions",
-        #     rdf_type=ODS.File,
-        # )
-        # if manufacturing_instructions_subject is not None:
-        #     cls.add(graph, module_subject, OKH.hasManufacturingInstructions, manufacturing_instructions_subject)
 
         user_manual_subject = cls._add_file(
             graph=graph,
