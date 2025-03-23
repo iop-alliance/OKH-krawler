@@ -16,7 +16,8 @@ class FetchResultRepository(FetchListener):
     def store_fetched(self, fetch_result: FetchResult) -> None:
         raise NotImplementedError()
 
-    def store_final(self, fetch_result: FetchResult, normalized_content: str, rdf_content: str) -> None:
+    def store_final(self, fetch_result: FetchResult, normalized_content: str, rdf_meta_content: str,
+                    rdf_content: str) -> None:
         raise NotImplementedError()
 
     def fetched(self, fetch_result: FetchResult) -> None:

@@ -6,10 +6,12 @@
 
 from __future__ import annotations
 
+import json
 import math
 from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from time import sleep
 from typing import Any
 
@@ -32,7 +34,8 @@ from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.repository import FetcherStateRepository
-from krawl.shared.thingiverse import RETRY_CODES, Hit, ThingSearch
+from krawl.shared.thingiverse import (RETRY_CODES, Hit, StorageThingIdState, StorageThingMeta, ThingSearch,
+                                      read_all_os_thing_metas, read_thing_metas, read_thing_metas_with_path)
 
 __long_name__: str = "thingiverse"
 __hosting_id__: HostingId = HostingId.THINGIVERSE_COM
@@ -149,26 +152,6 @@ class ThingiverseFetcher(Fetcher):
     we store the ID, fetch-date, and state (Open Source|proprietary|deleted).
     And we store the latest ID we tried fetched, separately.
     """
-    CONFIG_SCHEMA_EXTRA: dict = {
-        "fetch-range": {
-            "type": "dict",
-            "default": {},
-            "meta": {
-                "long_name": "fetch-range",
-                "description": "The range of thing-IDs to scrape"
-            },
-            "schema": {
-                "min": {
-                    "type": "integer",
-                    "default": 0
-                },
-                "max": {
-                    "type": "integer",
-                    "default": 999999999
-                }
-            }
-        },
-    }
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=__long_name__, default_timeout=10, access_token=True)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
@@ -197,15 +180,15 @@ class ThingiverseFetcher(Fetcher):
             "Authorization": f"Bearer {config.access_token}",
         })
 
-    def __fetch_one(self, fetcher_state: _FetcherState, hosting_unit_id: HostingUnitIdWebById,
-                    last_visited: datetime) -> FetchResult:
+    def __fetch_one(self, fetcher_state: _FetcherState, hosting_unit_id: HostingUnitIdWebById, last_visited: datetime,
+                    meta: StorageThingMeta, raw_thing: Hit) -> FetchResult:
         try:
             thing_id = hosting_unit_id.project_id
             log.info("Try to fetch thing with id %s", thing_id)
             # raw_project: dict[str, Any] = {}
             # Documentation for this call:
             # <https://www.thingiverse.com/developers/swagger#/Thing/get_things__thing_id_>
-            raw_thing: Hit = self._do_request(f"https://api.thingiverse.com/things/{thing_id}")
+            # raw_thing: Hit = self._do_request(f"https://api.thingiverse.com/things/{thing_id}")
             # raw_project["thing"] = raw_thing
             raw_project: Hit = raw_thing
 
@@ -220,15 +203,19 @@ class ThingiverseFetcher(Fetcher):
             # raw_files: list[ThingFile] = self._do_request(f"https://api.thingiverse.com/things/{thing_id}/files")
             # raw_project["files"] = raw_files
 
+            last_visited = meta["last_scrape"]
             data_set = DataSet(
                 okhv_fetched="OKH-LOSHv1.0",  # FIXME Not good, not right
                 crawling_meta=CrawlingMeta(
                     sourcing_procedure=__sourcing_procedure__,
-                    # created_at: datetime = None
                     last_visited=last_visited,
-                    # manifest=path,
-                    # last_changed: datetime = None
-                    # history = None,
+                    first_visited=last_visited,
+                    last_successfully_visited=last_visited,
+                    last_detected_change=None,
+                    created_at=None,
+                    visits=1,
+                    changes=0,
+                    manifest=None,
                 ),
                 hosting_unit_id=hosting_unit_id,
                 license=__dataset_license__,
@@ -239,7 +226,7 @@ class ThingiverseFetcher(Fetcher):
             #                            data=Manifest(content=json.dumps(raw_project, indent=2),
             #                                          format=ManifestFormat.JSON))
             fetch_result = FetchResult(data_set=data_set,
-                                       data=Manifest(content=raw_project, format=ManifestFormat.JSON))
+                                       data=Manifest(content=dict(raw_project), format=ManifestFormat.JSON))
 
             # project = self._normalizer.normalize(raw_project)
             # if not project:
@@ -262,11 +249,26 @@ class ThingiverseFetcher(Fetcher):
     def fetch(self, project_id: ProjectId) -> FetchResult:
         try:
             hosting_unit_id: HostingUnitIdWebById = HostingUnitIdWebById.from_url_no_path(project_id.uri)
+
+            thing_id: str = hosting_unit_id.project_id
+            thing_id_num: int = int(thing_id)
+            slice_min_id: int = (thing_id_num // 1000) * 1000
+            slice_file_path = Path(f"rust/workdir/thingiverse_store/data/{slice_min_id}/open_source.csv")
+
+            thing_meta: StorageThingMeta | None = None
+            thing: Hit | None = None
+            for (thing_meta_cur, thing_api_json_file) in read_thing_metas_with_path(slice_file_path):
+                thing_id_cur: int = thing_meta_cur['id']
+                if thing_id_cur != thing_id_num:
+                    continue
+                thing = json.loads(thing_api_json_file.read_text())
+            if thing_meta is None or thing is None:
+                raise FetcherError(f"Could not find thing with id {thing_id} in rust fetch-results")
         except ParserError as err:
             raise FetcherError(f"Invalid {__hosting_id__} project URL: '{project_id.uri}'") from err
         last_visited = datetime.now(timezone.utc)
         fetcher_state: _FetcherState = _FetcherState.load(self._state_repository)
-        return self.__fetch_one(fetcher_state, hosting_unit_id, last_visited)
+        return self.__fetch_one(fetcher_state, hosting_unit_id, last_visited, thing_meta, thing)
 
     def _do_request(self, url, params=None):
 
@@ -319,30 +321,52 @@ class ThingiverseFetcher(Fetcher):
         projects_counter: int = 0
         fetcher_state = _FetcherState.load(self._state_repository, start_over=start_over)
 
-        latest_thing_id: int = self.fetch_latest_thing_id()
-        min_thing_id = self.config.fetch_range.min
-        max_thing_id = min(self.config.fetch_range.max, latest_thing_id)
-        max_thing_id_src = "configured" if self.config.fetch_range.max < latest_thing_id else "latest available"
+        # latest_thing_id: int = self.fetch_latest_thing_id()
+        # min_thing_id = self.config.fetch_range.min
+        # max_thing_id = min(self.config.fetch_range.max, latest_thing_id)
+        # max_thing_id_src = "configured" if self.config.fetch_range.max < latest_thing_id else "latest available"
 
-        log.info("latest_thing_id: %d", latest_thing_id)
-        log.info("Actual scraping range:")
-        log.info("  min_thing_id (configured): %d", min_thing_id)
-        log.info("  max_thing_id (%s): %d", max_thing_id_src, max_thing_id)
+        # log.info("latest_thing_id: %d", latest_thing_id)
+        # log.info("Actual scraping range:")
+        # log.info("  min_thing_id (configured): %d", min_thing_id)
+        # log.info("  max_thing_id (%s): %d", max_thing_id_src, max_thing_id)
 
         # last_thing_id = data["hits"].pop(0)["id"]
         last_visited = datetime.now(timezone.utc)
 
-        for thing_id in range(min_thing_id, max_thing_id):
-            raw_project: dict[str, Any] = {}
-            thing: Hit = data["hits"][hit_idx]
-            raw_project["thing"] = thing
-            thing_id: int = thing["id"]
+        for (thing_meta, thing_api_json_file) in read_all_os_thing_metas():
+        # thing_meta = StorageThingMeta(
+        #     id=264461,
+        #     state= StorageThingIdState.OPEN_SOURCE,
+        #     first_scrape= last_visited,
+        #     last_scrape= last_visited,
+        #     last_successful_scrape= last_visited,
+        #     last_change= None,
+        #     attempted_scrapes= 1,
+        #     scraped_changes= 0)
+        # for (thing_meta, thing_api_json_file) in [thing_meta, Path("264461.json"))]: # HACK
+        # for (thing_meta, thing_api_json_file) in read_thing_metas_with_path(
+        #         Path("rust/workdir/thingiverse_store/data/264000/open_source.csv")):  # HACK
+            thing_id = thing_meta["id"]
+            final_proj_file = Path(f"workdir/thingiverse.com/{thing_id}/rdf.ttl")
+            if final_proj_file.exists():
+                log.debug("Thing %s already fetched; skipping it!", thing_id)
+                continue
+            # toml_path = TODO
+            # ttl_path = TODO
+            # if not ttl_path.exists():
+            #     self.__fetch_one()
+        # for thing_id in range(min_thing_id, max_thing_id):
+        # raw_project: dict[str, Any] = {}
+            thing: Hit = json.loads(thing_api_json_file.read_text())
+            # raw_project["thing"] = thing
+            # thing_id: int = thing["id"]
             thing_id_str: str = str(thing_id)
             # fetched_things_ids.append(thing_id)
             # next_total_hit_index += 1
             try:
                 hosting_unit_id = HostingUnitIdWebById(_hosting_id=__hosting_id__, project_id=thing_id_str)
-                fetch_result = self.__fetch_one(fetcher_state, hosting_unit_id, last_visited)
+                fetch_result = self.__fetch_one(fetcher_state, hosting_unit_id, last_visited, thing_meta, thing)
                 log.debug("yield fetch result #%d: %s", projects_counter, hosting_unit_id)
                 projects_counter += 1
                 yield fetch_result

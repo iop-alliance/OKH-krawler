@@ -10,6 +10,8 @@ import pathlib
 from datetime import datetime, timezone
 from typing import Any
 
+import dateutil
+
 from krawl.dict_utils import DictUtils
 from krawl.fetcher.result import FetchResult
 from krawl.file_formats import get_type_from_extension
@@ -20,7 +22,8 @@ from krawl.model.file import File, Image
 from krawl.model.licenses import License
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer, strip_html
-from krawl.shared.thingiverse import BROKEN_IMAGE_URL, LICENSE_MAPPING, Hit, ThingFile
+from krawl.shared.thingiverse import BROKEN_IMAGE_URL, LICENSE_MAPPING, Hit, ThingFile, ZipFile
+from krawl.util import fix_str_encoding
 
 log = get_child_logger("thingiverse")
 
@@ -35,6 +38,9 @@ class ThingiverseNormalizer(Normalizer):
         # thing: Hit = raw['thing']
         # files: list[ThingFile] = raw['files']
         thing: Hit = raw
+
+        if thing["id"] == 264461:
+            thing["description"] = fix_str_encoding(thing["description"])
         # print("$$$$$$$$$$$$$")
         # print(type(things))
         # print("$$$$$$$$$$$$$")
@@ -56,11 +62,19 @@ class ThingiverseNormalizer(Normalizer):
         #     # TODO Maybe not a good idea to set this like that?
         #     fetch_result.data_set.crawling_meta.last_visited = last_visited
 
-        name: str = thing['creator']['first_name'] + ' ' + thing['creator']['last_name']
-        creator = Person(name=name.strip(), url=thing['creator']['public_url'])
+        if thing['creator']:
+            name: str = thing['creator']['first_name'] + ' ' + thing['creator']['last_name']
+            creator = Person(name=name.strip(), url=thing['creator']['public_url'])
+        else:
+            creator = Person(name="ANONYMOUS", url=None)
+
+        # modification_date = dateutil.parser.parse(thing['modified']) if thing['modified'] else None
+        # version = str(modification_date.astimezone(timezone.utc)) if modification_date else None
+        version = str(thing['modified']) if thing['modified'] else None
+
         project = Project(name=thing['name'],
                           repo=thing['public_url'],
-                          version=str(thing['modified']),
+                          version=version,
                           license=self._license(thing),
                           licensor=[creator])
         project.function = self._function(thing)
@@ -92,7 +106,7 @@ class ThingiverseNormalizer(Normalizer):
         return None
 
     @classmethod
-    def _filter_files_by_category(cls, files: list[ThingFile], category: str) -> list[ThingFile]:
+    def _filter_files_by_category(cls, files: list[ThingFile | ZipFile], category: str) -> list[ThingFile | ZipFile]:
         found_files = []
         for file in files:
             file_format = get_type_from_extension(pathlib.Path(file['name']).suffix)
@@ -177,7 +191,7 @@ class ThingiverseNormalizer(Normalizer):
         return list(images.values())
 
     @classmethod
-    def _file(cls, thing_file: ThingFile) -> File:
+    def _file(cls, thing_file: ThingFile | ZipFile) -> File:
         url: str | None = thing_file.get("direct_url")
         if not url:
             url = thing_file.get("url")
@@ -190,7 +204,7 @@ class ThingiverseNormalizer(Normalizer):
         file.url = url
         file.frozen_url = None
         file.mime_type = file.evaluate_mime_type()
-        thing_file_date = thing_file.get("date")
+        thing_file_date: str | None = thing_file.get("date")
         file.created_at = datetime.strptime(thing_file_date, "%Y-%m-%d %H:%M:%S") if thing_file_date else None
         file.last_changed = file.created_at
         file.last_visited = datetime.now(timezone.utc)

@@ -80,7 +80,8 @@ class FetchResultRepositoryWorkdir(FetchResultRepository):
 
         self._finalize_store(hosting_unit_id, content_type, project_dir)
 
-    def store_final(self, fetch_result: FetchResult, normalized_content: str, rdf_content: str) -> None:
+    def store_final(self, fetch_result: FetchResult, normalized_content: str, rdf_meta_content: str,
+                    rdf_content: str) -> None:
         hosting_unit_id: HostingUnitId = fetch_result.data_set.hosting_unit_id
         content_type = "complete"
         project_dir: Path = self._prepare_store(hosting_unit_id, content_type)
@@ -94,6 +95,7 @@ class FetchResultRepositoryWorkdir(FetchResultRepository):
 
         self._store_file(project_dir, "normalized", ManifestFormat.TOML, normalized_content)
 
+        self._store_file(project_dir, "meta", ManifestFormat.TURTLE, rdf_meta_content)
         self._store_file(project_dir, "rdf", ManifestFormat.TURTLE, rdf_content)
 
         self._finalize_store(hosting_unit_id, content_type, project_dir)

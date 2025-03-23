@@ -88,11 +88,14 @@ class OshwaFetcher(Fetcher):
                 okhv_fetched="OKH-LOSHv1.0",  # FIXME Not good, not right
                 crawling_meta=CrawlingMeta(
                     sourcing_procedure=__sourcing_procedure__,
-                    # created_at: datetime = None
                     last_visited=last_visited,
-                    # manifest=path,
-                    # last_changed: datetime = None
-                    # history = None,
+                    first_visited=last_visited,
+                    last_successfully_visited=last_visited,
+                    last_detected_change=None,
+                    created_at=None,
+                    visits=1,
+                    changes=0,
+                    manifest=None,
                 ),
                 hosting_unit_id=hosting_unit_id,
                 license=__dataset_license__,

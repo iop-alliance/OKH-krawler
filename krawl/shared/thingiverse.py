@@ -4,10 +4,12 @@
 
 from __future__ import annotations
 
+from csv import DictReader
+from datetime import datetime
 from enum import Enum
+from pathlib import Path
 from typing import TypeAlias, TypedDict
 
-# from datetime import datetime, timezone
 from krawl.log import get_child_logger
 
 log = get_child_logger("thingiverse")
@@ -44,7 +46,8 @@ BATCH_SIZE = 1
 
 t_url: TypeAlias = str
 t_string: TypeAlias = str
-t_datetime: TypeAlias = str
+# t_datetime: TypeAlias = str
+t_datetime: TypeAlias = datetime
 
 
 class ThingSearch(TypedDict):
@@ -120,7 +123,7 @@ class Hit(TypedDict):
     thumbnail: t_url
     url: t_url
     public_url: t_url
-    creator: Person
+    creator: Person | None
     added: t_datetime
     modified: t_datetime
     is_published: int
@@ -196,12 +199,50 @@ class StorageThingIdState(Enum):
     """The basic state of a thing ID on the platform."""
     DELETED = 1
     PROPRIETARY = 2
-    OPEN = 3
+    OPEN_SOURCE = 3
 
 
 class StorageThingMeta(TypedDict):
     """What we store for every thing ID."""
     id: int
     state: StorageThingIdState
-    license: t_string | None
-    last_scrape: t_datetime
+    first_scrape: t_datetime | None
+    last_scrape: t_datetime | None
+    last_successful_scrape: t_datetime | None
+    last_change: t_datetime | None
+    attempted_scrapes: int
+    scraped_changes: int
+
+
+def read_all_os_thing_metas() -> list[tuple[StorageThingMeta, Path]]:
+    metas_with_path: list[tuple[StorageThingMeta, Path]] = []
+    tv_store_base: Path = Path("rust/workdir/thingiverse_store")
+    for os_metas_slice_csv_file in tv_store_base.glob("data/*/open_source.csv"):
+        slice_os_metas: list[StorageThingMeta] = read_thing_metas(os_metas_slice_csv_file)
+        things_dir = os_metas_slice_csv_file.parent / "things"
+        for meta in slice_os_metas:
+            path = things_dir / f"{meta['id']}.json"
+            metas_with_path.append((meta, path))
+    return metas_with_path
+
+
+def read_thing_metas_with_path(os_metas_slice_csv_file: Path) -> list[tuple[StorageThingMeta, Path]]:
+    metas_with_path: list[tuple[StorageThingMeta, Path]] = []
+    slice_os_metas: list[StorageThingMeta] = read_thing_metas(os_metas_slice_csv_file)
+    things_dir = os_metas_slice_csv_file.parent / "things"
+    for meta in slice_os_metas:
+        path = things_dir / f"{meta['id']}.json"
+        metas_with_path.append((meta, path))
+    return metas_with_path
+
+
+def read_thing_metas(thing_metas_csv_file: Path) -> list[StorageThingMeta]:
+    metas: list[StorageThingMeta] = []
+    # path = assets_path / (name + ".csv")
+    with thing_metas_csv_file.open("r") as file_handle:
+        csv_reader = DictReader(file_handle)
+        for record in csv_reader:
+            thing_meta_untyped: dict = record
+            thing_meta: StorageThingMeta = thing_meta_untyped
+            metas.append(thing_meta)
+    return metas

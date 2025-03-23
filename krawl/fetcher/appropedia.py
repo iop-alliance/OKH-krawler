@@ -182,11 +182,14 @@ class AppropediaFetcher(Fetcher):
                 okhv_fetched="OKH-v1.0",  # FIXME Not good, not right
                 crawling_meta=CrawlingMeta(
                     sourcing_procedure=__sourcing_procedure__,
-                    # created_at: datetime = None
                     last_visited=last_visited,
+                    first_visited=last_visited,
+                    last_successfully_visited=last_visited,
+                    last_detected_change=None,
+                    created_at=None,
+                    visits=1,
+                    changes=0,
                     manifest=manifest_dl_url,
-                    # last_changed: datetime = None
-                    # history = None,
                 ),
                 hosting_unit_id=hosting_unit_id,
                 license=__dataset_license__,

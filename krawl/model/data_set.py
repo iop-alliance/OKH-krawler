@@ -20,13 +20,22 @@ class CrawlingMeta:  # pylint: disable=too-many-instance-attributes
     """Meta data about the crawling of the data"""
 
     sourcing_procedure: SourcingProcedure
-    last_visited: datetime
+    # last_state: ScrapingIntentResultState
+    last_visited: datetime | None
+    first_visited: datetime | None = None
+    last_successfully_visited: datetime | None = None
+    # last_changed: datetime | None = None
+    last_detected_change: datetime | None = None
+    created_at: datetime | None = None
+    """This differs from `first_visited`,
+    if we know when before our first visit that the data was created
+    on the hosting technology."""
+    visits: int = 1
+    changes: int = 0
     manifest: str | None = None
     """Repo internal path or absolute HTTP(S) URL to the manifest file, if any.
     This is `None``, for example, if data was fetched through platform API only."""
-    created_at: datetime | None = None
-    last_changed: datetime | None = None
-    visits_file: Path | None = None
+    # visits_file: Path | None = None
     # history = None
     # score: float = field(default=None, init=False)
     # """internally calculated score for project importance to decide re-visit schedule"""
