@@ -34,6 +34,7 @@ class HostingType(StrEnum):
     GIT_LAB = "GitLab"
     OSHWA = "Oshwa"
     THINGIVERSE = "Thingiverse"
+    GIT_REPO = "a_git_repo"
 
     def __str__(self) -> str:
         match self:
@@ -54,7 +55,7 @@ class HostingType(StrEnum):
 
     def category(self) -> HostingCategory:
         match self:
-            case self.FORGE_JO | self.GIT_HUB | self.GIT_LAB:
+            case self.FORGE_JO | self.GIT_HUB | self.GIT_LAB | self.GIT_REPO:
                 return HostingCategory.FORGE
             case self.APPROPEDIA | self.OSHWA | self.THINGIVERSE:
                 return HostingCategory.OTHER
@@ -77,6 +78,7 @@ class HostingId(StrEnum):
     GITLAB_OPENSOURCEECOLOGY_DE = "gitlab.opensourceecology.de"
     OSHWA_ORG = "oshwa.org"  # "certification.oshwa.org"
     THINGIVERSE_COM = "thingiverse.com"
+    MANIFESTS_REPO = "manifests-repo"
 
     def type(self) -> HostingType:
         match self:
@@ -92,6 +94,8 @@ class HostingId(StrEnum):
                 platform_type = HostingType.OSHWA
             case self.THINGIVERSE_COM:
                 platform_type = HostingType.THINGIVERSE
+            case self.MANIFESTS_REPO:
+                platform_type = HostingType.GIT_REPO
             case _:
                 raise NotImplementedError(f"Missing `self.type()` impl for enum variant {self}")
 
