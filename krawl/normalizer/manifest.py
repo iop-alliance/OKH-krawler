@@ -53,7 +53,7 @@ class _ProjFilesInfo:
         if self._file_handler:
             self._fh_proj_info = self._file_handler.gen_proj_info(self._hosting_unit_id, manifest_contents_raw)
 
-    def files(self, raw_files: list[str] | str | None) -> list[File]:
+    def files(self, raw_files: list[dict] | list[str] | dict | str | None) -> list[File]:
         files: list[File] = []
         if raw_files is None:
             pass
@@ -62,7 +62,7 @@ class _ProjFilesInfo:
                 parsed_file = self.file(raw_file)
                 if parsed_file:
                     files.append(parsed_file)
-        elif isinstance(raw_files, str):
+        elif isinstance(raw_files, (dict, str)):
             parsed_file = self.file(raw_files)
             if parsed_file:
                 files.append(parsed_file)
@@ -139,7 +139,7 @@ class _ProjFilesInfo:
         elif isinstance(raw_file, dict):
             file_dict = raw_file
         else:
-            raise TypeError(f"Unsupported type for file: {type(raw_file)}")
+            raise NormalizerError(f"Unsupported type for file: {type(raw_file)} - content:\n{raw_file}")
 
         file = File()
         # NOTE Better not set this, as this path is not relative to the project root
@@ -214,13 +214,15 @@ class ManifestNormalizer(Normalizer):
             license_raw = raw.get("alternative-license")
         if not license_raw:
             raise ParserError("Missing required key 'license' in manifest")
+        if not isinstance(license_raw, str):
+            raise NormalizerError(f"Failed to normalize license: should be of type str, but is of type: {type(license_raw)} - content:\n{license_raw}")
         log.debug("license_raw: %s", license_raw)
         try:
             license = get_license(license_raw)
         except ValueError as err:
-            raise NormalizerError(f"Failed to license: {err}") from err
+            raise NormalizerError(f"Failed to normalize license: {err}") from err
         except NameError as err:
-            raise NormalizerError(f"Failed to license: {err}") from err
+            raise NormalizerError(f"Failed to normalize license: {err}") from err
         licensor_raw = raw.get("licensor")
         # HACK Necessary until Appropedia switches to the new OKH format
         #      (they are still on v1 as of January 2025),
