@@ -31,7 +31,7 @@ class Project:  # pylint: disable=too-many-instance-attributes
     version: str | None = None
     release: str | None = None
     organization: list[Organization | AgentRef] = field(default_factory=list)
-    readme: File | None = None
+    readme: list[File] | None = None
     contribution_guide: File | None = None
     image: list[Image] = field(default_factory=list)
     documentation_language: list[str] = field(default_factory=list)
@@ -43,9 +43,9 @@ class Project:  # pylint: disable=too-many-instance-attributes
     standard_compliance: list[str] = field(default_factory=list)
     cpc_patent_class: str | None = None
     tsdc: str | None = None
-    bom: File | None = None
+    bom: list[File] | None = None
     manufacturing_instructions: list[File] = field(default_factory=list)
-    user_manual: File | None = None
+    user_manual: list[File] | None = None
     mass: float | None = None
     outer_dimensions: OuterDimensions | None = None
     part: list[Part] = field(default_factory=list)

@@ -763,43 +763,35 @@ class RDFSerializer(Serializer):
         module_subject = cls._add_project(graph, namespace, fetch_result, project)
         cls.add(meta_graph, data_set_subj, VOID.rootResource, module_subject)
 
-        readme_subject = cls._add_file(
-            graph=graph,
+        cls._add_files(
+            graph,
             namespace=namespace,
             project=project,
-            key="readme",
+            parent_subj=module_subject,
+            parent_association_property=OKH.hasReadme,
+            files=project.readme,
             entity_name="readme",
-        )
-        if readme_subject is not None:
-            cls.add(graph, module_subject, OKH.hasReadme, readme_subject)
+            parent_name=project.name)
 
-        bom_subject = cls._add_file(
-            graph=graph,
+        cls._add_files(
+            graph,
             namespace=namespace,
             project=project,
-            key="bom",
+            parent_subj=module_subject,
+            parent_association_property=OKH.hasBoM,
+            files=project.bom,
             entity_name="billOfMaterials",
-        )
-        if bom_subject is not None:
-            cls.add(graph, module_subject, OKH.hasBoM, bom_subject)
+            parent_name=project.name)
 
-        for i, file in enumerate(project.manufacturing_instructions):
-            subj = cls._add_file_info(graph,
-                                      namespace,
-                                      file,
-                                      entity_name=cls._individual_case(f"project_manufacturingInstructions{i + 1}"),
-                                      parent_name=project.name)
-            cls.add(graph, module_subject, OKH.hasManufacturingInstructions, subj)
-
-        user_manual_subject = cls._add_file(
-            graph=graph,
+        cls._add_files(
+            graph,
             namespace=namespace,
             project=project,
-            key="user_manual",
+            parent_subj=module_subject,
+            parent_association_property=OKH.hasUserManual,
+            files=project.user_manual,
             entity_name="userManual",
-        )
-        if user_manual_subject is not None:
-            cls.add(graph, module_subject, OKH.hasUserManual, user_manual_subject)
+            parent_name=project.name)
 
         part_subjects = cls._add_parts(graph, namespace, project)
         for part_subject in part_subjects:

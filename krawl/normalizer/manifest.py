@@ -247,7 +247,7 @@ class ManifestNormalizer(Normalizer):
         project.version = DictUtils.to_string(raw.get("version"))
         project.release = DictUtils.to_string(raw.get("release"))
         project.organization = self._organizations(raw.get("organization"))
-        project.readme = self.files_info.file(raw.get("readme"))
+        project.readme = self.files_info.files(raw.get("readme"))
         project.contribution_guide = self.files_info.file(raw.get("contribution-guide"))
         project.image = self._images(raw.get("image"))
         project.function = DictUtils.to_string(raw.get("function"))
@@ -259,9 +259,9 @@ class ManifestNormalizer(Normalizer):
         project.standard_compliance = DictUtils.to_string_list(raw.get("standard-compliance"))
         project.cpc_patent_class = DictUtils.to_string(raw.get("cpc-patent-class"))
         project.tsdc = DictUtils.to_string(raw.get("tsdc"))
-        project.bom = self.files_info.file(raw.get("bom"))
+        project.bom = self.files_info.files(raw.get("bom"))
         project.manufacturing_instructions = self.files_info.files(raw.get("manufacturing-instructions"))
-        project.user_manual = self.files_info.file(raw.get("user-manual"))
+        project.user_manual = self.files_info.files(raw.get("user-manual"))
         try:
             project.outer_dimensions = self._outer_dimensions(raw.get("outer-dimensions"))
         except ParserError as err:
@@ -474,7 +474,7 @@ class ManifestNormalizer(Normalizer):
             # part.licensor = DictUtils.to_string(raw_part.get("licensor"))
             # part.documentation_language = self._language(raw_part.get("documentation-language"))
             part.material = DictUtils.to_string(raw_part.get("material"))
-            part.manufacturing_process = DictUtils.to_string(raw_part.get("manufacturing-process"))
+            part.manufacturing_process = self.files_info.files(raw_part.get("manufacturing-instructions"))
             part.mass = DictUtils.to_float(raw_part.get("mass"))
             try:
                 part.outer_dimensions = self._outer_dimensions(raw_part.get("outer-dimensions"))
