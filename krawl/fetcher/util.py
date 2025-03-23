@@ -21,13 +21,13 @@ from krawl.log import get_child_logger
 log = get_child_logger("util")
 
 # _manifest_name_pattern = r"^okh([_\-\t ].+)*$"
-_manifest_name_pattern = r"^okh([_\-:.][0-9a-zA-Z:._\-]+)?$"
+_manifest_name_pattern = r"^(.+\.)?okh([_\-:.][0-9a-zA-Z:._\-]+)?$"
+_manifest_suffix_pattern = r"^\.(json|toml|ya?ml)$"
 
 
 def is_accepted_manifest_file_name(path: Path) -> bool:
     """Return true if the given file name matches an accepted manifest name."""
-    # return bool(re.match(_manifest_name_pattern, path.with_suffix("").stem))
-    return bool(re.match(_manifest_name_pattern, path.stem))
+    return bool(re.match(_manifest_name_pattern, path.stem)) and bool(re.match(_manifest_suffix_pattern, path.suffix))
 
 
 def is_empty(content: str | bytes) -> bool:
