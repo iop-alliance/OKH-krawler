@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from krawl.errors import NormalizerError
 from krawl.dict_utils import DictUtils
 from krawl.log import get_child_logger
 from krawl.model.hosting_unit import HostingUnitId
@@ -62,12 +63,12 @@ class GitHubFileHandler(FileHandler):
     def gen_proj_info(self, hosting_unit_id: HostingUnitId, manifest_raw: dict) -> dict:
         repo_url = manifest_raw.get("repo")
         if repo_url is None:
-            raise ValueError("No repo URL in manifest")
-        if not repo_url.isinstance(str):
-            raise ValueError(f"repo URL in manifest should be of type str, but is: {repo_url}")
+            raise NormalizerError("No repo URL in manifest")
+        if not isinstance(repo_url, str):
+            raise NormalizerError(f"repo URL in manifest should be of type str, but is: {repo_url}")
         slug = self._extract_slug(repo_url)
         if slug is None:
-            raise ValueError(f"Unable to extract slug from repo URL '{repo_url}'")
+            raise NormalizerError(f"Unable to extract slug from repo URL '{repo_url}'")
         version = DictUtils.to_string(manifest_raw.get("version", "HEAD"))
         dev_branch = None  # TODO Maybe try to extract this from a files URL, if URLs are used ...
         return self.gen_proj_info_raw(slug, version, dev_branch)
