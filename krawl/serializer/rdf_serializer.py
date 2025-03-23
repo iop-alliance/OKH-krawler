@@ -523,7 +523,7 @@ class RDFSerializer(Serializer):
         return subj
 
     @classmethod
-    def _add_license_and_licensor(cls, graph: Graph, store_agents: bool, namespace: Namespace, subj: URIRef, project: Project) -> URIRef:
+    def _add_license_and_licensor(cls, graph: Graph, store_agents: bool, namespace: Namespace, subj: URIRef, project: Project):
 
         if project.license:
             if project.license.is_spdx:
