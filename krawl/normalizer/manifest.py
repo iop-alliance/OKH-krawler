@@ -215,10 +215,12 @@ class ManifestNormalizer(Normalizer):
         if not license_raw:
             raise ParserError("Missing required key 'license' in manifest")
         log.debug("license_raw: %s", license_raw)
-        license = get_license(license_raw)
-        log.warning(license)
-        if not license:
-            raise ParserError("Failed parsing required key 'license' in manifest")
+        try:
+            license = get_license(license_raw)
+        except ValueError as err:
+            raise NormalizerError(f"Failed to license: {err}") from err
+        except NameError as err:
+            raise NormalizerError(f"Failed to license: {err}") from err
         licensor_raw = raw.get("licensor")
         # HACK Necessary until Appropedia switches to the new OKH format
         #      (they are still on v1 as of January 2025),
