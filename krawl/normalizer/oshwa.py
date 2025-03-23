@@ -36,11 +36,12 @@ LICENSE_MAPPING = {
     "TAPR": "TAPR-OHL-1.0",
 }
 CATEGORIES_CPC_UNMAPPABLE = [
-    "Agriculture", "Arts", "Education", "Electronics", "Environmental", "IOT", "Manufacturing", "Other", "Science",
+    "Agriculture", "Arts", "Education", "Environmental", "IOT", "Manufacturing", "Other", "Science",
     "Tool", "Wearables"
 ]
 CATEGORIES_CPC_MAPPING = {
     "3D Printing": "B33Y",
+    "Electronics": "H03",
     "Enclosure": "F16M",
     "Home Connection": "H04W",
     "Robotics": "B25J9/00",
