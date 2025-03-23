@@ -25,7 +25,8 @@ _sha1_pattern = re.compile(r"^[A-Fa-f0-9]{40}$")
 @dataclass(slots=True, frozen=True)
 class HostingUnitId:
     """A "unit of storage" that holds a single project,
-    for example a GitHub repo or an IPFS hash.
+    for example a GitHub repo, a manifest-file or dir in a repo,
+    or an IPFS hash.
     """
 
     @classmethod
