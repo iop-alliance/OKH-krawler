@@ -235,7 +235,7 @@ class ManifestNormalizer(Normalizer):
                 licensor_raw = user_ids
         licensor = self._agents(licensor_raw)
         if not licensor:
-            raise ParserError("Missing required key 'licensor' in manifest (or parsing of it failed)")
+            raise NormalizerError("Missing required key 'licensor' in manifest (or parsing of it failed)")
         project = Project(
             name=self.extract_required_str(raw, "name"),
             repo=self.extract_required_str(raw, "repo"),
