@@ -23,7 +23,8 @@ from krawl.model.agent import Agent, AgentRef, Organization, Person
 from krawl.model.data_set import DataSet
 from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_id import HostingId
-from krawl.model.hosting_unit import HostingUnitId, HostingUnitIdForge
+from krawl.model.hosting_unit import HostingUnitId
+from krawl.model.hosting_unit_forge import HostingUnitIdForge
 from krawl.model.licenses import get_by_id_or_name as get_license
 from krawl.model.outer_dimensions import OuterDimensions, OuterDimensionsOpenScad
 from krawl.model.part import Part

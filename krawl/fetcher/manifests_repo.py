@@ -20,7 +20,7 @@ from krawl.fetcher.util import is_accepted_manifest_file_name, is_empty
 from krawl.log import get_child_logger
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
-from krawl.model.hosting_unit import HostingUnitIdForge
+from krawl.model.hosting_unit_forge import HostingUnitIdForge
 from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.project_part_reference import Ref

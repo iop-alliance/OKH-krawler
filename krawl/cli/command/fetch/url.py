@@ -13,7 +13,7 @@ from krawl.cli.command import KrawlCommand
 from krawl.fetcher import CountingFetchListener
 from krawl.fetcher.factory import FetcherFactory
 from krawl.log import get_child_logger
-from krawl.model.hosting_unit import HostingUnitIdFactory
+from krawl.model.hosting_unit_factory import HostingUnitIdFactory
 from krawl.model.project_id import ProjectId
 # from krawl.reporter import Status
 from krawl.reporter.dummy import DummyReporter

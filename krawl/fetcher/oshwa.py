@@ -22,7 +22,7 @@ from krawl.log import get_child_logger
 from krawl.model.agent import Organization
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
-from krawl.model.hosting_unit import HostingUnitIdWebById
+from krawl.model.hosting_unit_web import HostingUnitIdWebById
 from krawl.model.licenses import License
 from krawl.model.licenses import get_by_id_or_name_required as get_license_required
 from krawl.model.manifest import Manifest, ManifestFormat
