@@ -211,10 +211,10 @@ def get_by_id_or_name_required(id_or_name: str) -> License:
 
 def get_by_id_or_name(id_or_name: str | None) -> License | None:
     if id_or_name:
-        try:
-            return get_by_id_or_name_required(id_or_name)
-        except ValueError:
-            pass
+        # try:
+        return get_by_id_or_name_required(id_or_name)
+        # except ValueError:
+        #     pass
     return None
 
 
