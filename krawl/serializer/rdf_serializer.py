@@ -263,6 +263,13 @@ class RDFSerializer(Serializer):
             return s[0].upper() + s[1:]
 
     @staticmethod
+    def _decapitalize(s: str) -> str:
+        if s == "":
+            return s
+        else:
+            return s[0].lower() + s[1:]
+
+    @staticmethod
     def _title_case(s: str) -> str:
         parts = s.split(" ")
         capitalized = "".join([RDFSerializer._capitalize(p) for p in parts if p != ""])
@@ -385,43 +392,51 @@ class RDFSerializer(Serializer):
             # TODO Parse TsDCs, and check if part.tsdc is a valid tsdc, but maybe do that earlier in the process, not here, while serializing
             cls.add(graph, part_subject, OKH.tsdc, URIRef(f"{BASE_IRI_TSDC}#{thing.tsdc}"))
 
-        # source
-        for i, file in enumerate(thing.source):
-            subj = cls._add_file_info(graph,
-                                      namespace,
-                                      file,
-                                      entity_name=cls._individual_case(f"{part_name}SourceFile{i + 1}"),
-                                      parent_name=project.name)
-            cls.add(graph, part_subject, OKH.source, subj)
+        # sources
+        cls._add_files(
+            graph,
+            namespace=namespace,
+            project=project,
+            parent_subj=part_subject,
+            parent_association_property=OKH.source,
+            files=thing.source,
+            entity_name="SourceFile",
+            parent_name=part_name)
 
-        # export
-        for i, file in enumerate(thing.export):
-            subj = cls._add_file_info(graph,
-                                      namespace,
-                                      file,
-                                      entity_name=cls._individual_case(f"{part_name}ExportFile{i + 1}"),
-                                      parent_name=project.name)
-            cls.add(graph, part_subject, OKH.export, subj)
+        # exports
+        cls._add_files(
+            graph,
+            namespace=namespace,
+            project=project,
+            parent_subj=part_subject,
+            parent_association_property=OKH.export,
+            files=thing.export,
+            entity_name="ExportFile",
+            parent_name=part_name)
 
-        # auxiliary
-        for i, file in enumerate(thing.auxiliary):
-            subj = cls._add_file_info(graph,
-                                      namespace,
-                                      file,
-                                      entity_name=cls._individual_case(f"{part_name}AuxiliaryFile{i + 1}"),
-                                      parent_name=project.name)
-            cls.add(graph, part_subject, OKH.auxiliary, subj)
+        # auxiliaries
+        cls._add_files(
+            graph,
+            namespace=namespace,
+            project=project,
+            parent_subj=part_subject,
+            parent_association_property=OKH.auxiliary,
+            files=thing.auxiliary,
+            entity_name="AuxiliaryFile",
+            parent_name=part_name)
 
-        # image
-        for i, file in enumerate(thing.image):
-            subj = cls._add_file_info(graph,
-                                      namespace,
-                                      file,
-                                      entity_name=cls._individual_case(f"{part_name}Image{i + 1}"),
-                                      parent_name=project.name,
-                                      rdf_type=OKH.Image,
-                                      extras_handler=cls.image_extras_handler)
-            cls.add(graph, part_subject, OKH.hasImage, subj)
+        # images
+        cls._add_files(
+            graph,
+            namespace=namespace,
+            project=project,
+            parent_subj=part_subject,
+            parent_association_property=OKH.hasImage,
+            files=thing.image,
+            entity_name="Image",
+            parent_name=part_name,
+            rdf_type=OKH.Image,
+            extras_handler=cls.image_extras_handler)
 
         return part_subject
 
@@ -658,9 +673,36 @@ class RDFSerializer(Serializer):
         file = getattr(project, key) if hasattr(project, key) else None
         if file is None:
             return None
-
         parent_name = f"{project.name} {project.version}"
         return cls._add_file_info(graph, namespace, file, entity_name, parent_name, rdf_type, extras_handler)
+
+    @classmethod
+    def _add_files(cls,
+                  graph,
+                  namespace: Namespace,
+                  project: Project,
+                  parent_subj: URIRef,
+                  parent_association_property: URIRef,
+                  files: list[File] | None,
+                  entity_name: str,
+                  parent_name: str | None = None,
+                  rdf_type: URIRef = ODS.File,
+                  extras_handler: Callable | None = None) -> None:
+        if files is None:
+            return
+        if parent_name:
+            entity_name_base = f"{RDFSerializer._decapitalize(parent_name)}{RDFSerializer._capitalize(entity_name)}"
+        else:
+            entity_name_base = f"{RDFSerializer._decapitalize(entity_name)}"
+        for i, file in enumerate(files):
+            subj = cls._add_file_info(graph,
+                                      namespace,
+                                      file,
+                                      entity_name=cls._individual_case(f"{entity_name_base}{i + 1}"),
+                                      parent_name=parent_name,
+                                      rdf_type=rdf_type,
+                                      extras_handler=extras_handler)
+            cls.add(graph, parent_subj, parent_association_property, subj)
 
     @staticmethod
     def _image_slot(slot: ImageSlot) -> URIRef:
