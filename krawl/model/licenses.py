@@ -191,7 +191,6 @@ def get_by_id_or_name_required(id_or_name: str) -> License:
     match_res = _re_id_with_exception.match(id_or_name)
     if match_res:
         id_or_name = match_res.group("id")
-    exitx: bool = True  #id_or_name == "CC-BY-SA-4.0"
     normalized = _normalize_name(id_or_name)
     lic: License | None = _licenses().get(normalized)
     if lic:
@@ -201,9 +200,7 @@ def get_by_id_or_name_required(id_or_name: str) -> License:
         lic = _licenses().get(lic_id)
         if lic:
             return lic
-    log.warn(f'WARN: Non-SPDX license detected: "{id_or_name}"')
-    if exitx:
-        raise SystemExit(1)
+    raise NameError(f'WARN: Non-SPDX license detected: "{id_or_name}"')
 
     return License(
         _id=f'LicenseRef-{id_or_name}',
