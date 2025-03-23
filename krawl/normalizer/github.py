@@ -63,6 +63,8 @@ class GitHubFileHandler(FileHandler):
         repo_url = manifest_raw.get("repo")
         if repo_url is None:
             raise ValueError("No repo URL in manifest")
+        if not repo_url.isinstance(str):
+            raise ValueError(f"repo URL in manifest should be of type str, but is: {repo_url}")
         slug = self._extract_slug(repo_url)
         if slug is None:
             raise ValueError(f"Unable to extract slug from repo URL '{repo_url}'")
