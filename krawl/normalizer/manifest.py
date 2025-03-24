@@ -82,7 +82,7 @@ class _ProjFilesInfo:
                 path = self.extract_path(url)
             else:
                 if self._fh_proj_info is None:
-                    raise ParserError("Through the code logic of this software,"
+                    raise ValueError("Through the code logic of this software,"
                                       " it should be impossible to get here"
                                       " -> programmer error! (1)")
                 path = Path(self._file_handler.extract_path(self._fh_proj_info, url))
@@ -104,7 +104,7 @@ class _ProjFilesInfo:
                 frozen_url = None
             else:
                 if self._fh_proj_info is None:
-                    raise ParserError("Through the code logic of this software,"
+                    raise ValueError("Through the code logic of this software,"
                                       " it should be impossible to get here"
                                       " -> programmer error! (2)")
                 url = self._file_handler.to_url(self._fh_proj_info, path, False)
@@ -178,7 +178,7 @@ class ManifestNormalizer(Normalizer):
     def extract_required_str(self, raw: dict, key: str) -> str:
         value: str | None = DictUtils.to_string(raw.get(key))
         if not value:
-            raise ParserError(f"Manifest is missing required key: {key}")
+            raise NormalizerError(f"Manifest is missing required key: {key}")
         return value
 
     def normalize(self, fetch_result: FetchResult) -> Project:
@@ -265,7 +265,7 @@ class ManifestNormalizer(Normalizer):
         project.user_manual = self.files_info.files(raw.get("user-manual"))
         try:
             project.outer_dimensions = self._outer_dimensions(raw.get("outer-dimensions"))
-        except ParserError as err:
+        except (ParserError, NormalizerError) as err:
             log.warning("Failed parsing outer-dimensions: %s", err)
         project.part = self._parts(raw.get("part"))
         project.software = self._software(hosting_unit_id, raw.get("software"))
@@ -463,7 +463,7 @@ class ManifestNormalizer(Normalizer):
         for raw_part in raw_parts:
             name = DictUtils.to_string(raw_part.get("name"))
             if not name:
-                raise ParserError("Part is missing required property 'name'")
+                raise NormalizerError("Part is missing required property 'name'")
             part = Part(
                 name=name,
                 name_clean=DictUtils.clean_name(name),
@@ -479,7 +479,7 @@ class ManifestNormalizer(Normalizer):
             part.mass = DictUtils.to_float(raw_part.get("mass"))
             try:
                 part.outer_dimensions = self._outer_dimensions(raw_part.get("outer-dimensions"))
-            except ParserError as err:
+            except (ParserError, NormalizerError) as err:
                 log.warning("Failed parsing outer-dimensions: %s", err)
             part.tsdc = DictUtils.to_string(raw_part.get("tsdc"))
             parts.append(part)
@@ -489,7 +489,7 @@ class ManifestNormalizer(Normalizer):
     def _software_from_dict(self, hosting_unit_id: HostingUnitId, raw_software: dict) -> Software:
         release = DictUtils.to_string(raw_software.get("release"))
         if not release:
-            raise ParserError(f"Software entry in manifest {hosting_unit_id} is missing required property 'release'")
+            raise NormalizerError(f"Software entry in manifest {hosting_unit_id} is missing required property 'release'")
         sw = Software(release=release)
         sw.installation_guide = self.files_info.file(raw_software.get("installation-guide"))
         # sw.documentation_language = self._language(rs.get("documentation-language"))
@@ -508,6 +508,8 @@ class ManifestNormalizer(Normalizer):
         elif isinstance(raw_software, dict):
             sw = self._software_from_dict(hosting_unit_id, raw_software)
             software.append(sw)
+        else:
+            raise TypeError(f"Unsupported type for software: {type(raw_software)} - content:\n{raw_software}")
         return software
 
     @classmethod
