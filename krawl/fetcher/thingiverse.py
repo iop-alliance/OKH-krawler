@@ -29,7 +29,7 @@ from krawl.model.agent import Organization
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit_web import HostingUnitIdWebById
-from krawl.model.licenses import License, LicenseType
+from krawl.model.licenses import License, LicenseType, LicenseCont
 from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.sourcing_procedure import SourcingProcedure
@@ -40,7 +40,7 @@ from krawl.shared.thingiverse import (RETRY_CODES, Hit, StorageThingIdState, Sto
 __long_name__: str = "thingiverse"
 __hosting_id__: HostingId = HostingId.THINGIVERSE_COM
 __sourcing_procedure__: SourcingProcedure = SourcingProcedure.API
-__dataset_license__: License = License(
+__dataset_license__: LicenseCont = LicenseCont(
     _id="LicenseRef-Thingiverse-API",
     name="API License Agreement for the MakerBot Developer Program",
     reference_url="https://www.thingiverse.com/legal/api",

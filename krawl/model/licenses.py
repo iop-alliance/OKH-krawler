@@ -18,14 +18,14 @@ from typing import Any
 
 from krawl.log import get_child_logger
 
-_licenses_internal: dict[str, License]
+_licenses_internal: dict[str, LicenseCont]
 _name_to_id_internal: dict[str, str]
 log = get_child_logger("licenses")
 
 _re_id_with_exception = re.compile(r"^(?P<id>[^ \t]+)[ \t]+WITH[ \t](?P<exception>[^ \t]+)$")
 
 
-def _licenses() -> dict[str, License]:
+def _licenses() -> dict[str, LicenseCont]:
     if not _licenses_internal or _licenses_internal == {}:
         raise ValueError("licenses not initialized")
     return _licenses_internal
@@ -35,6 +35,17 @@ def _name_to_id() -> dict[str, str]:
     if not _name_to_id_internal or _name_to_id_internal == {}:
         raise ValueError("name_to_id_internal not initialized")
     return _name_to_id_internal
+
+def is_spdx_id(license_id: str) -> bool:
+    """Given a valid SPDX license expression,
+    returns `True` if it is a single license ID."""
+    if " " in license_id:
+        return False
+    if license_id.startswith("LicenseRef-"):
+        return False
+    if license_id.startswith("DocumentRef-"):
+        return False
+    return True
 
 
 class LicenseType(StrEnum):
@@ -65,9 +76,10 @@ class LicenseType(StrEnum):
             case _:
                 raise NotImplementedError
 
+License: type = str
 
 @dataclass(slots=True, frozen=True)
-class License:  # pylint: disable=too-many-instance-attributes
+class LicenseCont:  # pylint: disable=too-many-instance-attributes
     _id: str
     name: str
     reference_url: str
@@ -99,7 +111,7 @@ def _normalize_name(name: str) -> str:
     return unicodedata.normalize('NFKD', name).casefold().encode('ascii', 'ignore').decode('ascii').strip()
 
 
-def _init_licenses() -> tuple[dict[str, License], dict[str, str]]:
+def _init_licenses() -> tuple[dict[str, LicenseCont], dict[str, str]]:
     """Load the licenses and blocklist the included assets files.
 
     The lists originate from:
@@ -124,8 +136,8 @@ def _init_licenses() -> tuple[dict[str, License], dict[str, str]]:
         if name in license_info:
             license_info[name] = _merge_dicts(license_info[name], license_extra_info[name])
 
-    licenses: dict[str, License] = {
-        n: License(
+    licenses: dict[str, LicenseCont] = {
+        n: LicenseCont(
             _id=lic_inf["licenseId"],
             name=lic_inf["name"],
             type_=LicenseType.from_string(lic_inf.get("type")),
@@ -174,25 +186,30 @@ def get_blocked():
     return filter(lambda lic: lic.is_blocked, _licenses().values())
 
 
-def get_by_id(id: str) -> License | None:
+def get_by_id(id: str) -> LicenseCont | None:
     normalized = _normalize_name(id)
     return _licenses().get(normalized)
 
 
-def get_by_id_or_name_required(id_or_name: str) -> License:
+def get_by_id_or_name_required(id_or_name: str) -> LicenseCont:
     if not id_or_name:
         raise ValueError("id_or_name is required")
     if id_or_name.startswith(("LicenseRef-", "DocumentRef-")):
-        return License(
+        name = id_or_name.replace("LicenseRef-", "").replace("DocumentRef-", "")
+        if id_or_name == __unknown_license__.id():
+            return __unknown_license__
+        if id_or_name == __proprietary_license__.id():
+            return __proprietary_license__
+        return LicenseCont(
             _id=id_or_name,
-            name=id_or_name.replace("LicenseRef-", "").replace("DocumentRef-", ""),
+            name=name,
             reference_url=f"file://LICENSES/{id_or_name}.txt",
         )
     match_res = _re_id_with_exception.match(id_or_name)
     if match_res:
         id_or_name = match_res.group("id")
     normalized = _normalize_name(id_or_name)
-    lic: License | None = _licenses().get(normalized)
+    lic: LicenseCont | None = _licenses().get(normalized)
     if lic:
         return lic
     lic_id: str | None = _name_to_id().get(normalized)
@@ -203,7 +220,7 @@ def get_by_id_or_name_required(id_or_name: str) -> License:
     raise NameError(f'WARN: Non-SPDX license detected: "{id_or_name}"')
 
 
-def get_by_id_or_name(id_or_name: str | None) -> License | None:
+def get_by_id_or_name(id_or_name: str | None) -> LicenseCont | None:
     if id_or_name:
         # try:
         return get_by_id_or_name_required(id_or_name)
@@ -223,7 +240,7 @@ def get_spdx_by_id_or_name(id_or_name: str) -> str | None:
 # preload the license on import
 _licenses_internal, _name_to_id_internal = _init_licenses()
 
-__unknown_license__: License = License(
+__unknown_license__: LicenseCont = LicenseCont(
     _id="LicenseRef-NOASSERTION",
     name="No license statement is present; This equals legally to All Rights Reserved (== proprietary)",
     reference_url="https://en.wikipedia.org/wiki/All_rights_reserved",
@@ -233,7 +250,7 @@ __unknown_license__: License = License(
     is_fsf_libre=False,
     is_blocked=True,
 )
-__proprietary_license__: License = License(
+__proprietary_license__: LicenseCont = LicenseCont(
     _id="LicenseRef-AllRightsReserved",
     name="All Rights Reserved (== proprietary)",
     reference_url="https://en.wikipedia.org/wiki/All_rights_reserved",

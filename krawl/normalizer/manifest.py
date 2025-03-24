@@ -26,7 +26,7 @@ from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitId
 from krawl.model.hosting_unit_forge import HostingUnitIdForge
-from krawl.model.licenses import get_by_id_or_name as get_license
+from krawl.model.licenses import get_by_id_or_name as get_license, License, LicenseCont
 from krawl.model.outer_dimensions import OuterDimensions, OuterDimensionsOpenScad
 from krawl.model.part import Part
 from krawl.model.project import Project
@@ -204,38 +204,10 @@ class ManifestNormalizer(Normalizer):
 
         self.files_info = _ProjFilesInfo(hosting_unit_id, raw, self._file_handler)
 
-        # license_raw = self.extract_required_str(raw, "license")
-        license_raw = raw.get("license")
-        if not license_raw:
-            license_raw = raw.get("spdx-license")
-        if not license_raw:
-            license_raw = raw.get("alternative-license")
-        if not license_raw:
-            raise ParserError("Missing required key 'license' in manifest")
-        if not isinstance(license_raw, str):
-            raise NormalizerError(f"Failed to normalize license: should be of type str, but is of type: {type(license_raw)} - content:\n{license_raw}")
-        log.debug("license_raw: %s", license_raw)
-        try:
-            license = get_license(license_raw)
-        except ValueError as err:
-            raise NormalizerError(f"Failed to normalize license: {err}") from err
-        except NameError as err:
-            raise NormalizerError(f"Failed to normalize license: {err}") from err
-        licensor_raw = raw.get("licensor")
-        # HACK Necessary until Appropedia switches to the new OKH format
-        #      (they are still on v1 as of January 2025),
-        #      which allows for multiple licensors.
-        if hosting_unit_id.hosting_id() == HostingId.APPROPEDIA_ORG:
-            if isinstance(licensor_raw, str):
-                users = [user.strip() for user in licensor_raw.split(',')]
-                user_ids = [{
-                    "name": user.replace('User:', ''),
-                    "url": f"https://www.appropedia.org/{user}",
-                } for user in users]
-                licensor_raw = user_ids
-        licensor = self._agents(licensor_raw)
-        if not licensor:
-            raise NormalizerError("Missing required key 'licensor' in manifest (or parsing of it failed)")
+        license = self._license_from_container_dict(raw)
+        if not license:
+            raise NormalizerError("Missing required key 'license' in manifest (or parsing of it failed)")
+        licensor = self._licensor_from_container_dict(hosting_unit_id, raw)
         project = Project(
             name=self.extract_required_str(raw, "name"),
             repo=self.extract_required_str(raw, "repo"),
@@ -328,6 +300,48 @@ class ManifestNormalizer(Normalizer):
                     raise TypeError(f"Unsupported type for image depicts: {type(raw_item)} - content:\n{raw_item}")
                 depicts.add(cont)
         return depicts
+
+    def _license_from_container_dict(self, raw: dict) -> License | None:
+        # license_raw = self.extract_required_str(raw, "license")
+        license_raw = raw.get("license")
+        if not license_raw:
+            license_raw = raw.get("spdx-license") # NOTE Deprecated property
+            if license_raw:
+                log.warn("Missing required key 'license' in manifest, but found deprecated key 'spdx-license'")
+        if not license_raw:
+            license_raw = raw.get("alternative-license") # NOTE Deprecated property
+            if license_raw:
+                log.warn("Missing required key 'license' in manifest, but found deprecated key 'alternative-license'")
+        if not license_raw:
+            raise NormalizerError("Missing required key 'license' in manifest")
+        if not isinstance(license_raw, str):
+            raise NormalizerError(f"Failed to normalize license: should be of type str, but is of type: {type(license_raw)} - content:\n{license_raw}")
+        log.debug("license_raw: %s", license_raw)
+        try:
+            license_cont: LicenseCont | None = get_license(license_raw)
+            return license_cont.id() if license_cont else license_cont
+        except ValueError as err:
+            raise NormalizerError(f"Failed to normalize license: {err}") from err
+        except NameError as err:
+            raise NormalizerError(f"Failed to normalize license: {err}") from err
+
+    def _licensor_from_container_dict(self, hosting_unit_id: HostingUnitId, raw: dict) -> list[Agent | AgentRef]:
+        licensor_raw = raw.get("licensor")
+        # HACK Necessary until Appropedia switches to the new OKH format
+        #      (they are still on v1 as of January 2025),
+        #      which allows for multiple licensors.
+        if hosting_unit_id.hosting_id() == HostingId.APPROPEDIA_ORG:
+            if isinstance(licensor_raw, str):
+                users = [user.strip() for user in licensor_raw.split(',')]
+                user_ids = [{
+                    "name": user.replace('User:', ''),
+                    "url": f"https://www.appropedia.org/{user}",
+                } for user in users]
+                licensor_raw = user_ids
+        licensor = self._agents(licensor_raw)
+        if not licensor:
+            raise NormalizerError("Missing required key 'licensor' in manifest (or parsing of it failed)")
+        return licensor
 
     def _person_from_user_str(self, user: str) -> Person:
         # `user` is e.g:

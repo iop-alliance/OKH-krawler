@@ -22,7 +22,7 @@ from krawl.model.agent import Agent, AgentRef, Organization, Person
 from krawl.model.data_set import CrawlingMeta
 from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_unit import HostingId
-from krawl.model.licenses import License
+from krawl.model.licenses import is_spdx_id, License
 from krawl.model.language_string import LangStr
 from krawl.model.outer_dimensions import OuterDimensions
 from krawl.model.part import Part
@@ -497,21 +497,29 @@ class RDFSerializer(Serializer):
         return subj
 
     @classmethod
-    def _add_license_and_licensor(cls, graph: Graph, store_agents: bool, namespace: Namespace, subj: URIRef, project: Project):
+    def _add_license_and_licensor(cls, graph: Graph, store_agents: bool, namespace: Namespace, subj: URIRef, project: Project | Software):
 
         if project.license:
-            if project.license.is_spdx:
-                cls.add(graph, subj, ODS.license, SPDX[project.license.id()])
+            license_id: str = project.license
+            # if project.license.is_spdx:
+            if is_spdx_id(license_id):
+                cls.add(graph, subj, ODS.license, SPDX[license_id])
+            elif license_id == "LicenseRef-NONE" or license_id == "LicenseRef-NOASSERTION":
+                cls.add(graph, subj, ODS.license, OKHKRAWL.NoAssertionLicense)
+            elif license_id == "LicenseRef-AllRightsReserved":
+                cls.add(graph, subj, ODS.license, OKHKRAWL.AllRightsReservedLicense)
             else:
-                cls.add(graph, subj, ODS.licenseExpression, project.license.id())
-        for (index, licensor) in enumerate(project.licensor):
-            internal_iri_name = f"licensor{index}"
-            agent_rdf_iri = cls._create_agent(graph, namespace, internal_iri_name, licensor, store = store_agents)
-            cls.add(graph, subj, ODS.licensor, agent_rdf_iri)
-        for (index, organization) in enumerate(project.organization):
-            internal_iri_name = f"organization{index}"
-            org_rdf_iri = cls._create_organization(graph, namespace, internal_iri_name, organization, store = store_agents)
-            cls.add(graph, subj, OKH.organization, org_rdf_iri)
+                cls.add(graph, subj, ODS.licenseExpression, license_id)
+        if project.licensor:
+            for (index, licensor) in enumerate(project.licensor):
+                internal_iri_name = f"licensor{index}"
+                agent_rdf_iri = cls._create_agent(graph, namespace, internal_iri_name, licensor, store = store_agents)
+                cls.add(graph, subj, ODS.licensor, agent_rdf_iri)
+        if project.organization:
+            for (index, organization) in enumerate(project.organization):
+                internal_iri_name = f"organization{index}"
+                org_rdf_iri = cls._create_organization(graph, namespace, internal_iri_name, organization, store = store_agents)
+                cls.add(graph, subj, OKH.organization, org_rdf_iri)
 
 
     @classmethod
@@ -663,7 +671,6 @@ class RDFSerializer(Serializer):
         if not meta:
             graph.bind("mime", MIME)
             # graph.bind("okhmeta", OKHMETA)
-            graph.bind("okhkrawl", OKHKRAWL)
             graph.bind("okhimg", OKHIMG)
             graph.bind("otrl", OTRL)
             graph.bind("tsdc", TSDC)
@@ -671,6 +678,7 @@ class RDFSerializer(Serializer):
         graph.bind("ods", ODS)
         graph.bind("rdfs", RDFS)
         graph.bind("okh", OKH)
+        graph.bind("okhkrawl", OKHKRAWL)
         graph.bind("owl", OWL)
         graph.bind("schema", SCHEMA)
         graph.bind("spdx", SPDX)
