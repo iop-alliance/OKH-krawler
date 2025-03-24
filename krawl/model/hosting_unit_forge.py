@@ -24,18 +24,16 @@ except ImportError:
 @dataclass(slots=True, frozen=True)
 class HostingUnitIdForge(HostingUnitId):
     _hosting_id: HostingId
-    """The owning user or organization of the project"""
     owner: str
-    """The name of the repo/project"""
+    """The owning user or organization of the project"""
     repo: str
+    """The name of the repo/project"""
+    group_hierarchy: str | None = None
     """The path leading up to the repo, if any.
     This is [supported by GitLab](https://docs.gitlab.com/ee/user/group/#group-hierarchy),
     but for example GitHub and ForgeJo (CodeBerg) do not support this."""
-    group_hierarchy: str | None = None
-    # """The path within the repo"""
-    # path: str = None
-    """Could be a branch, tag or commit"""
     ref: str | None = None
+    """Could be a branch, tag or commit"""
 
     def to_path_str(self) -> str:
         return f"{self.hosting_id()}/{self.owner}{" / " + self.group_hierarchy if self.group_hierarchy else ''}/{self.repo}{" / " + self.ref if self.ref else ''}"
