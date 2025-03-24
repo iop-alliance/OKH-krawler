@@ -86,6 +86,9 @@ class GitHubFileHandler(FileHandler):
         # log.warning('XXX Extracted version is: "%s"', version)
         return not self._is_dev_branch(proj_info, version)
 
+    def is_home_hosting_url(self, proj_info: dict, url: str) -> bool:
+        return url.startswith(BASE_URL + '/' + proj_info['slug'] + '/')
+
     def to_url(self, proj_info: dict, relative_path: str | Path, frozen: bool) -> str:
         base = BASE_URL
         slug = proj_info['slug']

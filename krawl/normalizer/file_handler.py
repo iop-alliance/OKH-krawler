@@ -36,6 +36,16 @@ class FileHandler:
         """
         raise NotImplementedError()
 
+    def is_home_hosting_url(self, proj_info: dict, url: str) -> bool:
+        """Figures out whether the argument is a URL of the repo
+        as it is defined in the `project.repo` field.
+
+        Args:
+            proj_info (dict): The info about the containing OKH project
+            url (str): Should represent either a URL to a file on our own repo, or an other URL
+        """
+        raise NotImplementedError()
+
     # NOTE version, just like project slug, should be given to the constructor of this FileHandler
     # def to_url(self, relative_path: str, version: str = None) -> bool:
     def to_url(self, proj_info: dict, relative_path: str | Path, frozen: bool) -> str:

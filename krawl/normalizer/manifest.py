@@ -75,7 +75,7 @@ class _ProjFilesInfo:
         if is_url(raw_file):
             # is URL
             url = raw_file
-            if self._file_handler is None:
+            if self._file_handler is None or not self._file_handler.is_home_hosting_url(self._fh_proj_info, url):
                 # NOTE We assume, that all platforms we do not support FileHandler for -
                 #      i.e. we do not support frozen and non-frozen URLs for -
                 #      use (only) non-frozen URLs.
