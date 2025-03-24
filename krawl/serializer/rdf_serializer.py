@@ -428,6 +428,16 @@ class RDFSerializer(Serializer):
         return subj
 
     @classmethod
+    def _create_standard(cls, graph: Graph, namespace: Namespace, rdf_name: str, standard: str) -> URIRef:
+
+        subj = namespace[rdf_name]
+        # We only create this individual if it is not yet in the graph
+        if (subj, None, None) not in graph:
+            cls.add(graph, subj, RDF.type, OKH.Standard)
+            cls.add(graph, subj, OKH.standardID, standard)
+        return subj
+
+    @classmethod
     def _create_software(cls, graph: Graph, namespace: Namespace, rdf_name: str, software: Software) -> URIRef:
 
         subj = namespace[rdf_name]
@@ -574,6 +584,10 @@ class RDFSerializer(Serializer):
             internal_iri_name = f"publication{index}"
             publication_rdf_iri = cls._create_publication(graph, namespace, internal_iri_name, doi)
             cls.add(graph, module_subject, OKH.hasPublication, publication_rdf_iri)
+        for (index, standard) in enumerate(project.standard_compliance):
+            internal_iri_name = f"standard{index}"
+            standard_rdf_iri = cls._create_standard(graph, namespace, internal_iri_name, standard)
+            cls.add(graph, module_subject, OKH.compliesWith, standard_rdf_iri)
         for (index, software) in enumerate(project.software):
             internal_iri_name = f"software{index}"
             software_rdf_iri = cls._create_software(graph, namespace, internal_iri_name, software)
