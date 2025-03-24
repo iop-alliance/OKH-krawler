@@ -266,8 +266,9 @@ class GitHubFetcher(Fetcher):
             "Authorization": f"token {config.access_token}",
         })
 
-    def __fetch_one(self, hosting_unit_id: HostingUnitIdForge, path: Path) -> FetchResult:
+    def __fetch_one(self, hosting_unit_id: HostingUnitIdForge) -> FetchResult:
         try:
+            path: Path = hosting_unit_id.path if hosting_unit_id.path else __default_manifest_path__
             log.debug("fetching project '%s' path '%s' ...", hosting_unit_id, str(path))
 
             # check file name
@@ -344,28 +345,28 @@ class GitHubFetcher(Fetcher):
             self._failed_fetch(FailedFetch(hosting_unit_id=hosting_unit_id, error=err))
             raise err
 
-    def _parse_project_url(self, url: str) -> tuple[HostingUnitIdForge, Path | None]:
+    def _parse_project_url(self, url: str) -> HostingUnitIdForge:
         try:
-            hosting_unit_id, path_raw = HostingUnitIdForge.from_url(url)
+            hosting_unit_id, _path_raw = HostingUnitIdForge.from_url(url)
         except ParserError as err:
             raise FetcherError(f"Invalid GitHub manifest file URL: '{url}'") from err
-        return hosting_unit_id, path_raw
+        return hosting_unit_id
 
     def fetch(self, project_id: ProjectId) -> FetchResult:
-        hosting_unit_id, path_raw = self._parse_project_url(project_id.uri)
+        hosting_unit_id: HostingUnitIdForge = self._parse_project_url(project_id.uri)
 
-        if path_raw:
-            path = Path(path_raw)
-            return self.__fetch_one(hosting_unit_id, path)
-
-        for man_fl_ext in MANIFEST_FILE_EXTENSIONS:
-            path = Path(f'okh.{man_fl_ext}')
-            try:
-                return self.__fetch_one(hosting_unit_id, path)
-            except FetcherError:
-                continue
-        raise FetcherError("Non direct path to a manifest file given,"
-                           f" and no known manifest file found at: '{project_id.uri}'")
+        if hosting_unit_id.path:
+            return self.__fetch_one(hosting_unit_id)
+        else:
+            for man_fl_ext in MANIFEST_FILE_EXTENSIONS:
+                path = Path(f'okh.{man_fl_ext}')
+                hosting_unit_id_with_path = hosting_unit_id.derive(path=path)
+                try:
+                    return self.__fetch_one(hosting_unit_id_with_path)
+                except FetcherError:
+                    continue
+            raise FetcherError("Non direct path to a manifest file given,"
+                            f" and no known manifest file found at: '{project_id.uri}'")
 
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
         num_fetched_projects: int = 0
@@ -462,7 +463,7 @@ class GitHubFetcher(Fetcher):
                     log.warning(f"Not an accepted manifest file name: '{url_file_name}'")
                 # parsed_url = urlparse(raw_url)
                 try:
-                    hosting_unit_id, path = self._parse_project_url(raw_url)
+                    hosting_unit_id = self._parse_project_url(raw_url)
                 except FetcherError as err:
                     log.warning(f"Skipping project file, because: {err}")
                 # path = Path(raw_url.path)
@@ -479,7 +480,7 @@ class GitHubFetcher(Fetcher):
                 # )
 
                 try:
-                    yield self.__fetch_one(hosting_unit_id, path or __default_manifest_path__)
+                    yield self.__fetch_one(hosting_unit_id)
                 except FetcherError as err:
                     log.debug(f"skipping file, because: {err}")
 

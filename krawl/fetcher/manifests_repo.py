@@ -135,13 +135,13 @@ class ManifestsRepoFetcher(Fetcher):
             self._failed_fetch(FailedFetch(hosting_unit_id=hosting_unit_id, error=err))
             raise err
 
-    def _extract_url_from_file(self, manifest_file: Path) -> tuple[str, HostingUnitIdForge, Path | None]:
+    def _extract_url_from_file(self, manifest_file: Path) -> tuple[str, HostingUnitIdForge]:
         url = f"{self.repo_url}/{str(manifest_file)}"
         try:
-            hosting_unit_id, path_raw = HostingUnitIdForge.from_url(url)
+            hosting_unit_id, _path = HostingUnitIdForge.from_url(url)
         except ParserError as err:
             raise FetcherError(f"Invalid git forge manifest file URL: '{url}'") from err
-        return url, hosting_unit_id, path_raw
+        return url, hosting_unit_id
 
     def fetch(self, project_id: ProjectId) -> FetchResult:
         hosting_unit_id, path_raw = self._parse_project_url(project_id.uri)
@@ -167,8 +167,11 @@ class ManifestsRepoFetcher(Fetcher):
                 # print(potential_toml_manifest_path.name)
                 num_fetched_projects = num_fetched_projects + 1
 
+                potential_toml_manifest_path_rel = potential_toml_manifest_path.relative_to(self.scrape_dir)
+
                 try:
-                    manifest_url, hosting_unit_id, _path = self._extract_url_from_file(potential_toml_manifest_path)
+                    manifest_url, hosting_unit_id = self._extract_url_from_file(potential_toml_manifest_path_rel)
+                    log.warn(f"Manifests-repo - hosting unit ID: {hosting_unit_id}\n\t{manifest_url}\n\t{potential_toml_manifest_path_rel}")
                 except FetcherError as err:
                     log.warning(f"Skipping project file, because: {err}")
                     continue

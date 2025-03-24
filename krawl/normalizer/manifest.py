@@ -123,7 +123,9 @@ class _ProjFilesInfo:
             url (str): Should represent a hosting platforms URL, pointing to a file in a repo.
         """
         try:
-            _hosting_id, path = type(self._hosting_unit_id).from_url(url)
+            hosting_unit_id, path = type(self._hosting_unit_id).from_url(url)
+            if isinstance(hosting_unit_id, HostingUnitIdForge):
+                path = hosting_unit_id.path
             return path
         except (ValueError, ParserError):
             return krawl_util_extract_path(url)

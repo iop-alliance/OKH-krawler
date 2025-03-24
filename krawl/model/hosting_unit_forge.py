@@ -35,27 +35,30 @@ class HostingUnitIdForge(HostingUnitId):
     but for example GitHub and ForgeJo (CodeBerg) do not support this."""
     ref: str | None = None
     """Could be a branch, tag or commit"""
+    path: Path | None = None
+    """The path within the repo, commonly pointing to an OKH manifest file."""
 
     def to_path_str(self) -> str:
-        return f"{self.hosting_id()}/{self.owner}{path_opt(self.group_hierarchy)}/{self.repo}{path_opt(self.ref)}"
+        return f"{self.hosting_id()}/{self.owner}{path_opt(self.group_hierarchy)}/{self.repo}{path_opt(self.ref)}{path_opt(self.path)}"
 
     def hosting_id(self) -> HostingId:
         return self._hosting_id
 
-    def derive(self, hosting_id=None, owner=None, group_hierarchy=None, repo=None, ref=None) -> HostingUnitIdForge:
+    def derive(self, hosting_id=None, owner=None, group_hierarchy=None, repo=None, ref=None, path=None) -> HostingUnitIdForge:
         return self.__class__(
             _hosting_id=hosting_id if hosting_id else self.hosting_id(),
             owner=owner if owner else self.owner,
             group_hierarchy=group_hierarchy if group_hierarchy else self.group_hierarchy,
             repo=repo if repo else self.repo,
             ref=ref if ref else self.ref,
+            path=path if path else self.path,
         )
 
     def __eq__(self, other) -> bool:
         return (self.hosting_id() == other.hosting_id() and self.owner == other.owner and
                 self.group_hierarchy == other.group_hierarchy and self.repo == other.repo
-                # and self.path == other.path
-                and self.ref == other.ref)
+                and self.ref == other.ref
+                and self.path == other.path)
 
     def references_version(self) -> bool:
         return self.ref is not None
@@ -86,7 +89,7 @@ class HostingUnitIdForge(HostingUnitId):
                 repo = path_parts[1]
                 if domain == "raw.githubusercontent.com":
                     ref = path_parts[2] if len(path_parts) >= 3 else None
-                    path = Path("/".join(path_parts[3:])) if len(path_parts) >= 4 else None
+                    path = Path("/".join(path_parts[3:])) if len(path_parts) > 3 else None
                 else:
                     if len(path_parts) >= 4 and path_parts[2] in ["tree", "blob", "raw"]:
                         ref = path_parts[3]
@@ -96,6 +99,8 @@ class HostingUnitIdForge(HostingUnitId):
                         ref = path_parts[4]
                     elif len(path_parts) > 3 and path_parts[2] == "commit":
                         ref = path_parts[3]
+                    else:
+                        path = Path("/".join(path_parts[2:])) if len(path_parts) > 2 else None
                     # else:
                     #     raise NotImplementedError(f"Unknown or invalid path format: '{parsed_url.path}'; for platform {hosting_id}.")
 
@@ -111,6 +116,8 @@ class HostingUnitIdForge(HostingUnitId):
                         path = Path("/".join(path_parts[5:]))
                 elif len(path_parts) >= 5 and path_parts[2] == "-" and path_parts[3] in ["commit", "tags"]:
                     ref = path_parts[4]
+                # else:
+                    # TODO
 
             case HostingId.APPROPEDIA_ORG | HostingId.OSHWA_ORG | HostingId.THINGIVERSE_COM:
                 raise ParserError(f"This is not a forge(-like) hosting Id: {hosting_id}."
@@ -131,9 +138,10 @@ class HostingUnitIdForge(HostingUnitId):
             repo=repo,
             group_hierarchy=group_hierarchy,
             ref=ref,
+            path=path,
         )
 
-        return (hosting_unit_id, path)
+        return (hosting_unit_id, None)
 
     def create_project_hosting_url(self) -> str:
         self.validate()
