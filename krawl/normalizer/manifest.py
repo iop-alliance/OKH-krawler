@@ -269,43 +269,6 @@ class ManifestNormalizer(Normalizer):
 
         return project
 
-    def _evaluate_hosting_id(self, raw: dict, data_set: DataSet) -> tuple[HostingUnitId, Path | None]:
-        # try to use release URL, if exists
-        release_url = DictUtils.to_string(raw.get("release"))
-        if release_url:
-            try:
-                return type(self.files_info._hosting_unit_id).from_url(release_url)
-            except ParserError:
-                pass
-
-        # try to use repo URL and version info
-        if isinstance(self.files_info._hosting_unit_id, HostingUnitIdForge):
-            repo_url = DictUtils.to_string(raw.get("repo"))
-            version = DictUtils.to_string(raw.get("version"))
-            if repo_url and version:
-                try:
-                    hosting_unit_id = HostingUnitIdForge.from_url_no_path(repo_url)
-                    # hosting_id.ref = f"v{version}"
-                    hosting_unit_id = hosting_unit_id.derive(ref=version)
-                    return hosting_unit_id, None
-                except ValueError:
-                    pass
-
-        # # try to use meta information
-        # try:
-        #     hosting_unit_id = HostingUnitIdForge(
-        #         # platform=meta.source,
-        #         owner=meta.owner,
-        #         repo=meta.repo,
-        #         path=meta.path,
-        #         branch=meta.branch,
-        #     )
-        #     return hosting_unit_id, path
-        # except ValueError:
-        #     pass
-
-        raise ValueError(f"Unable to determine hosting unit ID from raw data: {raw}")
-
     @classmethod
     def _host(cls, raw: dict) -> str | None:  # NOTE Unused, can probably be removed
         manifest = raw["manifest"]
