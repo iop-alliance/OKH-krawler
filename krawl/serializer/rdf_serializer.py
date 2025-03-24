@@ -596,6 +596,16 @@ class RDFSerializer(Serializer):
 
         cls._fill_part(graph, namespace, project, project, module_name, module_subject)
 
+        cls._add_files(
+            graph,
+            namespace=namespace,
+            project=project,
+            parent_subj=module_subject,
+            parent_association_property=OKH.hasManufacturingInstructions,
+            files=project.manufacturing_instructions,
+            entity_name="ManufacturingInstructions",
+            parent_name=module_name)
+
         # NOTE We do not create a standard to then allow platform specific data again,
         #      and definitely not by introducing arbitrary properties
         #      into the OKH ontology on the fly, like we did here:
