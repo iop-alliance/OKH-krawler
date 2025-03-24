@@ -93,9 +93,9 @@ class FetchResultRepositoryWorkdir(FetchResultRepository):
 
             self._store_file(project_dir, "orig", fetch_result.data.format, fetch_result.data.content)
 
-        self._store_file(project_dir, "normalized", ManifestFormat.TOML, normalized_content)
+        self._store_file(project_dir, "normalized.okh", ManifestFormat.TOML, normalized_content)
 
         self._store_file(project_dir, "meta", ManifestFormat.TURTLE, rdf_meta_content)
-        self._store_file(project_dir, "data", ManifestFormat.TURTLE, rdf_content)
+        self._store_file(project_dir, "data.okh", ManifestFormat.TURTLE, rdf_content)
 
         self._finalize_store(hosting_unit_id, content_type, project_dir)
