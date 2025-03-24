@@ -114,7 +114,7 @@ class RDFSerializer(Serializer):
 
         hosting_id = fetch_result.data_set.hosting_unit_id.hosting_id()
         data_provider: URIRef = cls._data_provider(hosting_id)
-        cls.add(meta_graph, subj, ODS.dataProvider, data_provider)
+        cls.add(meta_graph, subj, ODS.primaryHost, data_provider)
 
         data_sourcing_procedure_iri: URIRef
         cm: CrawlingMeta = fetch_result.data_set.crawling_meta
