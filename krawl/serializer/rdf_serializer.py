@@ -23,6 +23,7 @@ from krawl.model.data_set import CrawlingMeta
 from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_unit import HostingId
 from krawl.model.licenses import License
+from krawl.model.language_string import LangStr
 from krawl.model.outer_dimensions import OuterDimensions
 from krawl.model.part import Part
 from krawl.model.project import Project
@@ -298,12 +299,14 @@ class RDFSerializer(Serializer):
     def add(graph: Graph,
             subject: URIRef,
             predicate: URIRef,
-            object: str | URIRef | Literal | datetime | float | None,
+            object: str | LangStr |URIRef | Literal | datetime | float | None,
             datatype: URIRef | None = None):
         if object:
             if not isinstance(object, (URIRef, Literal)):
                 if isinstance(object, str) and object.startswith("http") and validators.url(object):
                     object = URIRef(object)
+                elif isinstance(object, LangStr):
+                    object = Literal(str(object.text), datatype=RDF.langString, lang=object.language)
                 elif isinstance(object, datetime):
                     object = Literal(object.isoformat(), datatype=datatype if datatype else XSD.dateTime)
                 elif isinstance(object, float):
@@ -721,6 +724,8 @@ class RDFSerializer(Serializer):
             for tag in file.tags:
                 okh_rdf_image_tag = RDFSerializer._image_tag(tag)
                 RDFSerializer.add(graph, subj, OKH.hasTag, okh_rdf_image_tag)
+            for depicts in file.depicts:
+                RDFSerializer.add(graph, subj, OKH.depicts, depicts)
 
     @classmethod
     def _setup_graph(cls, graph: Graph, meta: bool = False) -> None:

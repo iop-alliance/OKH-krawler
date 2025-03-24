@@ -10,6 +10,7 @@ from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
 
+from krawl.model.language_string import LangStr
 # from krawl.model.licenses import get_spdx_by_id_or_name as get_license
 # from krawl.model.util import parse_date
 
@@ -175,6 +176,7 @@ class Image(File):  # pylint: disable=too-many-instance-attributes
     """File data model."""
     slots: set[ImageSlot] = field(default_factory=set)
     tags: set[ImageTag] = field(default_factory=set)
+    depicts: set[LangStr] = field(default_factory=set)
     # path: Path | None = None
     # mime_type: str | None = None
     # url: str | None = None

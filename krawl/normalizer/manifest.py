@@ -21,6 +21,7 @@ from krawl.fetcher.util import convert_okh_v1_dict_to_losh
 from krawl.log import get_child_logger
 from krawl.model.agent import Agent, AgentRef, Organization, Person
 from krawl.model.data_set import DataSet
+from krawl.model.language_string import LangStr
 from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitId
@@ -347,6 +348,29 @@ class ManifestNormalizer(Normalizer):
                     tags.add(tag)
         return tags
 
+    def _image_depicts_strings(self, raw: Any, default_language: str = 'en') -> set[LangStr]:
+        depicts: set[LangStr] = set()
+        if raw is None:
+            return depicts
+        if isinstance(raw, (str, dict, LangStr)):
+            raw = [raw]
+        if isinstance(raw, list):
+            for raw_item in raw:
+                if isinstance(raw_item, str):
+                    cont = LangStr(raw_item, default_language)
+                elif isinstance(raw_item, dict):
+                    text = raw_item.get("text")
+                    if not text:
+                        raise ValueError(f"Missing property 'text' for language string for image depicts:\n{raw_item}")
+                    language = raw_item.get("language", default_language)
+                    cont = LangStr(text, language)
+                elif isinstance(raw_item, LangStr):
+                    cont = raw_item
+                else:
+                    raise TypeError(f"Unsupported type for image depicts: {type(raw_item)} - content:\n{raw_item}")
+                depicts.add(cont)
+        return depicts
+
     def _person_from_user_str(self, user: str) -> Person:
         # `user` is e.g:
         # - 'Firstname Lastname'
@@ -451,6 +475,7 @@ class ManifestNormalizer(Normalizer):
                 if isinstance(raw_item, dict):
                     image.slots = self._image_slots(raw_item.get("slots"))
                     image.tags = self._image_tags(raw_item.get("tags"))
+                    image.depicts = self._image_depicts_strings(raw_item.get("depicts"))
                 images.append(image)
         else:
             raise TypeError(f"Unsupported type for images: {type(raw)}")
