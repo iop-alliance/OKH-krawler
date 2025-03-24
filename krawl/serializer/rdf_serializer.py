@@ -170,36 +170,6 @@ class RDFSerializer(Serializer):
         # cls.add(graph, subj, ODS.dataFile, cm.TODO)  # TODO
         # cls.add(graph, subj, ODS.hash, cm.hash)  # TODO
 
-        # sourcing_procedure: SourcingProcedure
-        # # last_state: ScrapingIntentResultState
-        # last_visited: datetime | None
-        # first_visited: datetime | None = None
-        # last_successfully_visited: datetime | None = None
-        # # last_changed: datetime | None = None
-        # last_detected_change: datetime | None = None
-        # created_at: datetime | None = None
-        # """This differs from `first_visited`,
-        # if we know when before our first visit that the data was created
-        # on the hosting technology."""
-        # visits: int = 1
-        # changes: int = 0
-        # manifest: str | None = None
-
-        # cls.add
-
-        # data_set = DataSet(
-        #     crawling_meta=CrawlingMeta(
-        #         sourcing_procedure=__sourcing_procedure__,
-        #         # created_at: datetime = None
-        #         last_visited=last_visited,
-        #         # last_changed: datetime = None
-        #         # history = None,
-        #     ),
-        #     hosting_unit_id=hosting_unit_id,
-        #     license=__dataset_license__,
-        #     creator=__dataset_creator__,
-        # )
-
         # # cls.add(graph, module_subject, ODS.dataSourcingProcedure, project.data_sourcing_procedure)
         # parts = urlparse(project.repo)
         # base = urlunparse(components=(
@@ -366,20 +336,6 @@ class RDFSerializer(Serializer):
         documentation_language: list[str] = get_fallback(thing, "documentation_language")
         for doc_lang in documentation_language:
             cls.add(graph, part_subject, OKH.documentationLanguage, doc_lang)
-        # license: License = get_fallback(thing, "license")
-        # if license:
-        #     if license.is_spdx:
-        #         cls.add(graph, part_subject, ODS.license, SPDX[license.id()])
-        #     else:
-        #         cls.add(graph, part_subject, ODS.licenseExpression, license.id())
-        # else:
-        #     if license.reference_url:
-        #         alt_license = license.reference_url[:-5]
-        #     else:
-        #         alt_license = license.id()
-        #     cls.add(graph, part_subject, ODS.alternativeLicense,
-        #             alt_license)  # FIXME: should be the license ID not the reference url, but it breaks the frontend
-        # cls.add(graph, part_subject, ODS.licensor, get_fallback(thing, "licensor"))
         add_if_exists_fallback(thing, OKH.material, "material")
         add_if_exists_fallback(thing, OKH.manufacturingProcess, "manufacturing_process")
         cls.add(graph, part_subject, OKH.hasMass, thing.mass, XSD.float)
@@ -548,15 +504,6 @@ class RDFSerializer(Serializer):
                 cls.add(graph, subj, ODS.license, SPDX[project.license.id()])
             else:
                 cls.add(graph, subj, ODS.licenseExpression, project.license.id())
-        # if project.license.is_spdx:
-        #     cls.add(graph, subj, ODS.license, project.license.id())
-        # else:
-        #     if project.license.reference_url is None:
-        #         alt_license = project.license.id
-        #     else:
-        #         alt_license = project.license.reference_url[:-5]
-        #     cls.add(graph, subj, ODS.alternativeLicense,
-        #             alt_license)  # FIXME: should be the license ID not the reference url, but it breaks the frontend
         for (index, licensor) in enumerate(project.licensor):
             internal_iri_name = f"licensor{index}"
             agent_rdf_iri = cls._create_agent(graph, namespace, internal_iri_name, licensor, store = store_agents)
@@ -628,22 +575,6 @@ class RDFSerializer(Serializer):
     #         l.append((entity, RDFS.label, Literal(key)))
     #         l.append((entity, RDFS.subPropertyOf, OKH.functionalMetadata))
     #     return l
-
-    # def _make_file_list(self, project, key, entity_name, rdf_type, BASE, extra=None):
-    #     extra = [] if extra is None else extra
-    #     parent_name = f"{project.name} {project.version}"
-    #     l = []
-    #     value = getattr(project, detailskey(key)) if hasattr(project, detailskey(key)) else None
-    #     if value is None:
-    #         return None
-    #     entity = BASE[entity_name]
-    #     l.append((entity, RDF.type, rdf_type))
-    #     l.append((entity, RDFS.label, f"{entity_name} of {parent_name}"))
-    #     for a, v in extra:
-    #         l.append((entity, a, v))
-    #     for k, v in value.items():
-    #         l.append((entity, getattr(OKH, k), v))
-    #     return entity, l
 
     @classmethod
     def _add_file_info(cls,

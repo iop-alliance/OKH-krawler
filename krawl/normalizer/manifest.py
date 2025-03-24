@@ -189,7 +189,6 @@ class ManifestNormalizer(Normalizer):
             raw: RecDict = fetch_result.data.as_dict()
         except ValueError as err:
             raise NormalizerError(f"Failed to parse manifest: {err}") from err
-        # data_set: DataSet = fetch_result.data_set
 
         okhv_fetched = raw.get("okhv", None)
         if okhv_fetched is None:
@@ -199,14 +198,9 @@ class ManifestNormalizer(Normalizer):
             except ConversionError as err:
                 raise NormalizerError(f"Failed to convert OKH v1 manifest to new version: {err}") from err
 
-        # hosting_unit_id, _path = self._evaluate_hosting_id(raw, data_set)
         hosting_unit_id = fetch_result.data_set.hosting_unit_id
 
         log.debug("normalizing manifest of '%s'", hosting_unit_id)
-
-        # _ProjFilesInfo
-        # self.file_dl_base_url = hosting_unit_id.create_download_url(path)
-        # self.manifest_path = data_set.crawling_meta.manifest
 
         self.files_info = _ProjFilesInfo(hosting_unit_id, raw, self._file_handler)
 
@@ -272,7 +266,6 @@ class ManifestNormalizer(Normalizer):
             log.warning("Failed parsing outer-dimensions: %s", err)
         project.part = self._parts(raw.get("part"))
         project.software = self._software(hosting_unit_id, raw.get("software"))
-        # project.sourcing_procedure = raw.get("data-sourcing-procedure", SourcingProcedure.MANIFEST)
 
         return project
 
@@ -498,9 +491,6 @@ class ManifestNormalizer(Normalizer):
             part.image = self._images(raw_part.get("image"))
             part.source = self.files_info.files(raw_part.get("source"))
             part.export = self.files_info.files(raw_part.get("export"))
-            # part.license = get_license(DictUtils.to_string(raw_part.get("license")))
-            # part.licensor = DictUtils.to_string(raw_part.get("licensor"))
-            # part.documentation_language = self._language(raw_part.get("documentation-language"))
             part.material = DictUtils.to_string(raw_part.get("material"))
             part.manufacturing_process = self.files_info.files(raw_part.get("manufacturing-instructions"))
             part.mass = DictUtils.to_float(raw_part.get("mass"))
