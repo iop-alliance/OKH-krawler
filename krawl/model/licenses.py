@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2021 - 2022 Andre Lehmann <aisberg@posteo.de>
 # SPDX-FileCopyrightText: 2021 Alec Hanefeld <alec@konek.to>
 # SPDX-FileCopyrightText: 2021 hoijui <hoijui.quaero@gmail.com>
-# SPDX-FileCopyrightText: 2022 - 2024 Robin Vobruba <hoijui.quaero@gmail.com>
+# SPDX-FileCopyrightText: 2022 - 2025 Robin Vobruba <hoijui.quaero@gmail.com>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -201,12 +201,6 @@ def get_by_id_or_name_required(id_or_name: str) -> License:
         if lic:
             return lic
     raise NameError(f'WARN: Non-SPDX license detected: "{id_or_name}"')
-
-    return License(
-        _id=f'LicenseRef-{id_or_name}',
-        name=id_or_name,
-        reference_url=f"file://LICENSES/LicenseRef-{id_or_name}.txt",
-    )
 
 
 def get_by_id_or_name(id_or_name: str | None) -> License | None:
