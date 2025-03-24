@@ -116,10 +116,10 @@ class _ProjFilesInfo:
         }
 
     def extract_path(self, url: str) -> Path | None:
-        """Figures out whether the argument is a URL (or a relative path). # TODO FIXME Wrong!
+        """Extracts the repo-internal path from a forge URL.
 
         Args:
-            url (str): Should represent a hosting platforms URL
+            url (str): Should represent a hosting platforms URL, pointing to a file in a repo.
         """
         try:
             _hosting_id, path = type(self._hosting_unit_id).from_url(url)
