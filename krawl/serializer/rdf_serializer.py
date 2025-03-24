@@ -161,7 +161,7 @@ class RDFSerializer(Serializer):
         cls.add(meta_graph, subj, ODS.lastVisited, cm.last_visited)
         cls.add(meta_graph, subj, ODS.firstVisited, cm.first_visited)
         cls.add(meta_graph, subj, ODS.lastSuccessfullyVisited, cm.last_successfully_visited)
-        cls.add(meta_graph, subj, ODS.lastDetectedChanged, cm.last_detected_change)
+        cls.add(meta_graph, subj, ODS.lastChanged, cm.last_detected_change)
         cls.add(meta_graph, subj, ODS.created, cm.created_at)
         cls.add(meta_graph, subj, ODS.visits, cm.visits)
         cls.add(meta_graph, subj, ODS.changes, cm.changes)
@@ -401,7 +401,7 @@ class RDFSerializer(Serializer):
             namespace=namespace,
             project=project,
             parent_subj=part_subject,
-            parent_association_property=OKH.source,
+            parent_association_property=OKH.hasSource,
             files=thing.source,
             entity_name="SourceFile",
             parent_name=part_name)
@@ -412,7 +412,7 @@ class RDFSerializer(Serializer):
             namespace=namespace,
             project=project,
             parent_subj=part_subject,
-            parent_association_property=OKH.export,
+            parent_association_property=OKH.hasExport,
             files=thing.export,
             entity_name="ExportFile",
             parent_name=part_name)
@@ -423,7 +423,7 @@ class RDFSerializer(Serializer):
             namespace=namespace,
             project=project,
             parent_subj=part_subject,
-            parent_association_property=OKH.auxiliary,
+            parent_association_property=OKH.hasAuxiliary,
             files=thing.auxiliary,
             entity_name="AuxiliaryFile",
             parent_name=part_name)
@@ -452,7 +452,7 @@ class RDFSerializer(Serializer):
                                              "_part")
             part_subject: URIRef = namespace[part_name]
             cls.add(graph, part_subject, RDF.type, OKH.Part)
-            cls.add(graph, part_subject, RDFS.label, part.name)
+            cls.add(graph, part_subject, OKH.name, part.name)
 
             part_subject = cls._fill_part(graph, namespace, project, part, part_name, part_subject)
 
@@ -573,7 +573,7 @@ class RDFSerializer(Serializer):
         module_subject = namespace[module_name]
         cls.add(graph, module_subject, RDF.type, OKH.Module)
 
-        cls.add(graph, module_subject, RDFS.label, project.name)
+        cls.add(graph, module_subject, OKH.name, project.name)
         # NOTE That is not how this works. It would have to link to an RDF subject (by IRI) that represents the same module but un-frozen/non-permanent. IT would likely be in an other file.
         #cls.add(graph, module_subject, OKH.versionOf, project.repo)
         cls.add(graph, module_subject, ODS.source, project.repo)
@@ -720,7 +720,7 @@ class RDFSerializer(Serializer):
         if isinstance(file, Image):
             for slot in file.slots:
                 okh_rdf_image_slot = RDFSerializer._image_slot(slot)
-                RDFSerializer.add(graph, subj, OKH.hasSlot, okh_rdf_image_slot)
+                RDFSerializer.add(graph, subj, OKH.fillsSlot, okh_rdf_image_slot)
             for tag in file.tags:
                 okh_rdf_image_tag = RDFSerializer._image_tag(tag)
                 RDFSerializer.add(graph, subj, OKH.hasTag, okh_rdf_image_tag)
