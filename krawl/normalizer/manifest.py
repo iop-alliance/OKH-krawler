@@ -166,7 +166,7 @@ class _ProjFilesInfo:
 
         file.created_at = DictUtils.to_datetime(file_dict.get("created-at"))
         file.last_changed = DictUtils.to_datetime(file_dict.get("last-changed"))
-        file.last_visited = datetime.now(timezone.utc)
+        # file.last_visited = datetime.now(timezone.utc)
         # file.license = get_license(DictUtils.to_string(file_dict.get("license")))
         # file.licensor = DictUtils.to_string(file_dict.get("licensor"))
 
