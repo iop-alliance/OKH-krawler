@@ -12,6 +12,7 @@ from krawl.errors import ParserError
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitId
 from krawl.model.util import create_url
+from krawl.util import path_opt
 
 try:
     from typing import Self
@@ -36,7 +37,7 @@ class HostingUnitIdForge(HostingUnitId):
     """Could be a branch, tag or commit"""
 
     def to_path_str(self) -> str:
-        return f"{self.hosting_id()}/{self.owner}{" / " + self.group_hierarchy if self.group_hierarchy else ''}/{self.repo}{" / " + self.ref if self.ref else ''}"
+        return f"{self.hosting_id()}/{self.owner}{path_opt(self.group_hierarchy)}/{self.repo}{path_opt(self.ref)}"
 
     def hosting_id(self) -> HostingId:
         return self._hosting_id
@@ -61,10 +62,6 @@ class HostingUnitIdForge(HostingUnitId):
 
     def is_valid(self) -> bool:
         return bool(self.hosting_id()) and bool(self.owner) and bool(self.repo)
-
-    @staticmethod
-    def path_opt(path_part: Path | str | None) -> str:
-        return f"/{str(path_part)}" if path_part else ""
 
     @classmethod
     def from_url(cls, url: str) -> tuple[Self, Path | None]:
@@ -158,7 +155,7 @@ class HostingUnitIdForge(HostingUnitId):
                         url_domain = "gitlab.com"
                     case HostingId.GITLAB_OPENSOURCEECOLOGY_DE:
                         url_domain = "gitlab.opensourceecology.de"
-                url_path = f"/{self.owner}{self.path_opt(self.group_hierarchy)}/{self.repo}"
+                url_path = f"/{self.owner}{path_opt(self.group_hierarchy)}/{self.repo}"
 
             case HostingId.APPROPEDIA_ORG | HostingId.OSHWA_ORG | HostingId.THINGIVERSE_COM:
                 raise NotImplementedError(f"This is not a forge(-like) hosting Id: {self.hosting_id()}."
@@ -180,14 +177,14 @@ class HostingUnitIdForge(HostingUnitId):
                 # format: https://codeberg.org/elevont/ontprox/raw/branch/master/.gitignore
                 ref_opt = self.ref if self.ref else "HEAD"
                 url_domain = "codeberg.org"
-                url_path = f"/{self.owner}/{self.repo}/raw/{ref_opt}{self.path_opt(path)}"
+                url_path = f"/{self.owner}/{self.repo}/raw/{ref_opt}{path_opt(path)}"
 
             case HostingId.GITHUB_COM:
                 # format: https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
                 # self.check_is_versioned()
                 ref_opt = self.ref if self.ref else "HEAD"
                 url_domain = "raw.githubusercontent.com"
-                url_path = f"/{self.owner}/{self.repo}/{ref_opt}{self.path_opt(path)}"
+                url_path = f"/{self.owner}/{self.repo}/{ref_opt}{path_opt(path)}"
 
             case HostingId.GITLAB_COM | HostingId.GITLAB_OPENSOURCEECOLOGY_DE:
                 # format: https://gitlab.com/{owner}/{groups}/{repo}/-/raw/{branch}/{path}
@@ -200,7 +197,7 @@ class HostingUnitIdForge(HostingUnitId):
                         url_domain = "gitlab.opensourceecology.de"
                     case _:
                         raise NotImplementedError(f"Unhandled hosting ID '{self.hosting_id()}'")
-                url_path = f"/{self.owner}/{self.group_hierarchy}/{self.repo}/-/raw/{ref_opt}{self.path_opt(path)}"
+                url_path = f"/{self.owner}/{self.group_hierarchy}/{self.repo}/-/raw/{ref_opt}{path_opt(path)}"
 
             case HostingId.APPROPEDIA_ORG | HostingId.OSHWA_ORG | HostingId.THINGIVERSE_COM:
                 raise NotImplementedError(f"This is not a forge(-like) hosting Id: {self.hosting_id()}."

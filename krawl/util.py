@@ -64,6 +64,10 @@ def extract_path(url: str) -> Path | None:
     return Path(parsed_url.path) if parsed_url.path else None
 
 
+def path_opt(path_part: Path | str | None) -> str:
+    return "/" + str(path_part) if path_part else ""
+
+
 def fix_str_encoding(potentially_bad_str: str) -> str:
     return fix_encoding(potentially_bad_str)
 
