@@ -27,6 +27,7 @@ from krawl.model.language_string import LangStr
 from krawl.model.outer_dimensions import OuterDimensions
 from krawl.model.part import Part
 from krawl.model.project import Project
+from krawl.model.software import Software
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.serializer import Serializer
 
@@ -426,6 +427,20 @@ class RDFSerializer(Serializer):
             cls.add(graph, subj, OKH.doi, doi)
         return subj
 
+    @classmethod
+    def _create_software(cls, graph: Graph, namespace: Namespace, rdf_name: str, software: Software) -> URIRef:
+
+        subj = namespace[rdf_name]
+        # We only create this individual if it is not yet in the graph
+        if (subj, None, None) not in graph:
+            cls.add(graph, subj, RDF.type, OKH.Software)
+            cls.add(graph, subj, OKH.release, software.release)
+            if software.documentation_language:
+                for doc_lang in software.documentation_language:
+                    cls.add(graph, subj, OKH.documentationLanguage, doc_lang)
+            cls._add_license_and_licensor(graph, True, namespace, subj, software)
+        return subj
+
     # @classmethod
     # def _create_agent(cls, graph: Graph, namespace: Namespace, rdf_name: str, agent: Agent) -> URIRef:
     #     subj = namespace[rdf_name]  # TODO FIXME This whole method
@@ -559,6 +574,10 @@ class RDFSerializer(Serializer):
             internal_iri_name = f"publication{index}"
             publication_rdf_iri = cls._create_publication(graph, namespace, internal_iri_name, doi)
             cls.add(graph, module_subject, OKH.hasPublication, publication_rdf_iri)
+        for (index, software) in enumerate(project.software):
+            internal_iri_name = f"software{index}"
+            software_rdf_iri = cls._create_software(graph, namespace, internal_iri_name, software)
+            cls.add(graph, module_subject, OKH.hasSoftware, software_rdf_iri)
 
 
         cls._fill_part(graph, namespace, project, project, module_name, module_subject)

@@ -7,6 +7,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from krawl.model.file import File
+from krawl.model.licenses import License
+from krawl.model.agent import Agent, AgentRef, Organization
 
 
 @dataclass(slots=True)
@@ -16,5 +18,6 @@ class Software:
     release: str
     installation_guide: File | None = None
     documentation_language: list[str] | None = field(default_factory=list)
-    license: str | None = None
-    licensor: str | None = None
+    license: License | None = None
+    licensor: list[Agent | AgentRef] | None = field(default_factory=list)
+    organization: list[Organization | AgentRef] | None = field(default_factory=list)

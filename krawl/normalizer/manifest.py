@@ -486,9 +486,10 @@ class ManifestNormalizer(Normalizer):
             raise NormalizerError(f"Software entry in manifest {hosting_unit_id} is missing required property 'release'")
         sw = Software(release=release)
         sw.installation_guide = self.files_info.file(raw_software.get("installation-guide"))
-        # sw.documentation_language = self._language(rs.get("documentation-language"))
-        # sw.license = get_license(DictUtils.to_string(rs.get("license")))
-        # sw.licensor = DictUtils.to_string(rs.get("licensor"))
+        sw.documentation_language = self._clean_language(raw_software.get("documentation-language"))
+        sw.license = self._license_from_container_dict(raw_software)
+        sw.licensor = self._licensor_from_container_dict(hosting_unit_id, raw_software)
+        sw.organization = self._organizations(raw_software.get("organization"))
         return sw
 
     def _software(self, hosting_unit_id: HostingUnitId, raw_software: Any) -> list[Software]:
@@ -497,8 +498,8 @@ class ManifestNormalizer(Normalizer):
             return software
         if isinstance(raw_software, list):
             for rs in raw_software:
-                sw = self._software_from_dict(hosting_unit_id, rs)
-                software.append(sw)
+                sws = self._software(hosting_unit_id, rs)
+                software.extend(sws)
         elif isinstance(raw_software, dict):
             sw = self._software_from_dict(hosting_unit_id, raw_software)
             software.append(sw)
