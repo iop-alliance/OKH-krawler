@@ -166,7 +166,7 @@ class RDFSerializer(Serializer):
         cls.add(meta_graph, subj, ODS.created, cm.created_at)
         cls.add(meta_graph, subj, ODS.visits, cm.visits)
         cls.add(meta_graph, subj, ODS.changes, cm.changes)
-        cls.add(meta_graph, subj, ODS.manifest, cm.manifest)
+        cls.add(meta_graph, subj, OKH.hasManifestFile, cm.manifest)
         # cls.add(graph, subj, ODS.visitsFile, cm.visits_file) # TODO
         # cls.add(graph, subj, ODS.dataFile, cm.TODO)  # TODO
         # cls.add(graph, subj, ODS.hash, cm.hash)  # TODO
