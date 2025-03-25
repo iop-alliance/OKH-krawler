@@ -560,7 +560,8 @@ class RDFSerializer(Serializer):
 
         # TODO FIXME This next line is not really correct, but it needs changes elsewhere (probably even the manifest and/or ontology) to be done right
         hosting_id = fetch_result.data_set.hosting_unit_id.hosting_id()
-        cls.add(graph, module_subject, ODS.host, cls._data_provider(hosting_id))
+        # NOTE The following we only have in the dataset (in meta.ttl)
+        # cls.add(graph, module_subject, ODS.host, cls._data_provider(hosting_id))
         cls.add(graph, module_subject, OKH.version, project.version)
         cls.add(graph, module_subject, OKH.release, project.release)
 
