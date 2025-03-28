@@ -5,15 +5,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import re
 
 from krawl.model.agent import Agent, AgentRef, Organization
 from krawl.model.file import File, Image
-from krawl.model.licenses import License
+from krawl.model.licenses import LicenseCont
 from krawl.model.outer_dimensions import OuterDimensions
 from krawl.model.part import Part
 from krawl.model.project_id import ProjectId
 from krawl.model.software import Software
 
+pat_special_chars = re.compile(r"[^a-zA-Z0-9_-]+")
 
 @dataclass(slots=True)
 class Project:  # pylint: disable=too-many-instance-attributes
@@ -26,7 +28,7 @@ class Project:  # pylint: disable=too-many-instance-attributes
 
     name: str
     repo: str
-    license: License
+    license: LicenseCont
     licensor: list[Agent | AgentRef] = field(default_factory=list)
     version: str | None = None
     release: str | None = None
@@ -58,3 +60,8 @@ class Project:  # pylint: disable=too-many-instance-attributes
     def id(self) -> ProjectId:
         """Generates an ID in form of 'platform/owner/repo/path'"""
         return ProjectId.from_url(self.repo)
+
+    @property
+    def name_clean(self) -> str:
+        """Returns a clean (no special chars) version of this projects `name`."""
+        return pat_special_chars.sub("", self.name)

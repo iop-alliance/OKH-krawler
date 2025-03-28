@@ -301,7 +301,7 @@ class ManifestNormalizer(Normalizer):
                 depicts.add(cont)
         return depicts
 
-    def _license_from_container_dict(self, raw: dict) -> License | None:
+    def _license_from_container_dict(self, raw: dict) -> LicenseCont | None:
         # license_raw = self.extract_required_str(raw, "license")
         license_raw = raw.get("license")
         if not license_raw:
@@ -319,7 +319,7 @@ class ManifestNormalizer(Normalizer):
         log.debug("license_raw: %s", license_raw)
         try:
             license_cont: LicenseCont | None = get_license(license_raw)
-            return license_cont.id() if license_cont else license_cont
+            return license_cont
         except ValueError as err:
             raise NormalizerError(f"Failed to normalize license: {err}") from err
         except NameError as err:

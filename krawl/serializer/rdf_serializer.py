@@ -22,7 +22,7 @@ from krawl.model.agent import Agent, AgentRef, Organization, Person
 from krawl.model.data_set import CrawlingMeta
 from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_unit import HostingId
-from krawl.model.licenses import is_spdx_id, License
+from krawl.model.licenses import is_spdx_id, License, LicenseCont
 from krawl.model.language_string import LangStr
 from krawl.model.outer_dimensions import OuterDimensions
 from krawl.model.part import Part
@@ -107,16 +107,21 @@ class RDFSerializer(Serializer):
         return data_provider
 
     @classmethod
-    def _add_data_set(cls, meta_graph: Graph, namespace: Namespace, fetch_result: FetchResult, project: Project) -> URIRef:
+    def _add_data_set(cls, meta_graph: Graph, namespace: Namespace, fetch_result: FetchResult, project: Project) -> tuple[URIRef, URIRef]:
 
-        name = cls._individual_case(project.name + "DataSet")
+        name = cls._individual_case("projectDataSet")
         subj: URIRef = namespace[name]
         cls.add(meta_graph, subj, RDF.type, ODS.Dataset)
         cls.add(meta_graph, subj, RDFS.label, "Covers all the data in this namespace")
 
+        name_src = cls._individual_case("projectDataSetSource")
+        subj_src: URIRef = namespace[name_src]
+        cls.add(meta_graph, subj_src, RDF.type, ODS.Source)
+        cls.add(meta_graph, subj_src, RDFS.label, "Info related to the source of a data-set")
+
         hosting_id = fetch_result.data_set.hosting_unit_id.hosting_id()
         data_provider: URIRef = cls._data_provider(hosting_id)
-        cls.add(meta_graph, subj, ODS.primaryHost, data_provider)
+        cls.add(meta_graph, subj_src, ODS.primaryHost, data_provider)
 
         data_sourcing_procedure_iri: URIRef
         cm: CrawlingMeta = fetch_result.data_set.crawling_meta
@@ -132,11 +137,9 @@ class RDFSerializer(Serializer):
                 data_sourcing_procedure_iri = OKHKRAWL.dataSourcingProcedureDirect
             case _:
                 raise SerializerError(f"unknown data sourcing procedure: {sourcing_procedure}")
-        cls.add(meta_graph, subj, ODS.dataSourcingProcedure, data_sourcing_procedure_iri)
+        cls.add(meta_graph, subj_src, ODS.dataSourcingProcedure, data_sourcing_procedure_iri)
 
-        cls._add_license_and_licensor(meta_graph, False, namespace, subj, project)
-
-        cls.add(meta_graph, subj, OKH.okhv, fetch_result.data_set.okhv_fetched)
+        cls._add_license_and_licensor(meta_graph, False, namespace, subj_src, project)
 
         # manifest_file_subject = cls._add_file(
         #     graph=graph,
@@ -154,17 +157,22 @@ class RDFSerializer(Serializer):
                                                        manifest_file,
                                                        "manifestFile",
                                                        rdf_type=OKH.ManifestFile)
-            cls.add(meta_graph, subj, OKH.hasManifestFile, manifest_file_subject)
+            cls.add(meta_graph, subj_src, OKH.hasManifestFile, manifest_file_subject)
 
-        cls.add(meta_graph, subj, ODS.lastVisited, cm.last_visited)
-        cls.add(meta_graph, subj, ODS.firstVisited, cm.first_visited)
-        cls.add(meta_graph, subj, ODS.lastSuccessfullyVisited, cm.last_successfully_visited)
+        cls.add(meta_graph, subj_src, ODS.lastVisited, cm.last_visited)
+        cls.add(meta_graph, subj_src, ODS.firstVisited, cm.first_visited)
+        cls.add(meta_graph, subj_src, ODS.lastSuccessfullyVisited, cm.last_successfully_visited)
+        cls.add(meta_graph, subj_src, ODS.visits, cm.visits)
         cls.add(meta_graph, subj, ODS.lastChanged, cm.last_detected_change)
         cls.add(meta_graph, subj, ODS.created, cm.created_at)
-        cls.add(meta_graph, subj, ODS.visits, cm.visits)
         cls.add(meta_graph, subj, ODS.changes, cm.changes)
-        cls.add(meta_graph, subj, OKH.hasManifestFile, cm.manifest)
-        # cls.add(graph, subj, ODS.visitsFile, cm.visits_file) # TODO
+
+        cls.add(meta_graph, subj_src, OKH.okhv, fetch_result.data_set.okhv_fetched)  # TODO Deprecated(?) - Replaced by `ODS.schemaVersionOfTheSourceData`, see below
+        # The OKH-version the final, converted, serialized data follows"""
+        # cls.add(graph, subj, OKH.okhvPresent, OKHV)
+        cls.add(meta_graph, subj_src, ODS.schemaVersion, fetch_result.data_set.okhv_fetched)
+        cls.add(meta_graph, subj_src, OKH.hasManifestFile, cm.manifest)
+        # cls.add(graph, subj_src, ODS.visitsFile, cm.visits_file) # TODO
         # cls.add(graph, subj, ODS.dataFile, cm.TODO)  # TODO
         # cls.add(graph, subj, ODS.hash, cm.hash)  # TODO
 
@@ -178,7 +186,7 @@ class RDFSerializer(Serializer):
         #     "",
         #     "",
         # ))
-        return subj
+        return subj, subj_src
 
     @staticmethod
     def _as_single_path_part(raw_part: str) -> str:
@@ -402,13 +410,13 @@ class RDFSerializer(Serializer):
 
         part_subjects = []
         for part in project.part:
-            part_name = cls._individual_case(part.name_clean if part.name_clean != project.name else part.name_clean +
+            part_name_clean = cls._individual_case(part.name_clean if part.name_clean != "project" else part.name_clean +
                                              "_part")
-            part_subject: URIRef = namespace[part_name]
+            part_subject: URIRef = namespace[part_name_clean]
             cls.add(graph, part_subject, RDF.type, OKH.Part)
             cls.add(graph, part_subject, OKH.name, part.name)
 
-            part_subject = cls._fill_part(graph, namespace, project, part, part_name, part_subject)
+            part_subject = cls._fill_part(graph, namespace, project, part, part_name_clean, part_subject)
 
             part_subjects.append(part_subject)
 
@@ -522,7 +530,8 @@ class RDFSerializer(Serializer):
     def _add_license_and_licensor(cls, graph: Graph, store_agents: bool, namespace: Namespace, subj: URIRef, project: Project | Software):
 
         if project.license:
-            license_id: str = project.license
+            license_cont: LicenseCont = project.license
+            license_id: License = license_cont.id()
             # if project.license.is_spdx:
             if is_spdx_id(license_id):
                 cls.add(graph, subj, ODS.license, SPDX[license_id])
@@ -553,7 +562,7 @@ class RDFSerializer(Serializer):
         cls.add(graph, module_subject, OKH.name, project.name)
         # NOTE That is not how this works. It would have to link to an RDF subject (by IRI) that represents the same module but un-frozen/non-permanent. IT would likely be in an other file.
         #cls.add(graph, module_subject, OKH.versionOf, project.repo)
-        cls.add(graph, module_subject, ODS.source, project.repo)
+        # cls.add(graph, module_subject, ODS.source, project.repo)
 
         # TODO FIXME This next line is not really correct, but it needs changes elsewhere (probably even the manifest and/or ontology) to be done right
         hosting_id = fetch_result.data_set.hosting_unit_id.hosting_id()
@@ -666,7 +675,7 @@ class RDFSerializer(Serializer):
                   project: Project,
                   parent_subj: URIRef,
                   parent_association_property: URIRef,
-                  files: list[File] | None,
+                  files: list[File] | list[Image] | None,
                   entity_name: str,
                   parent_name: str | None = None,
                   rdf_type: URIRef = ODS.File,
@@ -743,10 +752,12 @@ class RDFSerializer(Serializer):
         #      we store it in a separate file then the actual OKH RDF,
         #      which only changes when the actual fetched OKH data
         #      differs from previous fetches.
-        data_set_subj = cls._add_data_set(meta_graph, namespace, fetch_result, project)
+        data_set_subj, subj_src = cls._add_data_set(meta_graph, namespace, fetch_result, project)
 
         module_subject = cls._add_project(graph, namespace, fetch_result, project)
         cls.add(meta_graph, data_set_subj, VOID.rootResource, module_subject)
+
+        cls.add(graph, module_subject, ODS.hasSource, subj_src)
 
         cls._add_files(
             graph,
