@@ -108,8 +108,8 @@ class RDFSerializer(Serializer):
 
     @classmethod
     def _add_data_set(cls, meta_graph: Graph, namespace: Namespace, fetch_result: FetchResult, project: Project) -> URIRef:
-        name = cls._individual_case(project.name + "DataSet")
 
+        name = cls._individual_case(project.name + "DataSet")
         subj: URIRef = namespace[name]
         cls.add(meta_graph, subj, RDF.type, ODS.Dataset)
         cls.add(meta_graph, subj, RDFS.label, "Covers all the data in this namespace")
@@ -137,8 +137,6 @@ class RDFSerializer(Serializer):
         cls._add_license_and_licensor(meta_graph, False, namespace, subj, project)
 
         cls.add(meta_graph, subj, OKH.okhv, fetch_result.data_set.okhv_fetched)
-        # The OKH-version the final, converted, serialized data follows"""
-        # cls.add(graph, subj, OKH.okhvPresent, OKHV)
 
         # manifest_file_subject = cls._add_file(
         #     graph=graph,
@@ -151,7 +149,6 @@ class RDFSerializer(Serializer):
         manifest_file = File(url=fetch_result.data_set.crawling_meta.manifest, name="OKH Manifest")
         manifest_file.mime_type = manifest_file.evaluate_mime_type()
         if manifest_file.valid:
-            log.debug("manifest file:\n%s", manifest_file)
             manifest_file_subject = cls._add_file_info(meta_graph,
                                                        namespace,
                                                        manifest_file,
