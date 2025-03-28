@@ -176,6 +176,8 @@ class RDFSerializer(Serializer):
         # cls.add(graph, subj, ODS.dataFile, cm.TODO)  # TODO
         # cls.add(graph, subj, ODS.hash, cm.hash)  # TODO
 
+        cls.add(meta_graph, subj, ODS.hasSource, subj_src)
+
         # # cls.add(graph, module_subject, ODS.dataSourcingProcedure, project.data_sourcing_procedure)
         # parts = urlparse(project.repo)
         # base = urlunparse(components=(
