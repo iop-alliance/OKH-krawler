@@ -7,12 +7,12 @@ from __future__ import annotations
 
 import os
 from collections.abc import Generator
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import unquote
 
 from krawl.config import Config
-from krawl.errors import FetcherError, NotFound, ParserError
+from krawl.errors import FetcherError, ParserError
 from krawl.fetcher import Fetcher
 from krawl.fetcher.event import FailedFetch
 from krawl.fetcher.result import FetchResult
