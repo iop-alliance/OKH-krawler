@@ -130,9 +130,9 @@ class RDFSerializer(Serializer):
             case SourcingProcedure.API:
                 data_sourcing_procedure_iri = OKHKRAWL.dataSourcingProcedureApi
             case SourcingProcedure.MANIFEST:
-                data_sourcing_procedure_iri = OKHKRAWL.dataSourcingProcedureGeneratedManifest
-            case SourcingProcedure.GENERATED_MANIFEST:
                 data_sourcing_procedure_iri = OKHKRAWL.dataSourcingProcedureManifest
+            case SourcingProcedure.GENERATED_MANIFEST:
+                data_sourcing_procedure_iri = OKHKRAWL.dataSourcingProcedureGeneratedManifest
             case SourcingProcedure.DIRECT:
                 data_sourcing_procedure_iri = OKHKRAWL.dataSourcingProcedureDirect
             case _:
