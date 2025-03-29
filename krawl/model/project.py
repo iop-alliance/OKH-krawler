@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import re
+from dataclasses import dataclass, field
 
 from krawl.model.agent import Agent, AgentRef, Organization
 from krawl.model.file import File, Image
@@ -16,6 +16,7 @@ from krawl.model.project_id import ProjectId
 from krawl.model.software import Software
 
 pat_special_chars = re.compile(r"[^a-zA-Z0-9_-]+")
+
 
 @dataclass(slots=True)
 class Project:  # pylint: disable=too-many-instance-attributes

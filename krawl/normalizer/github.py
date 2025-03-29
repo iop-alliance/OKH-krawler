@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from krawl.errors import NormalizerError
 from krawl.dict_utils import DictUtils
+from krawl.errors import NormalizerError
 from krawl.log import get_child_logger
 from krawl.model.hosting_unit import HostingUnitId
 from krawl.normalizer.file_handler import FileHandler

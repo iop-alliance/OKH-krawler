@@ -5,7 +5,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 # from rdflib import Literal
+
 
 @dataclass(slots=True, unsafe_hash=True)
 class LangStr:

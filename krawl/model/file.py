@@ -11,6 +11,7 @@ from enum import StrEnum
 from pathlib import Path
 
 from krawl.model.language_string import LangStr
+
 # from krawl.model.licenses import get_spdx_by_id_or_name as get_license
 # from krawl.model.util import parse_date
 

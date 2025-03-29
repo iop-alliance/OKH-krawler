@@ -21,12 +21,13 @@ from krawl.fetcher.util import convert_okh_v1_dict_to_losh
 from krawl.log import get_child_logger
 from krawl.model.agent import Agent, AgentRef, Organization, Person
 from krawl.model.data_set import DataSet
-from krawl.model.language_string import LangStr
 from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitId
 from krawl.model.hosting_unit_forge import HostingUnitIdForge
-from krawl.model.licenses import get_by_id_or_name as get_license, License, LicenseCont
+from krawl.model.language_string import LangStr
+from krawl.model.licenses import License, LicenseCont
+from krawl.model.licenses import get_by_id_or_name as get_license
 from krawl.model.outer_dimensions import OuterDimensions, OuterDimensionsOpenScad
 from krawl.model.part import Part
 from krawl.model.project import Project
@@ -84,8 +85,8 @@ class _ProjFilesInfo:
             else:
                 if self._fh_proj_info is None:
                     raise ValueError("Through the code logic of this software,"
-                                      " it should be impossible to get here"
-                                      " -> programmer error! (1)")
+                                     " it should be impossible to get here"
+                                     " -> programmer error! (1)")
                 path = Path(self._file_handler.extract_path(self._fh_proj_info, url))
                 if self._file_handler.is_frozen_url(self._fh_proj_info, url):
                     frozen_url = url
@@ -106,8 +107,8 @@ class _ProjFilesInfo:
             else:
                 if self._fh_proj_info is None:
                     raise ValueError("Through the code logic of this software,"
-                                      " it should be impossible to get here"
-                                      " -> programmer error! (2)")
+                                     " it should be impossible to get here"
+                                     " -> programmer error! (2)")
                 url = self._file_handler.to_url(self._fh_proj_info, path, False)
                 frozen_url = self._file_handler.to_url(self._fh_proj_info, path, True)
         return {
@@ -305,17 +306,19 @@ class ManifestNormalizer(Normalizer):
         # license_raw = self.extract_required_str(raw, "license")
         license_raw = raw.get("license")
         if not license_raw:
-            license_raw = raw.get("spdx-license") # NOTE Deprecated property
+            license_raw = raw.get("spdx-license")  # NOTE Deprecated property
             if license_raw:
                 log.warn("Missing required key 'license' in manifest, but found deprecated key 'spdx-license'")
         if not license_raw:
-            license_raw = raw.get("alternative-license") # NOTE Deprecated property
+            license_raw = raw.get("alternative-license")  # NOTE Deprecated property
             if license_raw:
                 log.warn("Missing required key 'license' in manifest, but found deprecated key 'alternative-license'")
         if not license_raw:
             raise NormalizerError("Missing required key 'license' in manifest")
         if not isinstance(license_raw, str):
-            raise NormalizerError(f"Failed to normalize license: should be of type str, but is of type: {type(license_raw)} - content:\n{license_raw}")
+            raise NormalizerError(
+                f"Failed to normalize license: should be of type str, but is of type: {type(license_raw)} - content:\n{license_raw}"
+            )
         log.debug("license_raw: %s", license_raw)
         try:
             license_cont: LicenseCont | None = get_license(license_raw)
@@ -483,7 +486,8 @@ class ManifestNormalizer(Normalizer):
     def _software_from_dict(self, hosting_unit_id: HostingUnitId, raw_software: dict) -> Software:
         release = DictUtils.to_string(raw_software.get("release"))
         if not release:
-            raise NormalizerError(f"Software entry in manifest {hosting_unit_id} is missing required property 'release'")
+            raise NormalizerError(
+                f"Software entry in manifest {hosting_unit_id} is missing required property 'release'")
         sw = Software(release=release)
         sw.installation_guide = self.files_info.file(raw_software.get("installation-guide"))
         sw.documentation_language = self._clean_language(raw_software.get("documentation-language"))

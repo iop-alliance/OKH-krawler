@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from krawl.model.file import File
-from krawl.model.licenses import License
 from krawl.model.agent import Agent, AgentRef, Organization
+from krawl.model.file import File
+from krawl.model.licenses import LicenseCont
 
 
 @dataclass(slots=True)

@@ -29,7 +29,7 @@ from krawl.model.agent import Organization
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit_web import HostingUnitIdWebById
-from krawl.model.licenses import License, LicenseType, LicenseCont
+from krawl.model.licenses import License, LicenseCont, LicenseType
 from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.sourcing_procedure import SourcingProcedure
@@ -335,18 +335,18 @@ class ThingiverseFetcher(Fetcher):
         last_visited = datetime.now(timezone.utc)
 
         for (thing_meta, thing_api_json_file) in read_all_os_thing_metas():
-        # thing_meta = StorageThingMeta(
-        #     id=264461,
-        #     state= StorageThingIdState.OPEN_SOURCE,
-        #     first_scrape= last_visited,
-        #     last_scrape= last_visited,
-        #     last_successful_scrape= last_visited,
-        #     last_change= None,
-        #     attempted_scrapes= 1,
-        #     scraped_changes= 0)
-        # for (thing_meta, thing_api_json_file) in [thing_meta, Path("264461.json"))]: # HACK
-        # for (thing_meta, thing_api_json_file) in read_thing_metas_with_path(
-        #         Path("rust/workdir/thingiverse_store/data/264000/open_source.csv")):  # HACK
+            # thing_meta = StorageThingMeta(
+            #     id=264461,
+            #     state= StorageThingIdState.OPEN_SOURCE,
+            #     first_scrape= last_visited,
+            #     last_scrape= last_visited,
+            #     last_successful_scrape= last_visited,
+            #     last_change= None,
+            #     attempted_scrapes= 1,
+            #     scraped_changes= 0)
+            # for (thing_meta, thing_api_json_file) in [thing_meta, Path("264461.json"))]: # HACK
+            # for (thing_meta, thing_api_json_file) in read_thing_metas_with_path(
+            #         Path("rust/workdir/thingiverse_store/data/264000/open_source.csv")):  # HACK
             thing_id = thing_meta["id"]
             final_proj_file = Path(f"workdir/thingiverse.com/{thing_id}/rdf.ttl")
             if final_proj_file.exists():

@@ -36,6 +36,7 @@ def _name_to_id() -> dict[str, str]:
         raise ValueError("name_to_id_internal not initialized")
     return _name_to_id_internal
 
+
 def is_spdx_id(license_id: str) -> bool:
     """Given a valid SPDX license expression,
     returns `True` if it is a single license ID."""
@@ -76,7 +77,9 @@ class LicenseType(StrEnum):
             case _:
                 raise NotImplementedError
 
+
 License: type = str
+
 
 @dataclass(slots=True, frozen=True)
 class LicenseCont:  # pylint: disable=too-many-instance-attributes

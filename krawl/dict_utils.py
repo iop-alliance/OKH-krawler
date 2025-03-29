@@ -17,7 +17,7 @@ class DictUtils:
 
     @staticmethod
     def ensure_unquoted(orig: str | None) -> str | None:
-        if orig is not None and len(orig) >= 2 and  orig[0] in ['"', "'"] and orig[0] == orig[-1]:
+        if orig is not None and len(orig) >= 2 and orig[0] in ['"', "'"] and orig[0] == orig[-1]:
             return orig[1:-1]
         return orig
 

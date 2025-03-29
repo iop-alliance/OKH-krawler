@@ -44,7 +44,13 @@ class HostingUnitIdForge(HostingUnitId):
     def hosting_id(self) -> HostingId:
         return self._hosting_id
 
-    def derive(self, hosting_id=None, owner=None, group_hierarchy=None, repo=None, ref=None, path=None) -> HostingUnitIdForge:
+    def derive(self,
+               hosting_id=None,
+               owner=None,
+               group_hierarchy=None,
+               repo=None,
+               ref=None,
+               path=None) -> HostingUnitIdForge:
         return self.__class__(
             _hosting_id=hosting_id if hosting_id else self.hosting_id(),
             owner=owner if owner else self.owner,
@@ -56,9 +62,8 @@ class HostingUnitIdForge(HostingUnitId):
 
     def __eq__(self, other) -> bool:
         return (self.hosting_id() == other.hosting_id() and self.owner == other.owner and
-                self.group_hierarchy == other.group_hierarchy and self.repo == other.repo
-                and self.ref == other.ref
-                and self.path == other.path)
+                self.group_hierarchy == other.group_hierarchy and self.repo == other.repo and self.ref == other.ref and
+                self.path == other.path)
 
     def references_version(self) -> bool:
         return self.ref is not None
@@ -117,7 +122,7 @@ class HostingUnitIdForge(HostingUnitId):
                 elif len(path_parts) >= 5 and path_parts[2] == "-" and path_parts[3] in ["commit", "tags"]:
                     ref = path_parts[4]
                 # else:
-                    # TODO
+                # TODO
 
             case HostingId.APPROPEDIA_ORG | HostingId.OSHWA_ORG | HostingId.THINGIVERSE_COM:
                 raise ParserError(f"This is not a forge(-like) hosting Id: {hosting_id}."

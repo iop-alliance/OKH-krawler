@@ -366,7 +366,7 @@ class GitHubFetcher(Fetcher):
                 except FetcherError:
                     continue
             raise FetcherError("Non direct path to a manifest file given,"
-                            f" and no known manifest file found at: '{project_id.uri}'")
+                               f" and no known manifest file found at: '{project_id.uri}'")
 
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
         num_fetched_projects: int = 0

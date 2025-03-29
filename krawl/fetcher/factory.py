@@ -10,7 +10,7 @@ from collections.abc import Generator
 
 from krawl.config import Config
 from krawl.errors import FetcherError, NormalizerError
-from krawl.fetcher import Fetcher, appropedia, github, oshwa, thingiverse, manifests_repo
+from krawl.fetcher import Fetcher, appropedia, github, manifests_repo, oshwa, thingiverse
 from krawl.fetcher.event import FetchListener
 # from krawl.cli.command.fetch import NormalizationListener
 from krawl.fetcher.result import FetchResult

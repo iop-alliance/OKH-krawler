@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from re import sub
 from typing import Callable
 from urllib.parse import quote, urlparse, urlunparse
 
-from re import sub
 import validators
 from rdflib import DCTERMS, FOAF, OWL, RDF, RDFS, VOID, XSD, Graph, Literal, Namespace, URIRef
 
@@ -22,8 +22,8 @@ from krawl.model.agent import Agent, AgentRef, Organization, Person
 from krawl.model.data_set import CrawlingMeta
 from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_unit import HostingId
-from krawl.model.licenses import is_spdx_id, License, LicenseCont
 from krawl.model.language_string import LangStr
+from krawl.model.licenses import License, LicenseCont, is_spdx_id
 from krawl.model.outer_dimensions import OuterDimensions
 from krawl.model.part import Part
 from krawl.model.project import Project
@@ -100,14 +100,15 @@ class RDFSerializer(Serializer):
             case HostingId.THINGIVERSE_COM:
                 data_provider = OKHKRAWL.dataProviderThingiverse
             case HostingId.MANIFESTS_REPO:
-                data_provider = None # TODO FIXME
+                data_provider = None  # TODO FIXME
             case _:
                 raise SerializerError(f"Unknown hosting id {hosting_id}, trying to convert to data-provider")
 
         return data_provider
 
     @classmethod
-    def _add_data_set(cls, meta_graph: Graph, namespace: Namespace, fetch_result: FetchResult, project: Project) -> tuple[URIRef, URIRef]:
+    def _add_data_set(cls, meta_graph: Graph, namespace: Namespace, fetch_result: FetchResult,
+                      project: Project) -> tuple[URIRef, URIRef]:
 
         name = cls._individual_case("projectDataSet")
         subj: URIRef = namespace[name]
@@ -167,7 +168,8 @@ class RDFSerializer(Serializer):
         cls.add(meta_graph, subj, ODS.created, cm.created_at)
         cls.add(meta_graph, subj, ODS.changes, cm.changes)
 
-        cls.add(meta_graph, subj_src, OKH.okhv, fetch_result.data_set.okhv_fetched)  # TODO Deprecated(?) - Replaced by `ODS.schemaVersionOfTheSourceData`, see below
+        cls.add(meta_graph, subj_src, OKH.okhv, fetch_result.data_set.okhv_fetched
+               )  # TODO Deprecated(?) - Replaced by `ODS.schemaVersionOfTheSourceData`, see below
         # The OKH-version the final, converted, serialized data follows"""
         # cls.add(graph, subj, OKH.okhvPresent, OKHV)
         cls.add(meta_graph, subj_src, ODS.schemaVersion, fetch_result.data_set.okhv_fetched)
@@ -277,7 +279,7 @@ class RDFSerializer(Serializer):
     def add(graph: Graph,
             subject: URIRef,
             predicate: URIRef,
-            object: str | LangStr |URIRef | Literal | datetime | float | None,
+            object: str | LangStr | URIRef | Literal | datetime | float | None,
             datatype: URIRef | None = None):
         if object:
             if not isinstance(object, (URIRef, Literal)):
@@ -360,50 +362,46 @@ class RDFSerializer(Serializer):
             cls.add(graph, part_subject, OKH.tsdc, URIRef(f"{BASE_IRI_TSDC}#{thing.tsdc}"))
 
         # sources
-        cls._add_files(
-            graph,
-            namespace=namespace,
-            project=project,
-            parent_subj=part_subject,
-            parent_association_property=OKH.hasSource,
-            files=thing.source,
-            entity_name="SourceFile",
-            parent_name=part_name)
+        cls._add_files(graph,
+                       namespace=namespace,
+                       project=project,
+                       parent_subj=part_subject,
+                       parent_association_property=OKH.hasSource,
+                       files=thing.source,
+                       entity_name="SourceFile",
+                       parent_name=part_name)
 
         # exports
-        cls._add_files(
-            graph,
-            namespace=namespace,
-            project=project,
-            parent_subj=part_subject,
-            parent_association_property=OKH.hasExport,
-            files=thing.export,
-            entity_name="ExportFile",
-            parent_name=part_name)
+        cls._add_files(graph,
+                       namespace=namespace,
+                       project=project,
+                       parent_subj=part_subject,
+                       parent_association_property=OKH.hasExport,
+                       files=thing.export,
+                       entity_name="ExportFile",
+                       parent_name=part_name)
 
         # auxiliaries
-        cls._add_files(
-            graph,
-            namespace=namespace,
-            project=project,
-            parent_subj=part_subject,
-            parent_association_property=OKH.hasAuxiliary,
-            files=thing.auxiliary,
-            entity_name="AuxiliaryFile",
-            parent_name=part_name)
+        cls._add_files(graph,
+                       namespace=namespace,
+                       project=project,
+                       parent_subj=part_subject,
+                       parent_association_property=OKH.hasAuxiliary,
+                       files=thing.auxiliary,
+                       entity_name="AuxiliaryFile",
+                       parent_name=part_name)
 
         # images
-        cls._add_files(
-            graph,
-            namespace=namespace,
-            project=project,
-            parent_subj=part_subject,
-            parent_association_property=OKH.hasImage,
-            files=thing.image,
-            entity_name="Image",
-            parent_name=part_name,
-            rdf_type=OKH.Image,
-            extras_handler=cls.image_extras_handler)
+        cls._add_files(graph,
+                       namespace=namespace,
+                       project=project,
+                       parent_subj=part_subject,
+                       parent_association_property=OKH.hasImage,
+                       files=thing.image,
+                       entity_name="Image",
+                       parent_name=part_name,
+                       rdf_type=OKH.Image,
+                       extras_handler=cls.image_extras_handler)
 
         return part_subject
 
@@ -412,8 +410,8 @@ class RDFSerializer(Serializer):
 
         part_subjects = []
         for part in project.part:
-            part_name_clean = cls._individual_case(part.name_clean if part.name_clean != "project" else part.name_clean +
-                                             "_part")
+            part_name_clean = cls._individual_case(part.name_clean if part.name_clean !=
+                                                   "project" else part.name_clean + "_part")
             part_subject: URIRef = namespace[part_name_clean]
             cls.add(graph, part_subject, RDF.type, OKH.Part)
             cls.add(graph, part_subject, OKH.name, part.name)
@@ -473,7 +471,12 @@ class RDFSerializer(Serializer):
     #     return subj
 
     @classmethod
-    def _create_person(cls, graph: Graph, namespace: Namespace, rdf_name: str, person: Person | AgentRef, store: bool = False) -> URIRef:
+    def _create_person(cls,
+                       graph: Graph,
+                       namespace: Namespace,
+                       rdf_name: str,
+                       person: Person | AgentRef,
+                       store: bool = False) -> URIRef:
 
         if isinstance(person, AgentRef):
             subj = URIRef(person.iri)
@@ -493,8 +496,12 @@ class RDFSerializer(Serializer):
         return subj
 
     @classmethod
-    def _create_organization(cls, graph: Graph, namespace: Namespace, rdf_name: str,
-                             org: Organization | AgentRef, store: bool = False) -> URIRef:
+    def _create_organization(cls,
+                             graph: Graph,
+                             namespace: Namespace,
+                             rdf_name: str,
+                             org: Organization | AgentRef,
+                             store: bool = False) -> URIRef:
 
         if isinstance(org, AgentRef):
             subj = URIRef(org.iri)
@@ -514,7 +521,12 @@ class RDFSerializer(Serializer):
         return subj
 
     @classmethod
-    def _create_agent(cls, graph: Graph, namespace: Namespace, rdf_name: str, agent: Agent | AgentRef, store: bool = False) -> URIRef:
+    def _create_agent(cls,
+                      graph: Graph,
+                      namespace: Namespace,
+                      rdf_name: str,
+                      agent: Agent | AgentRef,
+                      store: bool = False) -> URIRef:
         # subj = namespace[rdf_name]  # TODO FIXME This whole method
 
         subj: URIRef
@@ -529,7 +541,8 @@ class RDFSerializer(Serializer):
         return subj
 
     @classmethod
-    def _add_license_and_licensor(cls, graph: Graph, store_agents: bool, namespace: Namespace, subj: URIRef, project: Project | Software):
+    def _add_license_and_licensor(cls, graph: Graph, store_agents: bool, namespace: Namespace, subj: URIRef,
+                                  project: Project | Software):
 
         if project.license:
             license_cont: LicenseCont = project.license
@@ -546,14 +559,17 @@ class RDFSerializer(Serializer):
         if project.licensor:
             for (index, licensor) in enumerate(project.licensor):
                 internal_iri_name = f"licensor{index}"
-                agent_rdf_iri = cls._create_agent(graph, namespace, internal_iri_name, licensor, store = store_agents)
+                agent_rdf_iri = cls._create_agent(graph, namespace, internal_iri_name, licensor, store=store_agents)
                 cls.add(graph, subj, ODS.licensor, agent_rdf_iri)
         if project.organization:
             for (index, organization) in enumerate(project.organization):
                 internal_iri_name = f"organization{index}"
-                org_rdf_iri = cls._create_organization(graph, namespace, internal_iri_name, organization, store = store_agents)
+                org_rdf_iri = cls._create_organization(graph,
+                                                       namespace,
+                                                       internal_iri_name,
+                                                       organization,
+                                                       store=store_agents)
                 cls.add(graph, subj, OKH.organization, org_rdf_iri)
-
 
     @classmethod
     def _add_project(cls, graph: Graph, namespace: Namespace, fetch_result: FetchResult, project: Project) -> URIRef:
@@ -602,18 +618,16 @@ class RDFSerializer(Serializer):
             software_rdf_iri = cls._create_software(graph, namespace, internal_iri_name, software)
             cls.add(graph, module_subject, OKH.hasSoftware, software_rdf_iri)
 
-
         cls._fill_part(graph, namespace, project, project, module_name, module_subject)
 
-        cls._add_files(
-            graph,
-            namespace=namespace,
-            project=project,
-            parent_subj=module_subject,
-            parent_association_property=OKH.hasManufacturingInstructions,
-            files=project.manufacturing_instructions,
-            entity_name="ManufacturingInstructions",
-            parent_name=module_name)
+        cls._add_files(graph,
+                       namespace=namespace,
+                       project=project,
+                       parent_subj=module_subject,
+                       parent_association_property=OKH.hasManufacturingInstructions,
+                       files=project.manufacturing_instructions,
+                       entity_name="ManufacturingInstructions",
+                       parent_name=module_name)
 
         # NOTE We do not create a standard to then allow platform specific data again,
         #      and definitely not by introducing arbitrary properties
@@ -672,16 +686,16 @@ class RDFSerializer(Serializer):
 
     @classmethod
     def _add_files(cls,
-                  graph,
-                  namespace: Namespace,
-                  project: Project,
-                  parent_subj: URIRef,
-                  parent_association_property: URIRef,
-                  files: list[File] | list[Image] | None,
-                  entity_name: str,
-                  parent_name: str | None = None,
-                  rdf_type: URIRef = ODS.File,
-                  extras_handler: Callable | None = None) -> None:
+                   graph,
+                   namespace: Namespace,
+                   project: Project,
+                   parent_subj: URIRef,
+                   parent_association_property: URIRef,
+                   files: list[File] | list[Image] | None,
+                   entity_name: str,
+                   parent_name: str | None = None,
+                   rdf_type: URIRef = ODS.File,
+                   extras_handler: Callable | None = None) -> None:
         if files is None:
             return
         if parent_name:
@@ -761,35 +775,32 @@ class RDFSerializer(Serializer):
 
         cls.add(graph, module_subject, ODS.hasSource, subj_src)
 
-        cls._add_files(
-            graph,
-            namespace=namespace,
-            project=project,
-            parent_subj=module_subject,
-            parent_association_property=OKH.hasReadme,
-            files=project.readme,
-            entity_name="readme",
-            parent_name=project.name)
+        cls._add_files(graph,
+                       namespace=namespace,
+                       project=project,
+                       parent_subj=module_subject,
+                       parent_association_property=OKH.hasReadme,
+                       files=project.readme,
+                       entity_name="readme",
+                       parent_name=project.name)
 
-        cls._add_files(
-            graph,
-            namespace=namespace,
-            project=project,
-            parent_subj=module_subject,
-            parent_association_property=OKH.hasBoM,
-            files=project.bom,
-            entity_name="billOfMaterials",
-            parent_name=project.name)
+        cls._add_files(graph,
+                       namespace=namespace,
+                       project=project,
+                       parent_subj=module_subject,
+                       parent_association_property=OKH.hasBoM,
+                       files=project.bom,
+                       entity_name="billOfMaterials",
+                       parent_name=project.name)
 
-        cls._add_files(
-            graph,
-            namespace=namespace,
-            project=project,
-            parent_subj=module_subject,
-            parent_association_property=OKH.hasUserManual,
-            files=project.user_manual,
-            entity_name="userManual",
-            parent_name=project.name)
+        cls._add_files(graph,
+                       namespace=namespace,
+                       project=project,
+                       parent_subj=module_subject,
+                       parent_association_property=OKH.hasUserManual,
+                       files=project.user_manual,
+                       entity_name="userManual",
+                       parent_name=project.name)
 
         part_subjects = cls._add_parts(graph, namespace, project)
         for part_subject in part_subjects:

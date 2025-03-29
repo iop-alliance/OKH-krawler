@@ -5,10 +5,10 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Generator
 from datetime import datetime, timezone
 from pathlib import Path
-import os
 from urllib.parse import unquote
 
 from krawl.config import Config
@@ -28,7 +28,7 @@ from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.repository import FetcherStateRepository
 
 __long_name__: str = "manifests-repo"
-__hosting_id__: HostingId = HostingId.MANIFESTS_REPO # TODO FIXME HACK
+__hosting_id__: HostingId = HostingId.MANIFESTS_REPO  # TODO FIXME HACK
 __sourcing_procedure__: SourcingProcedure = SourcingProcedure.MANIFEST
 log = get_child_logger(__long_name__)
 
@@ -36,6 +36,7 @@ MANIFEST_FILE_EXTENSIONS = ['toml', 'yaml', 'yml', 'json', 'ttl', 'rdf', 'jsonld
 MANIFEST_FILES_GLOB = ("**/?(*.)okh.{", ",".join(MANIFEST_FILE_EXTENSIONS), "}")
 TOML_MANIFEST_FILES_GLOB_1 = "**/okh.toml"
 TOML_MANIFEST_FILES_GLOB_2 = "**/*.okh.toml"
+
 
 class ManifestsRepoFetcher(Fetcher):
     """Fetcher for a local directory.
@@ -64,7 +65,8 @@ class ManifestsRepoFetcher(Fetcher):
         # print(self.repo_url)
         # exit(99)
 
-    def __fetch_one(self, hosting_unit_id: HostingUnitIdForge, manifest_url: str, okh_manifest_path: Path) -> FetchResult:
+    def __fetch_one(self, hosting_unit_id: HostingUnitIdForge, manifest_url: str,
+                    okh_manifest_path: Path) -> FetchResult:
         try:
             log.debug("fetching project '%s' ...", str(okh_manifest_path))
 
@@ -171,7 +173,9 @@ class ManifestsRepoFetcher(Fetcher):
 
                 try:
                     manifest_url, hosting_unit_id = self._extract_url_from_file(potential_toml_manifest_path_rel)
-                    log.warn(f"Manifests-repo - hosting unit ID: {hosting_unit_id}\n\t{manifest_url}\n\t{potential_toml_manifest_path_rel}")
+                    log.warn(
+                        f"Manifests-repo - hosting unit ID: {hosting_unit_id}\n\t{manifest_url}\n\t{potential_toml_manifest_path_rel}"
+                    )
                 except FetcherError as err:
                     log.warning(f"Skipping project file, because: {err}")
                     continue
