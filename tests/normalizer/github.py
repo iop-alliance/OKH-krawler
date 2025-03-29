@@ -44,7 +44,6 @@ class TestStringMethods(unittest.TestCase):
 
     def test__extract_slug(self):
         file_handler = GitHubFileHandler()
-        proj_info = file_handler.gen_proj_info_raw(SLUG, VERSION, DEV_BRANCH)
         self.assertEqual(file_handler._extract_slug(FILE_FROZEN_DL_URL), SLUG)
 
 
