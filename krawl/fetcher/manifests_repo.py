@@ -146,20 +146,7 @@ class ManifestsRepoFetcher(Fetcher):
         return url, hosting_unit_id
 
     def fetch(self, project_id: ProjectId) -> FetchResult:
-        hosting_unit_id, path_raw = self._parse_project_url(project_id.uri)
-
-        if path_raw:
-            path = Path(path_raw)
-            return self.__fetch_one(hosting_unit_id, path)
-
-        for man_fl_ext in MANIFEST_FILE_EXTENSIONS:
-            path = Path(f'okh.{man_fl_ext}')
-            try:
-                return self.__fetch_one(hosting_unit_id, path)
-            except FetcherError:
-                continue
-        raise FetcherError("Non direct path to a manifest file given,"
-                           f" and no known manifest file found at: '{project_id.uri}'")
+        raise FetcherError("Single project fetching not implemented for '{__hosting_id__}'")
 
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
         num_fetched_projects = 0
