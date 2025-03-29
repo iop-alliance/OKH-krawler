@@ -23,7 +23,7 @@ from krawl.model.agent import Organization
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit_web import HostingUnitIdWebById
-from krawl.model.licenses import License
+from krawl.model.licenses import LicenseCont
 from krawl.model.licenses import get_by_id_or_name_required as get_license_required
 from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
@@ -37,7 +37,7 @@ from krawl.request.rate_limit import RateLimitFixedTimedelta
 __long_name__: str = "oshwa"
 __hosting_id__: HostingId = HostingId.OSHWA_ORG
 __sourcing_procedure__: SourcingProcedure = SourcingProcedure.API
-__dataset_license__: License = get_license_required("CC0-1.0")
+__dataset_license__: LicenseCont = get_license_required("CC0-1.0")
 __dataset_creator__: Organization = Organization(name="Open Source Hardware Association",
                                                  email="info@oshwa.org",
                                                  url="https://www.oshwa.org")
@@ -99,7 +99,7 @@ class OshwaFetcher(Fetcher):
                 ),
                 hosting_unit_id=hosting_unit_id,
                 license=__dataset_license__,
-                creator=__dataset_creator__,
+                licensor=[__dataset_creator__],
             )
 
             fetch_result = FetchResult(data_set=data_set,

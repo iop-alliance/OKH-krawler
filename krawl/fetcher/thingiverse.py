@@ -27,7 +27,7 @@ from krawl.model.agent import Organization
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit_web import HostingUnitIdWebById
-from krawl.model.licenses import License, LicenseCont, LicenseType
+from krawl.model.licenses import LicenseCont, LicenseType
 from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.sourcing_procedure import SourcingProcedure
@@ -217,7 +217,7 @@ class ThingiverseFetcher(Fetcher):
                 ),
                 hosting_unit_id=hosting_unit_id,
                 license=__dataset_license__,
-                creator=__dataset_creator__,
+                licensor=__dataset_creator__,
             )
 
             # fetch_result = FetchResult(data_set=data_set,

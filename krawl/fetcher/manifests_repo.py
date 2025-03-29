@@ -113,7 +113,7 @@ class ManifestsRepoFetcher(Fetcher):
                 ),
                 hosting_unit_id=hosting_unit_id,
                 license=Ref.DOCUMENTATION,
-                creator=Ref.DOCUMENTATION,
+                licensor=Ref.DOCUMENTATION,
                 organization=Ref.DOCUMENTATION,
             )
             # log.info(f"manifest_contents: {manifest_contents}")

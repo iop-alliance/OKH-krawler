@@ -23,7 +23,7 @@ from krawl.model.agent import Organization
 from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit_web import HostingUnitIdWebById
-from krawl.model.licenses import License
+from krawl.model.licenses import LicenseCont
 from krawl.model.licenses import get_by_id_or_name_required as get_license_required
 from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
@@ -35,7 +35,7 @@ from krawl.util import url_encode
 __long_name__: str = "appropedia"
 __hosting_id__: HostingId = HostingId.APPROPEDIA_ORG
 __sourcing_procedure__: SourcingProcedure = SourcingProcedure.GENERATED_MANIFEST
-__dataset_license__: License = get_license_required("CC-BY-SA-4.0")
+__dataset_license__: LicenseCont = get_license_required("CC-BY-SA-4.0")
 __dataset_creator__: Organization = Organization(name="Appropedia", url="https://www.appropedia.org")
 _re_auto_translated_page_title = re.compile(r".*/[a-z]{2}$")
 log = get_child_logger(__long_name__)
@@ -193,7 +193,8 @@ class AppropediaFetcher(Fetcher):
                 ),
                 hosting_unit_id=hosting_unit_id,
                 license=__dataset_license__,
-                creator=__dataset_creator__,
+                licensor=[__dataset_creator__],
+                organization=[__dataset_creator__],
             )
 
             fetch_result = FetchResult(data_set=data_set,

@@ -4,12 +4,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
-from krawl.model.agent import Agent, Organization
+from krawl.model.agent import Agent, AgentRef, Organization
 from krawl.model.hosting_unit import HostingUnitId
-from krawl.model.licenses import License
+from krawl.model.licenses import LicenseCont
 from krawl.model.project_part_reference import Ref
 from krawl.model.sourcing_procedure import SourcingProcedure
 
@@ -74,8 +74,8 @@ class DataSet:  # pylint: disable=too-many-instance-attributes
     crawling_meta: CrawlingMeta
     hosting_unit_id: HostingUnitId
     """info about the repository on the hosting platform"""
-    license: License | Ref
-    creator: Agent | Ref
+    license: LicenseCont | Ref
+    licensor: list[Agent | AgentRef] | Ref = field(default_factory=list)
     """Who created the projects meta data"""
-    organization: Organization | Ref | None = None
+    organization: list[Organization | AgentRef] | Ref = field(default_factory=list)
     """Who created the projects meta data"""
