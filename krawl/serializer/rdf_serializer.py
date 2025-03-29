@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from re import sub
 from typing import Callable
-from urllib.parse import quote, urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse
 
 import validators
 from rdflib import DCTERMS, FOAF, OWL, RDF, RDFS, VOID, XSD, Graph, Literal, Namespace, URIRef

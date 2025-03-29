@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -20,13 +19,12 @@ from krawl.fetcher.result import FetchResult
 from krawl.fetcher.util import convert_okh_v1_dict_to_losh
 from krawl.log import get_child_logger
 from krawl.model.agent import Agent, AgentRef, Organization, Person
-from krawl.model.data_set import DataSet
 from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_id import HostingId
 from krawl.model.hosting_unit import HostingUnitId
 from krawl.model.hosting_unit_forge import HostingUnitIdForge
 from krawl.model.language_string import LangStr
-from krawl.model.licenses import License, LicenseCont
+from krawl.model.licenses import LicenseCont
 from krawl.model.licenses import get_by_id_or_name as get_license
 from krawl.model.outer_dimensions import OuterDimensions, OuterDimensionsOpenScad
 from krawl.model.part import Part

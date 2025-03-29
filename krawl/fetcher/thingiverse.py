@@ -7,13 +7,11 @@
 from __future__ import annotations
 
 import json
-import math
 from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from time import sleep
-from typing import Any
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -34,8 +32,8 @@ from krawl.model.manifest import Manifest, ManifestFormat
 from krawl.model.project_id import ProjectId
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.repository import FetcherStateRepository
-from krawl.shared.thingiverse import (RETRY_CODES, Hit, StorageThingIdState, StorageThingMeta, ThingSearch,
-                                      read_all_os_thing_metas, read_thing_metas, read_thing_metas_with_path)
+from krawl.shared.thingiverse import (RETRY_CODES, Hit, StorageThingMeta, ThingSearch, read_all_os_thing_metas,
+                                      read_thing_metas_with_path)
 
 __long_name__: str = "thingiverse"
 __hosting_id__: HostingId = HostingId.THINGIVERSE_COM

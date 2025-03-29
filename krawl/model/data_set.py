@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
 
 from krawl.model.agent import Agent, Organization
 from krawl.model.hosting_unit import HostingUnitId
