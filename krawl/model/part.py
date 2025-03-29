@@ -25,7 +25,8 @@ class Part:  # pylint: disable=too-many-instance-attributes
     # licensor: str = None
     # documentation_language: str = None
     material: str | None = None
-    manufacturing_process: str | None = None
+    manufacturing_instructions: list[File] = field(default_factory=list)
+    # manufacturing_process: str | None = None
     mass: float | None = None
     outer_dimensions: OuterDimensions | None = None
     tsdc: str | None = None

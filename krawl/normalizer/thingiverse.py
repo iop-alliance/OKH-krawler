@@ -10,8 +10,6 @@ import pathlib
 from datetime import datetime, timezone
 from typing import Any
 
-import dateutil
-
 from krawl.dict_utils import DictUtils
 from krawl.fetcher.result import FetchResult
 from krawl.file_formats import get_type_from_extension
@@ -19,7 +17,7 @@ from krawl.log import get_child_logger
 from krawl.model import licenses
 from krawl.model.agent import Person
 from krawl.model.file import File, Image
-from krawl.model.licenses import License
+from krawl.model.licenses import LicenseCont
 from krawl.model.project import Project
 from krawl.normalizer import Normalizer, strip_html
 from krawl.shared.thingiverse import BROKEN_IMAGE_URL, LICENSE_MAPPING, Hit, ThingFile, ZipFile
@@ -120,7 +118,7 @@ class ThingiverseNormalizer(Normalizer):
         return found_files
 
     @classmethod
-    def _license_from_str(cls, tv_license_str: str | None) -> License | None:
+    def _license_from_str(cls, tv_license_str: str | None) -> LicenseCont | None:
         if not tv_license_str:
             return None
 
@@ -135,15 +133,18 @@ class ThingiverseNormalizer(Normalizer):
         maybe_spdx_id = mapped_license[1]
         return licenses.get_by_id_or_name(maybe_spdx_id)
 
-    @classmethod
-    def _license_raw(cls, raw: dict):
-        raw_license = DictUtils.get_key(raw, "license")
-        return cls._license_from_str(raw_license)
+    # @classmethod
+    # def _license_raw(cls, raw: dict) -> LicenseCont:
+    #     raw_license = DictUtils.get_key(raw, "license")
+    #     return cls._license_from_str(raw_license)
 
     @classmethod
-    def _license(cls, hit: Hit):
+    def _license(cls, hit: Hit) -> LicenseCont:
         raw_license = hit["license"]
-        return cls._license_from_str(raw_license)
+        license_cont = cls._license_from_str(raw_license)
+        if not license_cont:
+            license_cont = licenses.__unknown_license__
+        return license_cont
 
     @classmethod
     def _function(cls, raw_thing: Hit) -> str | None:

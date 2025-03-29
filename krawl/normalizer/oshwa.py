@@ -126,7 +126,7 @@ class OshwaNormalizer(Normalizer):
         return None
 
     @classmethod
-    def _license(cls, raw: dict) -> licenses.License:
+    def _license(cls, raw: dict) -> licenses.LicenseCont:
         raw_license: str | None = DictUtils.get_key(raw, "hardwareLicense")
 
         if not raw_license:
@@ -142,7 +142,7 @@ class OshwaNormalizer(Normalizer):
         if mapped_license:
             raw_license = mapped_license
         if raw_license:
-            validated_license: licenses.License | None = licenses.get_by_id_or_name(raw_license)
+            validated_license: licenses.LicenseCont | None = licenses.get_by_id_or_name(raw_license)
             if validated_license:
                 return validated_license
         return licenses.__unknown_license__

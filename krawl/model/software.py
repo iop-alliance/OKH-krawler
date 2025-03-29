@@ -18,6 +18,6 @@ class Software:
     release: str
     installation_guide: File | None = None
     documentation_language: list[str] | None = field(default_factory=list)
-    license: License | None = None
+    license: LicenseCont | None = None
     licensor: list[Agent | AgentRef] | None = field(default_factory=list)
     organization: list[Organization | AgentRef] | None = field(default_factory=list)

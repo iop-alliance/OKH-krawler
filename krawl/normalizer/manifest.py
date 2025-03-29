@@ -76,7 +76,8 @@ class _ProjFilesInfo:
         if is_url(raw_file):
             # is URL
             url = raw_file
-            if self._file_handler is None or not self._file_handler.is_home_hosting_url(self._fh_proj_info, url):
+            if self._file_handler is None or (self._fh_proj_info is not None and
+                                              not self._file_handler.is_home_hosting_url(self._fh_proj_info, url)):
                 # NOTE We assume, that all platforms we do not support FileHandler for -
                 #      i.e. we do not support frozen and non-frozen URLs for -
                 #      use (only) non-frozen URLs.
@@ -472,7 +473,7 @@ class ManifestNormalizer(Normalizer):
             part.source = self.files_info.files(raw_part.get("source"))
             part.export = self.files_info.files(raw_part.get("export"))
             part.material = DictUtils.to_string(raw_part.get("material"))
-            part.manufacturing_process = self.files_info.files(raw_part.get("manufacturing-instructions"))
+            part.manufacturing_instructions = self.files_info.files(raw_part.get("manufacturing-instructions"))
             part.mass = DictUtils.to_float(raw_part.get("mass"))
             try:
                 part.outer_dimensions = self._outer_dimensions(raw_part.get("outer-dimensions"))
