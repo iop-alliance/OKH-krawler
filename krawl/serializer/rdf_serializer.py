@@ -19,7 +19,7 @@ from krawl.errors import SerializerError
 from krawl.fetcher.result import FetchResult
 from krawl.log import get_child_logger
 from krawl.model.agent import Agent, AgentRef, Organization, Person
-from krawl.model.data_set import CrawlingMeta
+from krawl.model.data_set import CrawlingMeta, DataSet
 from krawl.model.file import File, Image, ImageSlot, ImageTag
 from krawl.model.hosting_unit import HostingId
 from krawl.model.language_string import LangStr
@@ -27,6 +27,7 @@ from krawl.model.licenses import License, LicenseCont, is_spdx_id
 from krawl.model.outer_dimensions import OuterDimensions
 from krawl.model.part import Part
 from krawl.model.project import Project
+from krawl.model.project_part_reference import Ref
 from krawl.model.software import Software
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.serializer import Serializer
@@ -541,12 +542,31 @@ class RDFSerializer(Serializer):
         return subj
 
     @classmethod
-    def _add_license_and_licensor(cls, graph: Graph, store_agents: bool, namespace: Namespace, subj: URIRef,
-                                  project: Project | Software):
+    def _add_license_and_licensor(
+        cls,
+        graph: Graph,
+        store_agents: bool,
+        namespace: Namespace,
+        subj: URIRef,
+        project: Project | Software | DataSet,
+        license_docu: LicenseCont | None = None,
+        licensor_docu: list[Agent | AgentRef] = [],
+        organization_docu: list[Organization | AgentRef] = [],
+    ):
 
         if project.license:
-            license_cont: LicenseCont = project.license
-            license_id: License = license_cont.id()
+            license_cont: LicenseCont | Ref = project.license
+            license_id: License
+            if isinstance(license_cont, LicenseCont):
+                license_id = license_cont.id()
+            elif isinstance(license_cont, Ref):
+                if not license_docu:
+                    raise ValueError(
+                        "data-set license is marked as being the same as the docu license, but no docu license was provided"
+                    )
+                license_id = license_docu.id()
+            else:
+                raise TypeError(f"Unknown license type: {type(license_cont)} - content:\n{license_cont}")
             # if project.license.is_spdx:
             if is_spdx_id(license_id):
                 cls.add(graph, subj, ODS.license, SPDX[license_id])
@@ -557,12 +577,22 @@ class RDFSerializer(Serializer):
             else:
                 cls.add(graph, subj, ODS.licenseExpression, license_id)
         if project.licensor:
-            for (index, licensor) in enumerate(project.licensor):
+            licensors: list[Agent | AgentRef]
+            if isinstance(project.licensor, Ref):
+                licensors = licensor_docu
+            else:
+                licensors = project.licensor
+            for (index, licensor) in enumerate(licensors):
                 internal_iri_name = f"licensor{index}"
                 agent_rdf_iri = cls._create_agent(graph, namespace, internal_iri_name, licensor, store=store_agents)
                 cls.add(graph, subj, ODS.licensor, agent_rdf_iri)
         if project.organization:
-            for (index, organization) in enumerate(project.organization):
+            orgs: list[Organization | AgentRef]
+            if isinstance(project.organization, Ref):
+                orgs = organization_docu
+            else:
+                orgs = project.organization
+            for (index, organization) in enumerate(orgs):
                 internal_iri_name = f"organization{index}"
                 org_rdf_iri = cls._create_organization(graph,
                                                        namespace,
