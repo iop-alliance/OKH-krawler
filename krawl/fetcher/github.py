@@ -357,16 +357,16 @@ class GitHubFetcher(Fetcher):
 
         if hosting_unit_id.path:
             return self.__fetch_one(hosting_unit_id)
-        else:
-            for man_fl_ext in MANIFEST_FILE_EXTENSIONS:
-                path = Path(f'okh.{man_fl_ext}')
-                hosting_unit_id_with_path = hosting_unit_id.derive(path=path)
-                try:
-                    return self.__fetch_one(hosting_unit_id_with_path)
-                except FetcherError:
-                    continue
-            raise FetcherError("Non direct path to a manifest file given,"
-                               f" and no known manifest file found at: '{project_id.uri}'")
+
+        for man_fl_ext in MANIFEST_FILE_EXTENSIONS:
+            path = Path(f'okh.{man_fl_ext}')
+            hosting_unit_id_with_path: HostingUnitIdForge = hosting_unit_id.derive(path=path)
+            try:
+                return self.__fetch_one(hosting_unit_id_with_path)
+            except FetcherError:
+                continue
+        raise FetcherError("Non direct path to a manifest file given,"
+                           f" and no known manifest file found at: '{project_id.uri}'")
 
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
         num_fetched_projects: int = 0
