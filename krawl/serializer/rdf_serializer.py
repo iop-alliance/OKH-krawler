@@ -141,6 +141,8 @@ class RDFSerializer(Serializer):
                 raise SerializerError(f"unknown data sourcing procedure: {sourcing_procedure}")
         cls.add(meta_graph, subj_src, ODS.dataSourcingProcedure, data_sourcing_procedure_iri)
 
+        cls._add_license_and_licensor(meta_graph, False, namespace, subj, fetch_result.data_set, project.license,
+                                      project.licensor, project.organization)
         cls._add_license_and_licensor(meta_graph, False, namespace, subj_src, project)
 
         # manifest_file_subject = cls._add_file(
