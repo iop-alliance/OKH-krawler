@@ -353,6 +353,7 @@ class GitHubFetcher(Fetcher):
         return hosting_unit_id
 
     def fetch(self, project_id: ProjectId) -> FetchResult:
+        # pylint: disable=no-member
         hosting_unit_id: HostingUnitIdForge = self._parse_project_url(project_id.uri)
 
         if hosting_unit_id.path:
