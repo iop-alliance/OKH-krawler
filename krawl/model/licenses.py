@@ -220,6 +220,9 @@ def get_by_id_or_name_required(id_or_name: str) -> LicenseCont:
         lic = _licenses().get(lic_id)
         if lic:
             return lic
+    if id_or_name == "CC-BY-NC-SA-3.0-US":
+        # HACK for CC-BY-NC-SA-3.0-US
+        return get_by_id_or_name_required("CC-BY-NC-SA-3.0")
     raise NameError(f'Non-SPDX license detected: "{id_or_name}"')
 
 
