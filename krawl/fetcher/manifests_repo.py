@@ -26,6 +26,7 @@ from krawl.model.project_id import ProjectId
 from krawl.model.project_part_reference import Ref
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.repository import FetcherStateRepository
+from krawl.util import url_encode_path
 
 __long_name__: str = "manifests-repo"
 __hosting_id__: HostingId = HostingId.MANIFESTS_REPO  # TODO FIXME HACK
@@ -138,7 +139,7 @@ class ManifestsRepoFetcher(Fetcher):
             raise err
 
     def _extract_url_from_file(self, manifest_file: Path) -> tuple[str, HostingUnitIdForge]:
-        url = f"{self.repo_url}/{str(manifest_file)}"
+        url = f"{self.repo_url}/{url_encode_path(manifest_file)}"
         try:
             hosting_unit_id, _path = HostingUnitIdForge.from_url(url)
         except ParserError as err:
