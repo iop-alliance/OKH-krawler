@@ -73,4 +73,4 @@ def fix_str_encoding(potentially_bad_str: str) -> str:
 
 
 def url_encode(raw_url_part: str) -> str:
-    return urllib.parse.quote_plus(raw_url_part)
+    return urllib.parse.quote(urllib.parse.unquote(raw_url_part), safe=';/?:@&=+,')
