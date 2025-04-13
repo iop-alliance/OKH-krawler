@@ -195,4 +195,5 @@ class ManifestsRepoFetcher(Fetcher):
                     log.warn("skipping file '%s', because: %s", hosting_unit_id, err)
 
         self._state_repository.delete(__hosting_id__)
-        log.debug("scraped %d of the %d found manifests from local dir '%s'", num_scraped_manifests, num_found_manifests, self.scrape_dir)
+        log.debug("scraped %d of the %d found manifests from local dir '%s'", num_scraped_manifests,
+                  num_found_manifests, self.scrape_dir)

@@ -328,7 +328,8 @@ class ManifestNormalizer(Normalizer):
             license_cont: list[LicenseCont] | None = get_license(license_raw)
             if not license_cont:
                 if required:
-                    raise NormalizerError(f"Invalid SPDX license expression '{license_raw}' - did not map to any license")
+                    raise NormalizerError(
+                        f"Invalid SPDX license expression '{license_raw}' - did not map to any license")
                 return None
             if license_cont and len(license_cont) > 1:
                 log.warn(f"Silently ignore additional licenses: {", ".join([license.id() for license in license_cont[1:]])}")
@@ -338,7 +339,10 @@ class ManifestNormalizer(Normalizer):
         except NameError as err:
             raise NormalizerError(f"Failed to normalize license: {err}") from err
 
-    def _licensor_from_container_dict(self, hosting_unit_id: HostingUnitId, raw: dict, required: bool = True) -> list[Agent | AgentRef] | None:
+    def _licensor_from_container_dict(self,
+                                      hosting_unit_id: HostingUnitId,
+                                      raw: dict,
+                                      required: bool = True) -> list[Agent | AgentRef] | None:
         licensor_raw = raw.get("licensor")
         # HACK Necessary until Appropedia switches to the new OKH format
         #      (they are still on v1 as of January 2025),
