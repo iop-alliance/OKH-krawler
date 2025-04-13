@@ -32,6 +32,8 @@ from krawl.model.software import Software
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.serializer import Serializer
 
+from .util import is_doi, is_web_url
+
 # Useful info about RDF:
 # https://medium.com/wallscope/understanding-linked-data-formats-rdf-xml-vs-turtle-vs-n-triples-eb931dbe9827
 
@@ -426,13 +428,20 @@ class RDFSerializer(Serializer):
         return part_subjects
 
     @classmethod
-    def _create_publication(cls, graph: Graph, namespace: Namespace, rdf_name: str, doi: str) -> URIRef:
+    def _create_publication(cls, graph: Graph, namespace: Namespace, rdf_name: str, doi_or_url: str) -> URIRef:
 
         subj = namespace[rdf_name]
         # We only create this individual if it is not yet in the graph
         if (subj, None, None) not in graph:
+            if is_doi(doi_or_url):
+                cls.add(graph, subj, OKH.doi, doi_or_url)
+            elif is_web_url(doi_or_url):
+                cls.add(graph, subj, ODS.url, doi_or_url)
+            else:
+                log.warn(
+                    f"Ignoring publication entry, because it is neither a DOI nor a common web URL: '{doi_or_url}'")
+                return subj
             cls.add(graph, subj, RDF.type, OKH.Publication)
-            cls.add(graph, subj, OKH.doi, doi)
         return subj
 
     @classmethod
@@ -637,9 +646,9 @@ class RDFSerializer(Serializer):
         if project.tsdc is not None:
             # TODO Parse TsDCs, and check if part.tsdc is a valid tsdc, but maybe do that earlier in the process, not here, while serializing
             cls.add(graph, module_subject, OKH.tsdc, URIRef(f"{BASE_IRI_TSDC}#{project.tsdc}"))
-        for (index, doi) in enumerate(project.publication):
+        for (index, doi_or_url) in enumerate(project.publication):
             internal_iri_name = f"publication{index}"
-            publication_rdf_iri = cls._create_publication(graph, namespace, internal_iri_name, doi)
+            publication_rdf_iri = cls._create_publication(graph, namespace, internal_iri_name, doi_or_url)
             cls.add(graph, module_subject, OKH.hasPublication, publication_rdf_iri)
         for (index, standard) in enumerate(project.standard_compliance):
             internal_iri_name = f"standard{index}"
