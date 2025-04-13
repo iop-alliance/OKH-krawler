@@ -332,7 +332,8 @@ class ManifestNormalizer(Normalizer):
                         f"Invalid SPDX license expression '{license_raw}' - did not map to any license")
                 return None
             if license_cont and len(license_cont) > 1:
-                log.warn(f"Silently ignore additional licenses: {", ".join([license.id() for license in license_cont[1:]])}")
+                additional_licenses = ', '.join([license.id() for license in license_cont[1:]])
+                log.warn(f"Silently ignore additional licenses: {additional_licenses}")
             return license_cont[0]
         except ValueError as err:
             raise NormalizerError(f"Failed to normalize license: {err}") from err
