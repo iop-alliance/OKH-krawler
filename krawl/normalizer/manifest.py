@@ -536,7 +536,7 @@ class ManifestNormalizer(Normalizer):
                 return OuterDimensions.from_openscad(OuterDimensionsOpenScad.from_dict(raw_outer_dimensions))
             except ParserError as err2:
                 raise ParserError("Failed to parse outer dimensions, both as new and as old format:"
-                                  f"\n- '{err}'\n- '{err2}'")
+                                  f"\n- '{err}'\n- '{err2}'") from err
 
 
 # __test_od_data = {'unit': 'm', 'openSCAD': '13'}
