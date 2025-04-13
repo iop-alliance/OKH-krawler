@@ -150,12 +150,13 @@ class ManifestsRepoFetcher(Fetcher):
         raise FetcherError("Single project fetching not implemented for '{__hosting_id__}'")
 
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
-        num_fetched_projects = 0
+        num_found_manifests = 0
+        num_scraped_manifests = 0
         for glob in [TOML_MANIFEST_FILES_GLOB_1, TOML_MANIFEST_FILES_GLOB_2]:
             log.debug("fetching projects with recursive glob '%s' ...", glob)
             for potential_toml_manifest_path in self.scrape_dir.rglob(glob):
                 # print(potential_toml_manifest_path.name)
-                num_fetched_projects = num_fetched_projects + 1
+                num_found_manifests = num_found_manifests + 1
 
                 potential_toml_manifest_path_rel = potential_toml_manifest_path.relative_to(self.scrape_dir)
 
@@ -188,8 +189,10 @@ class ManifestsRepoFetcher(Fetcher):
 
                 try:
                     yield self.__fetch_one(hosting_unit_id, manifest_url, potential_toml_manifest_path)
+                    log.info("scraped file '%s'", hosting_unit_id)
+                    num_scraped_manifests = num_scraped_manifests + 1
                 except FetcherError as err:
                     log.warn("skipping file '%s', because: %s", hosting_unit_id, err)
 
         self._state_repository.delete(__hosting_id__)
-        log.debug("fetched %d projects from local dir '%s'", num_fetched_projects, self.scrape_dir)
+        log.debug("scraped %d of the %d found manifests from local dir '%s'", num_scraped_manifests, num_found_manifests, self.scrape_dir)
