@@ -209,6 +209,8 @@ class ManifestNormalizer(Normalizer):
         if not license:
             raise ValueError("'license' is None, which should not be possible at this point")
         licensor = self._licensor_from_container_dict(hosting_unit_id, raw)
+        if not licensor:
+            raise ValueError("'licensor' is None, which should not be possible at this point")
         project = Project(
             name=self.extract_required_str(raw, "name"),
             repo=self.extract_required_str(raw, "repo"),
@@ -336,7 +338,7 @@ class ManifestNormalizer(Normalizer):
         except NameError as err:
             raise NormalizerError(f"Failed to normalize license: {err}") from err
 
-    def _licensor_from_container_dict(self, hosting_unit_id: HostingUnitId, raw: dict) -> list[Agent | AgentRef]:
+    def _licensor_from_container_dict(self, hosting_unit_id: HostingUnitId, raw: dict, required: bool = True) -> list[Agent | AgentRef] | None:
         licensor_raw = raw.get("licensor")
         # HACK Necessary until Appropedia switches to the new OKH format
         #      (they are still on v1 as of January 2025),
@@ -351,7 +353,9 @@ class ManifestNormalizer(Normalizer):
                 licensor_raw = user_ids
         licensor = self._agents(licensor_raw)
         if not licensor:
-            raise NormalizerError("Missing required key 'licensor' in manifest (or parsing of it failed)")
+            if required:
+                raise NormalizerError("Missing required key 'licensor' in manifest (or parsing of it failed)")
+                return None
         return licensor
 
     def _person_from_user_str(self, user: str) -> Person:
@@ -500,7 +504,7 @@ class ManifestNormalizer(Normalizer):
         sw.installation_guide = self.files_info.file(raw_software.get("installation-guide"))
         sw.documentation_language = self._clean_language(raw_software.get("documentation-language"))
         sw.license = self._license_from_container_dict(raw_software, False)
-        sw.licensor = self._licensor_from_container_dict(hosting_unit_id, raw_software)
+        sw.licensor = self._licensor_from_container_dict(hosting_unit_id, raw_software, False)
         sw.organization = self._organizations(raw_software.get("organization"))
         return sw
 
