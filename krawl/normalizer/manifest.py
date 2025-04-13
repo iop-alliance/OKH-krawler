@@ -177,6 +177,7 @@ class ManifestNormalizer(Normalizer):
 
     def __init__(self, file_handler: FileHandler | None = None):
         self._file_handler = file_handler
+        self.files_info: _ProjFilesInfo = None
 
     def extract_required_str(self, raw: dict, key: str) -> str:
         value: str | None = DictUtils.to_string(raw.get(key))
