@@ -161,7 +161,7 @@ class ManifestsRepoFetcher(Fetcher):
 
                 try:
                     manifest_url, hosting_unit_id = self._extract_url_from_file(potential_toml_manifest_path_rel)
-                    log.warn(
+                    log.debug(
                         f"Manifests-repo - hosting unit ID: {hosting_unit_id}\n\t{manifest_url}\n\t{potential_toml_manifest_path_rel}"
                     )
                 except FetcherError as err:
@@ -189,7 +189,7 @@ class ManifestsRepoFetcher(Fetcher):
                 try:
                     yield self.__fetch_one(hosting_unit_id, manifest_url, potential_toml_manifest_path)
                 except FetcherError as err:
-                    log.debug(f"skipping file, because: {err}")
+                    log.warn("skipping file '%s', because: %s", hosting_unit_id, err)
 
         self._state_repository.delete(__hosting_id__)
         log.debug("fetched %d projects from local dir '%s'", num_fetched_projects, self.scrape_dir)
