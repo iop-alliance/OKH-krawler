@@ -25,7 +25,7 @@ from krawl.model.hosting_unit import HostingUnitId
 from krawl.model.hosting_unit_forge import HostingUnitIdForge
 from krawl.model.language_string import LangStr
 from krawl.model.licenses import LicenseCont
-from krawl.model.licenses import get_by_id_or_name as get_license
+from krawl.model.licenses import get_by_expression_or_name_required as get_license
 from krawl.model.outer_dimensions import OuterDimensions, OuterDimensionsOpenScad
 from krawl.model.part import Part
 from krawl.model.project import Project
@@ -207,7 +207,7 @@ class ManifestNormalizer(Normalizer):
 
         license = self._license_from_container_dict(raw)
         if not license:
-            raise NormalizerError("Missing required key 'license' in manifest (or parsing of it failed)")
+            raise ValueError("'license' is None, which should not be possible at this point")
         licensor = self._licensor_from_container_dict(hosting_unit_id, raw)
         project = Project(
             name=self.extract_required_str(raw, "name"),
@@ -302,7 +302,7 @@ class ManifestNormalizer(Normalizer):
                 depicts.add(cont)
         return depicts
 
-    def _license_from_container_dict(self, raw: dict) -> LicenseCont | None:
+    def _license_from_container_dict(self, raw: dict, required: bool = True) -> LicenseCont | None:
         # license_raw = self.extract_required_str(raw, "license")
         license_raw = raw.get("license")
         if not license_raw:
@@ -314,15 +314,23 @@ class ManifestNormalizer(Normalizer):
             if license_raw:
                 log.warn("Missing required key 'license' in manifest, but found deprecated key 'alternative-license'")
         if not license_raw:
-            raise NormalizerError("Missing required key 'license' in manifest")
+            if required:
+                raise NormalizerError("Missing required key 'license' in manifest")
+            return None
         if not isinstance(license_raw, str):
             raise NormalizerError(
                 f"Failed to normalize license: should be of type str, but is of type: {type(license_raw)} - content:\n{license_raw}"
             )
         log.debug("license_raw: %s", license_raw)
         try:
-            license_cont: LicenseCont | None = get_license(license_raw)
-            return license_cont
+            license_cont: list[LicenseCont] | None = get_license(license_raw)
+            if not license_cont:
+                if required:
+                    raise NormalizerError(f"Invalid SPDX license expression '{license_raw}' - did not map to any license")
+                return None
+            if license_cont and len(license_cont) > 1:
+                log.warn(f"Silently ignore additional licenses: {", ".join([license.id() for license in license_cont[1:]])}")
+            return license_cont[0]
         except ValueError as err:
             raise NormalizerError(f"Failed to normalize license: {err}") from err
         except NameError as err:
@@ -491,7 +499,7 @@ class ManifestNormalizer(Normalizer):
         sw = Software(release=release)
         sw.installation_guide = self.files_info.file(raw_software.get("installation-guide"))
         sw.documentation_language = self._clean_language(raw_software.get("documentation-language"))
-        sw.license = self._license_from_container_dict(raw_software)
+        sw.license = self._license_from_container_dict(raw_software, False)
         sw.licensor = self._licensor_from_container_dict(hosting_unit_id, raw_software)
         sw.organization = self._organizations(raw_software.get("organization"))
         return sw

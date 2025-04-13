@@ -226,6 +226,36 @@ def get_by_id_or_name_required(id_or_name: str) -> LicenseCont:
     raise NameError(f'Non-SPDX license detected: "{id_or_name}"')
 
 
+def get_by_expression_or_name_required(expression_or_name: str) -> list[LicenseCont] | None:
+    """This is a very basic and HACKY SPDX license expression parsing.
+    It outputs all found licenses in a list, ignoring whether they are AND or OR connected,
+    and it also skips "WITH"s/exceptions."""
+    if not expression_or_name:
+        raise ValueError("expression_or_name is required for evaluating license")
+    licenses: list[LicenseCont] = []
+    expression_parts = re.split(r'\s+', expression_or_name)
+    last_license: LicenseCont | None = None
+    expecting_exception: bool = False
+    for expression_part in expression_parts:
+        if last_license:
+            if expression_part in ["AND", "OR"]:
+                last_license = None
+            elif expression_part == "WITH":
+                expecting_exception = True
+            else:
+                raise ValueError(f"Invalid or unrecognized SPDX license expression '{expression_or_name}'")
+        else:
+            if expecting_exception:
+                # Silently ignore exceptions
+                expecting_exception = False
+                continue
+            last_license = get_by_id_or_name_required(expression_part)
+            licenses.append(last_license)
+    if len(licenses) == 0:
+        return None
+    return licenses
+
+
 def get_by_id_or_name(id_or_name: str | None) -> LicenseCont | None:
     if id_or_name:
         # try:
