@@ -525,6 +525,8 @@ class ManifestNormalizer(Normalizer):
 
     @classmethod
     def _outer_dimensions(cls, raw_outer_dimensions: Any) -> OuterDimensions | None:
+        if not raw_outer_dimensions:
+            return None
         if not isinstance(raw_outer_dimensions, dict):
             raise ParserError("Can only parse dict as outer dimensions")
         try:
