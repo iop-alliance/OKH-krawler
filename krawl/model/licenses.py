@@ -196,7 +196,7 @@ def get_by_id(id: str) -> LicenseCont | None:
 
 def get_by_id_or_name_required(id_or_name: str) -> LicenseCont:
     if not id_or_name:
-        raise ValueError("id_or_name is required")
+        raise ValueError("id_or_name is required for evaluating license")
     if id_or_name.startswith(("LicenseRef-", "DocumentRef-")):
         name = id_or_name.replace("LicenseRef-", "").replace("DocumentRef-", "")
         if id_or_name == __unknown_license__.id():
@@ -220,7 +220,7 @@ def get_by_id_or_name_required(id_or_name: str) -> LicenseCont:
         lic = _licenses().get(lic_id)
         if lic:
             return lic
-    raise NameError(f'WARN: Non-SPDX license detected: "{id_or_name}"')
+    raise NameError(f'Non-SPDX license detected: "{id_or_name}"')
 
 
 def get_by_id_or_name(id_or_name: str | None) -> LicenseCont | None:
