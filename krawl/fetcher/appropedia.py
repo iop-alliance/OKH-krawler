@@ -283,7 +283,7 @@ class AppropediaFetcher(Fetcher):
             # try:
             fetch_result = self.__fetch_one(fetcher_state, hosting_unit_id, last_visited)
             # except FetcherError as err:
-            #     log.warning(f"Failed to fetch project '{hosting_unit_id}': {err}")
+            #     log.warn(f"Failed to fetch project '{hosting_unit_id}': {err}")
             #     continue
             fetcher_state.store(self._state_repository)  # XXX This might be very costly
 

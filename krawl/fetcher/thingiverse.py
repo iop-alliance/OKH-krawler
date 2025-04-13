@@ -369,5 +369,5 @@ class ThingiverseFetcher(Fetcher):
                 projects_counter += 1
                 yield fetch_result
             except FetcherError as err:
-                log.warning(err)
+                log.warn(err)
                 continue

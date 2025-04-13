@@ -166,12 +166,12 @@ class ManifestsRepoFetcher(Fetcher):
                         f"Manifests-repo - hosting unit ID: {hosting_unit_id}\n\t{manifest_url}\n\t{potential_toml_manifest_path_rel}"
                     )
                 except FetcherError as err:
-                    log.warning(f"Skipping project file, because: {err}")
+                    log.warn(f"Skipping project file, because: {err}")
                     continue
 
                 # file_name = Path(potential_toml_manifest_path.name)
                 # if not is_accepted_manifest_file_name(file_name):
-                #     log.warning(f"Not an accepted manifest file name (in this URL): '{manifest_url}'")
+                #     log.warn(f"Not an accepted manifest file name (in this URL): '{manifest_url}'")
                 #     continue
 
                 # path = Path(raw_url.path)

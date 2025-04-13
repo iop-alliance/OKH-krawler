@@ -461,12 +461,12 @@ class GitHubFetcher(Fetcher):
                 raw_url = raw_found_file["html_url"]
                 url_file_name = Path(Path(raw_url).name)
                 if not is_accepted_manifest_file_name(url_file_name):
-                    log.warning(f"Not an accepted manifest file name: '{url_file_name}'")
+                    log.warn(f"Not an accepted manifest file name: '{url_file_name}'")
                 # parsed_url = urlparse(raw_url)
                 try:
                     hosting_unit_id = self._parse_project_url(raw_url)
                 except FetcherError as err:
-                    log.warning(f"Skipping project file, because: {err}")
+                    log.warn(f"Skipping project file, because: {err}")
                 # path = Path(raw_url.path)
                 # path_parts = path.parts
                 # owner = path_parts[1]

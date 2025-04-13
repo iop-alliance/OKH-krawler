@@ -34,7 +34,7 @@ class GitHubFileHandler(FileHandler):
         if not url_path:
             return None
         path_parts = url_path.relative_to("/").parts
-        # log.warning('XXX Re-concatenated path parts: "%s"', '#'.join(path_parts))
+        # log.warn('XXX Re-concatenated path parts: "%s"', '#'.join(path_parts))
         if len(path_parts) <= self.pre_vers_path_parts:
             log.error("Invalid file path in URL for this platform; too few parts: '%s'", url)
             return None
@@ -57,7 +57,7 @@ class GitHubFileHandler(FileHandler):
             return None
         path_parts = url_path.relative_to("/").parts
         slug = '/'.join(path_parts[:self.slug_parts])
-        # log.warning('XXX Extracted slug is: "%s"', slug)
+        # log.warn('XXX Extracted slug is: "%s"', slug)
         return slug
 
     def gen_proj_info(self, hosting_unit_id: HostingUnitId, manifest_raw: dict) -> dict:
@@ -83,7 +83,7 @@ class GitHubFileHandler(FileHandler):
         version = self._extract_version(proj_info, url)
         if not version:
             return False
-        # log.warning('XXX Extracted version is: "%s"', version)
+        # log.warn('XXX Extracted version is: "%s"', version)
         return not self._is_dev_branch(proj_info, version)
 
     def is_home_hosting_url(self, proj_info: dict, url: str) -> bool:

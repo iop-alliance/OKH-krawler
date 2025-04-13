@@ -238,7 +238,7 @@ class ManifestNormalizer(Normalizer):
         try:
             project.outer_dimensions = self._outer_dimensions(raw.get("outer-dimensions"))
         except (ParserError, NormalizerError) as err:
-            log.warning("Failed parsing outer-dimensions: %s", err)
+            log.warn("Failed parsing outer-dimensions: %s", err)
         project.part = self._parts(raw.get("part"))
         project.software = self._software(hosting_unit_id, raw.get("software"))
 
@@ -489,7 +489,7 @@ class ManifestNormalizer(Normalizer):
             try:
                 part.outer_dimensions = self._outer_dimensions(raw_part.get("outer-dimensions"))
             except (ParserError, NormalizerError) as err:
-                log.warning("Failed parsing outer-dimensions: %s", err)
+                log.warn("Failed parsing outer-dimensions: %s", err)
             part.tsdc = DictUtils.to_string(raw_part.get("tsdc"))
             parts.append(part)
         DictUtils.ensure_unique_clean_names(parts)

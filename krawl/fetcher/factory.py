@@ -50,7 +50,7 @@ class NormalizationListener(FetchListener):
         try:
             project = normalizer.normalize(fetch_result)
         except NormalizerError as err:
-            log.warning("Failed to normalize fetch result '%s': %s", fetch_result.data_set.hosting_unit_id, err)
+            log.warn("Failed to normalize fetch result '%s': %s", fetch_result.data_set.hosting_unit_id, err)
             return
         toml: str = self.serializer_toml.serialize(fetch_result, project)
         (meta_ttl, ttl) = self.serializer_rdf.serialize(fetch_result, project)
