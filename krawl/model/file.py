@@ -97,15 +97,25 @@ An image could fill multiple slots,
 but each slot can be filled at most once within a design.
 This is useful for things like the project-icon,
 or the left-side view of the 3D model."""
-    LOGO = "logo"
     ICON_MAIN = "icon-main"
     ICON_MAIN_BW = "icon-main-bw"
-    """black&white"""
-    SOCIAL = "social"
-    """social media preview"""
+    LOGO = "logo"
+    LOGO_BW = "logo-bw"
+    MODEL_3D = "model-3d"
+    MODEL_FROM_ABOVE = "model-from-above"
+    MODEL_FROM_BACK = "model-from-back"
+    MODEL_FROM_BELOW = "model-from-below"
+    MODEL_FROM_FRONT = "model-from-front"
+    MODEL_FROM_LEFT = "model-from-left"
+    MODEL_FROM_RIGHT = "model-from-right"
+    MODEL_MAIN = "model-main"
     ORGANIZATION_LOGO = "organization-logo"
     ORGANIZATION_LOGO_BW = "organization-logo-bw"
     """too much?"""
+    PHOTO_PACKAGING = "photo-packaging"
+    PHOTO_THING_MAIN = "photo-thing-main"
+    SOCIAL = "social"
+    """social media preview"""
     SYMBOL = "symbol"
     """An icon is a simple image that represents a real thing.
     For example, a shopping cart icon.
@@ -116,16 +126,6 @@ or the left-side view of the 3D model."""
     needs to be learned to be understood.
 
     (source: [flaticon.com](https://www.flaticon.com/blog/difference-between-symbols-and-icons/))"""
-    PHOTO_THING_MAIN = "photo-thing-main"
-    PHOTO_PACKAGING = "photo-packaging"
-    MODEL_FROM_LEFT = "model-from-left"
-    MODEL_FROM_RIGHT = "model-from-right"
-    MODEL_FROM_TOP = "model-from-top"
-    MODEL_FROM_BOTTOM = "model-from-bottom"
-    MODEL_FROM_FRONT = "model-from-front"
-    MODEL_FROM_BACK = "model-from-back"
-    MODEL_3D = "model-3d"
-    MODEL_MAIN = "model-main"
 
     # TODO
     # echo "    photo
@@ -161,14 +161,17 @@ class ImageTag(StrEnum):
     """A number of predefined+self-defined values.
 An image could have 0 to many tags attached.
 Each tag could be used by multiple images."""
-    PHOTO = "photo"
+    ARTISTIC = "art"
+    ASSEMBLY = "assembly"
+    BW = "bw"
+    COLOR = "color"
+    DIAGRAM = "diagram"
+    DRAWING = "drawing"
+    GRAY = "gray"
     ICON = "icon"
     LOGO = "logo"
     MODEL = "model"
-    ARTISTIC = "artistic"
-    DIAGRAM = "diagram"
-    COLOR = "color"
-    BNW = "bnw"
+    PHOTO = "photo"
     SCREENSHOT = "screenshot"
 
 
