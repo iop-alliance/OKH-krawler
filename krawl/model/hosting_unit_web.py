@@ -54,10 +54,11 @@ class HostingUnitIdWebById(HostingUnitId):
 
             case HostingId.APPROPEDIA_ORG:
                 # example: <https://www.appropedia.org/Open_Source_Digitally_Replicable_Lab-Grade_Scales>
-                if len(path_parts) > 1:
-                    raise ParserError(
-                        f"Project URLs on platform {hosting_id} only have one path part, but got '{url}'.")
-                project_id = path_parts[0]
+                project_id = parsed_url.path
+                if project_id.startswith("/"):
+                    project_id = project_id[1:]
+                if project_id.endswith("/"):
+                    project_id = project_id[:-1]
                 path = None
 
             case HostingId.OSHWA_ORG:
