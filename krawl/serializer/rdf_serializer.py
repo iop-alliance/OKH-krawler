@@ -291,7 +291,7 @@ class RDFSerializer(Serializer):
                 if isinstance(object, str) and object.startswith("http") and validators.url(object):
                     object = URIRef(object)
                 elif isinstance(object, LangStr):
-                    object = Literal(str(object.text), datatype=RDF.langString, lang=object.language)
+                    object = Literal(str(object.text), lang=object.language)
                 elif isinstance(object, datetime):
                     object = Literal(object.isoformat(), datatype=datatype if datatype else XSD.dateTime)
                 elif isinstance(object, float):
