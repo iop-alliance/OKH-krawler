@@ -14,6 +14,7 @@ from pathlib import Path
 
 import tomli
 import yaml
+# import psutil
 
 from krawl.errors import ConversionError
 from krawl.log import get_child_logger
@@ -47,17 +48,17 @@ def recuperate_invalid_yaml_manifest(manifest_contents: bytes) -> bytes:
     Many manifests out there use bad syntax or invalid values,
     which we try to undo as much as possible in here."""
 
-    fn_v1: Path = Path(tempfile.mkstemp()[1])
-    # Target file should not yet exist when converting
-    os.remove(fn_v1)
+    (fd_v1, fn_v1) = tempfile.mkstemp()
+    fp_v1: Path = Path(fn_v1)
 
-    with open(fn_v1, "wb") as binary_file:
+    with os.fdopen(fd_v1, "wb") as binary_file:
         binary_file.write(manifest_contents)
 
-    sanitize_okh_v1_yaml(fn_v1)
+    sanitize_okh_v1_yaml(fp_v1)
 
     with open(fn_v1, "rb") as binary_file:
         manifest_contents = binary_file.read()
+        binary_file.close()
         os.remove(fn_v1)
         return manifest_contents
 
@@ -86,17 +87,20 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes:
 
     # manifest_contents = recuperate_invalid_yaml_manifest(manifest_contents)
 
-    (_, fn_v1) = tempfile.mkstemp()
-    (_, fn_losh) = tempfile.mkstemp()
+    (fd_v1, fn_v1) = tempfile.mkstemp()
+    (fd_losh, fn_losh) = tempfile.mkstemp()
     # Target file should not yet exist when converting
     os.remove(fn_losh)
 
-    with open(fn_v1, "wb") as binary_file:
+    with os.fdopen(fd_v1, "wb") as binary_file:
         binary_file.write(manifest_contents)
 
     conv_cmd = ['okh-tool', 'conv', fn_v1, fn_losh]
     try:
         log.debug('Going to run command "%s" ...', " ".join(conv_cmd))
+        # proc = psutil.Process()
+        # for (path, fd, _position, mode, flags) in proc.open_files():
+        #     print("Open File: %s\t%s\t%s\t%s" % (fd, mode, flags, path))
         subprocess.check_output(conv_cmd, stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as err:
         sep = "-" * 80
@@ -110,7 +114,7 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes:
     log.debug('Should have written file "%s".', fn_losh)
 
     # res.check_returncode()
-    with open(fn_losh, "rb") as binary_file:
+    with os.fdopen(fd_losh, "rb") as binary_file:
         manifest_contents = binary_file.read()
     log.debug('Read file "%s".', fn_losh)
 
