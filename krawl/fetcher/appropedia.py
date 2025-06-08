@@ -167,16 +167,27 @@ class AppropediaFetcher(Fetcher):
 
     def __fetch_one(self, fetcher_state: _FetcherState, hosting_unit_id: HostingUnitIdWebById,
                     last_visited: datetime) -> FetchResult:
+        log.debug('hosting_unit_id.project_id: "%s"', hosting_unit_id.project_id)
+        encoded_project_id: str = url_encode(hosting_unit_id.project_id.replace(" ", "_"))
+        log.debug('hosting_unit_id.project_id (URL-encoded): "%s"', encoded_project_id)
+        manifest_dl_url = f"https://www.appropedia.org/scripts/generateOpenKnowHowManifest.php?title={encoded_project_id}"
+        return self.__fetch_one_raw(fetcher_state, hosting_unit_id, manifest_dl_url, last_visited)
+
+    def __fetch_one_raw(self, fetcher_state: _FetcherState, hosting_unit_id: HostingUnitIdWebById | None, manifest_dl_url: str,
+                    last_visited: datetime) -> FetchResult:
         try:
-            log.debug('hosting_unit_id.project_id: "%s"', hosting_unit_id.project_id)
-            encoded_project_id: str = url_encode(hosting_unit_id.project_id.replace(" ", "_"))
-            log.debug('hosting_unit_id.project_id (URL-encoded): "%s"', encoded_project_id)
-            manifest_dl_url = f"https://www.appropedia.org/scripts/generateOpenKnowHowManifest.php?title={encoded_project_id}"
             try:
                 okh_v1_contents = self._download_manifest(manifest_dl_url)
             except NotFound as err:
-                raise FetcherError(f"Failed to download manifest for '{hosting_unit_id.project_id}': {err}") from err
+                raise FetcherError(f"Failed to download manifest from '{manifest_dl_url}': {err}") from err
             raw_project = okh_v1_contents
+
+            manifest = Manifest(content=raw_project, format=ManifestFormat.YAML)
+            if not hosting_unit_id:
+                manifest_data = manifest.as_dict()
+                # sample data:
+                #     project-link: https://www.appropedia.org/2_FT_Prosthetics
+                hosting_unit_id = HostingUnitIdWebById.from_url_no_path(url_encode(manifest_data['project-link']))
 
             data_set = DataSet(
                 okhv_fetched="OKH-v1.0",  # FIXME Not good, not right
@@ -197,26 +208,22 @@ class AppropediaFetcher(Fetcher):
                 organization=[__dataset_creator__],
             )
 
-            fetch_result = FetchResult(data_set=data_set,
-                                       data=Manifest(content=raw_project, format=ManifestFormat.YAML))
+            fetch_result = FetchResult(data_set=data_set, data=manifest)
             fetcher_state.fetched_ids.append(hosting_unit_id.project_id)
             fetcher_state.next_fetch += 1
-            # try normalizing it
-            # try:
-            #     raw_project.update(unfiltered_output)
-            #     project = self._normalizer.normalize(raw_project)
-            # except NormalizerError as err:
-            #     raise FetcherError(f"Normalization failed, that should not happen: {err}") from err
             self._fetched(fetch_result)
             return fetch_result
         except FetcherError as err:
+            if not hosting_unit_id:
+                hosting_unit_id = HostingUnitIdWebById(
+                    _hosting_id = __hosting_id__,
+                    project_id = manifest_dl_url,
+                )
             self._failed_fetch(FailedFetch(hosting_unit_id=hosting_unit_id, error=err))
             raise err
 
     def fetch(self, project_id: ProjectId) -> FetchResult:
         log.debug('Start fetching project %s', project_id)
-
-        hosting_unit_id: HostingUnitIdWebById = HostingUnitIdWebById.from_url_no_path(project_id.uri)
 
         try:
             hosting_unit_id = HostingUnitIdWebById.from_url_no_path(project_id.uri)
@@ -234,14 +241,8 @@ class AppropediaFetcher(Fetcher):
     def _download_projects_index(self) -> dict:
         response = self._session.get(
             # url="https://www.appropedia.org/w/api.php?action=query&format=json&list=categorymembers&cmlimit=max&cmtitle=Category:Projects",
-            url="https://www.appropedia.org/w/api.php",
-            params={
-                "action": "query",
-                "format": "json",
-                "list": "categorymembers",
-                "cmlimit": "max",
-                "cmtitle": "Category:Projects",
-            },
+            url="https://www.appropedia.org/manifests/list.json",
+
             headers={
                 'Accept': 'application/json',
             },
@@ -250,16 +251,15 @@ class AppropediaFetcher(Fetcher):
             raise FetcherError(f"Failed to fetch projects from {__hosting_id__}: {response.text}")
         return response.json()
 
-    def _get_projects_index(self) -> Generator[str]:
-        project_list_json = self._download_projects_index()
-        for project in project_list_json["query"]["categorymembers"]:
-            title: str = project["title"]
-            if not _re_auto_translated_page_title.match(title):
-                yield title
+    def _get_projects_manifest_urls(self) -> Generator[str]:
+        manifest_url_list_json = self._download_projects_index()
+        for manifest_url in manifest_url_list_json:
+            # manifest_url: str = manifest_url
+            yield manifest_url
 
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
-        project_ids = list(self._get_projects_index())
-        project_ids.sort()
+        manifest_urls = list(self._get_projects_manifest_urls())
+        manifest_urls.sort()
         # print("#################################")
         # print('\n'.join(project_ids))
         # appro_projs_csv_path = 'appro_projs.csv'
@@ -268,20 +268,19 @@ class AppropediaFetcher(Fetcher):
         # print(f"Written '{appro_projs_csv_path}'.")
         # print("#################################")
         # raise SystemExit(56)
-        total_projects = len(project_ids)
+        total_projects = len(manifest_urls)
 
         proj_idx = -1
         last_visited = datetime.now(timezone.utc)
         fetcher_state: _FetcherState = _FetcherState.load(self._state_repository, start_over=start_over)
         fetcher_state.total_projects = total_projects
         fetcher_state.store(self._state_repository)
-        for project_id in project_ids:
+        for manifest_url in manifest_urls:
             proj_idx += 1
             log.debug("Fetching project %d/%d", proj_idx, total_projects)
 
-            hosting_unit_id = HostingUnitIdWebById(_hosting_id=__hosting_id__, project_id=project_id)
             # try:
-            fetch_result = self.__fetch_one(fetcher_state, hosting_unit_id, last_visited)
+            fetch_result = self.__fetch_one_raw(fetcher_state, None, manifest_url, last_visited)
             # except FetcherError as err:
             #     log.warn(f"Failed to fetch project '{hosting_unit_id}': {err}")
             #     continue
