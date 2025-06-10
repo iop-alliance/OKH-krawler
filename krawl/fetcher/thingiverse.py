@@ -217,7 +217,7 @@ class ThingiverseFetcher(Fetcher):
                 ),
                 hosting_unit_id=hosting_unit_id,
                 license=__dataset_license__,
-                licensor=__dataset_creator__,
+                licensor=[__dataset_creator__],
             )
 
             # fetch_result = FetchResult(data_set=data_set,
