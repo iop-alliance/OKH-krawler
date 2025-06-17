@@ -26,7 +26,11 @@ class HostingUnitIdWebById(HostingUnitId):
     project_id: str
 
     def to_path_str(self) -> str:
-        return f"{self.hosting_id()}/{self.project_id}"
+        proj_id: str = str(self.project_id)
+        if self.hosting_id() == HostingId.THINGIVERSE_COM:
+            group = int(int(self.project_id) / 10000)
+            proj_id = f"{group}/{self.project_id}"
+        return f"{self.hosting_id()}/{proj_id}"
 
     def hosting_id(self) -> HostingId:
         return self._hosting_id

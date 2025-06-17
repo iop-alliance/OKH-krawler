@@ -258,10 +258,12 @@ class ThingiverseFetcher(Fetcher):
             thing_meta: StorageThingMeta | None = None
             thing: Hit | None = None
             for (thing_meta_cur, thing_api_json_file) in read_thing_metas_with_path(slice_file_path):
-                thing_id_cur: int = thing_meta_cur['id']
+                thing_id_cur: int = int(thing_meta_cur['id'])
                 if thing_id_cur != thing_id_num:
                     continue
                 thing = json.loads(thing_api_json_file.read_text())
+                thing_meta = thing_meta_cur
+                break
             if thing_meta is None or thing is None:
                 raise FetcherError(f"Could not find thing with id {thing_id} in rust fetch-results")
         except ParserError as err:
@@ -349,7 +351,11 @@ class ThingiverseFetcher(Fetcher):
             # for (thing_meta, thing_api_json_file) in read_thing_metas_with_path(
             #         Path("rust/workdir/thingiverse_store/data/264000/open_source.csv")):  # HACK
             thing_id = thing_meta["id"]
-            final_proj_file = Path(f"workdir/thingiverse.com/{thing_id}/rdf.ttl")
+            hosting_unit_id = HostingUnitIdWebById(
+                _hosting_id= HostingId.THINGIVERSE_COM,
+                project_id= str(thing_id)
+                )
+            final_proj_file = Path(f"workdir/{hosting_unit_id.to_path_str()}/data.okh.ttl")
             if final_proj_file.exists():
                 log.debug("Thing %s already fetched; skipping it!", thing_id)
                 continue
@@ -359,7 +365,11 @@ class ThingiverseFetcher(Fetcher):
             #     self.__fetch_one()
         # for thing_id in range(min_thing_id, max_thing_id):
         # raw_project: dict[str, Any] = {}
-            thing: Hit = json.loads(thing_api_json_file.read_text())
+            json_content_str: str = thing_api_json_file.read_text()
+            if json_content_str == '':
+                raise FetcherError(f"API result JSON file is empty: '{thing_api_json_file}'")
+
+            thing: Hit = json.loads(json_content_str)
             # raw_project["thing"] = thing
             # thing_id: int = thing["id"]
             thing_id_str: str = str(thing_id)
