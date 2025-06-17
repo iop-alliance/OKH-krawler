@@ -103,7 +103,7 @@ class TOMLSerializer(Serializer):
         except Exception as err:
             serialized_json: str | None = None
             if project_dict_clean is not None:
-                json_serialize(project_dict_clean)
+                serialized_json = json_serialize(project_dict_clean)
             raise SerializerError(
                 f"Failed to serialize TOML for project '{fetch_result.data_set.hosting_unit_id}': {err}\ndata:\n{serialized_json}"
             ) from err
