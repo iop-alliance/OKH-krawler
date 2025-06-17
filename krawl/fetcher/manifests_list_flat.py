@@ -26,9 +26,9 @@ from krawl.model.project_id import ProjectId
 from krawl.model.project_part_reference import Ref
 from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.repository import FetcherStateRepository
-from krawl.util import url_encode_path
 
-from .manifests_repo import TOML_MANIFEST_FILES_GLOB_1, TOML_MANIFEST_FILES_GLOB_2, YAML_MANIFEST_FILES_GLOB_1, YAML_MANIFEST_FILES_GLOB_2
+from .manifests_repo import (TOML_MANIFEST_FILES_GLOB_1, TOML_MANIFEST_FILES_GLOB_2, YAML_MANIFEST_FILES_GLOB_1,
+                             YAML_MANIFEST_FILES_GLOB_2)
 
 __long_name__: str = "manifests-list-flat"
 __hosting_id__: HostingId = HostingId.MANIFESTS_LIST_FLAT  # TODO FIXME HACK
@@ -165,7 +165,10 @@ class ManifestsListFlatFetcher(Fetcher):
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
         num_found_manifests = 0
         num_scraped_manifests = 0
-        for glob in [TOML_MANIFEST_FILES_GLOB_1, TOML_MANIFEST_FILES_GLOB_2, YAML_MANIFEST_FILES_GLOB_1, YAML_MANIFEST_FILES_GLOB_2]:
+        for glob in [
+                TOML_MANIFEST_FILES_GLOB_1, TOML_MANIFEST_FILES_GLOB_2, YAML_MANIFEST_FILES_GLOB_1,
+                YAML_MANIFEST_FILES_GLOB_2
+        ]:
             log.debug("fetching projects with recursive glob '%s' ...", glob)
             for potential_toml_manifest_path in self.scrape_dir.rglob(glob):
                 # print(potential_toml_manifest_path.name)
@@ -174,12 +177,14 @@ class ManifestsListFlatFetcher(Fetcher):
                 potential_toml_manifest_path_rel = potential_toml_manifest_path.relative_to(self.scrape_dir)
 
                 try:
-                    if unquote(potential_toml_manifest_path_rel.parent.name).startswith("https://projects.openhardware.science/"):
+                    if unquote(potential_toml_manifest_path_rel.parent.name).startswith(
+                            "https://projects.openhardware.science/"):
                         log.warn(
                             f"Manifests-list-flat - HACK Skipping 'openhardware.science' project: {potential_toml_manifest_path_rel}"
                         )
                         continue
-                    if unquote(potential_toml_manifest_path_rel.parent.name).startswith("https://field-ready-projects.openknowhow.org/"):
+                    if unquote(potential_toml_manifest_path_rel.parent.name).startswith(
+                            "https://field-ready-projects.openknowhow.org/"):
                         log.warn(
                             f"Manifests-list-flat - HACK Skipping 'field-ready' project: {potential_toml_manifest_path_rel}"
                         )

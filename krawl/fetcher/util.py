@@ -14,10 +14,11 @@ from pathlib import Path
 
 import tomli
 import yaml
-# import psutil
 
 from krawl.errors import ConversionError
 from krawl.log import get_child_logger
+
+# import psutil
 
 log = get_child_logger("util")
 

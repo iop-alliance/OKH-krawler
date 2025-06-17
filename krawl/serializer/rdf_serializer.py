@@ -7,12 +7,12 @@
 from __future__ import annotations
 
 import base64
+import zlib
 from datetime import datetime
 from pathlib import Path
 from re import sub
 from typing import Callable
 from urllib.parse import urlparse, urlunparse
-import zlib
 
 import validators
 from rdflib import DCTERMS, FOAF, OWL, RDF, RDFS, VOID, XSD, Graph, Literal, Namespace, URIRef
@@ -825,7 +825,8 @@ class RDFSerializer(Serializer):
         module_subject = cls._add_project(graph, namespace, fetch_result, project)
 
         if project.normalized_toml:
-            compressed_normalized_manifest_toml_content: bytes = zlib.compress(bytearray(project.normalized_toml, 'utf-8'), zlib.Z_BEST_COMPRESSION)
+            compressed_normalized_manifest_toml_content: bytes = zlib.compress(
+                bytearray(project.normalized_toml, 'utf-8'), zlib.Z_BEST_COMPRESSION)
             b64_bytes: bytes = base64.b64encode(compressed_normalized_manifest_toml_content)
             b64_str: str = b64_bytes.decode('utf-8')
             cls.add(toml_graph, module_subject, OKH.normalizedManifestContent, b64_str)

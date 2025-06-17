@@ -154,7 +154,10 @@ class ManifestsRepoFetcher(Fetcher):
     def fetch_all(self, start_over=True) -> Generator[FetchResult]:
         num_found_manifests = 0
         num_scraped_manifests = 0
-        for glob in [TOML_MANIFEST_FILES_GLOB_1, TOML_MANIFEST_FILES_GLOB_2, YAML_MANIFEST_FILES_GLOB_1, YAML_MANIFEST_FILES_GLOB_2]:
+        for glob in [
+                TOML_MANIFEST_FILES_GLOB_1, TOML_MANIFEST_FILES_GLOB_2, YAML_MANIFEST_FILES_GLOB_1,
+                YAML_MANIFEST_FILES_GLOB_2
+        ]:
             log.debug("fetching projects with recursive glob '%s' ...", glob)
             for potential_toml_manifest_path in self.scrape_dir.rglob(glob):
                 # print(potential_toml_manifest_path.name)

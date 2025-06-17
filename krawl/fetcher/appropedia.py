@@ -173,8 +173,8 @@ class AppropediaFetcher(Fetcher):
         manifest_dl_url = f"https://www.appropedia.org/scripts/generateOpenKnowHowManifest.php?title={encoded_project_id}"
         return self.__fetch_one_raw(fetcher_state, hosting_unit_id, manifest_dl_url, last_visited)
 
-    def __fetch_one_raw(self, fetcher_state: _FetcherState, hosting_unit_id: HostingUnitIdWebById | None, manifest_dl_url: str,
-                    last_visited: datetime) -> FetchResult:
+    def __fetch_one_raw(self, fetcher_state: _FetcherState, hosting_unit_id: HostingUnitIdWebById | None,
+                        manifest_dl_url: str, last_visited: datetime) -> FetchResult:
         try:
             try:
                 okh_v1_contents = self._download_manifest(manifest_dl_url)
@@ -216,8 +216,8 @@ class AppropediaFetcher(Fetcher):
         except FetcherError as err:
             if not hosting_unit_id:
                 hosting_unit_id = HostingUnitIdWebById(
-                    _hosting_id = __hosting_id__,
-                    project_id = manifest_dl_url,
+                    _hosting_id=__hosting_id__,
+                    project_id=manifest_dl_url,
                 )
             self._failed_fetch(FailedFetch(hosting_unit_id=hosting_unit_id, error=err))
             raise err

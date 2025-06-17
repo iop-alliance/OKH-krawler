@@ -178,10 +178,13 @@ class ThingiverseFetcher(Fetcher):
             "Authorization": f"Bearer {config.access_token}",
         })
 
-    def __fetch_one(self,
-    # fetcher_state: _FetcherState,
-    hosting_unit_id: HostingUnitIdWebById, last_visited: datetime,
-                    meta: StorageThingMeta, raw_thing: Hit) -> FetchResult:
+    def __fetch_one(
+            self,
+            # fetcher_state: _FetcherState,
+            hosting_unit_id: HostingUnitIdWebById,
+            last_visited: datetime,
+            meta: StorageThingMeta,
+            raw_thing: Hit) -> FetchResult:
         try:
             thing_id = hosting_unit_id.project_id
             log.info("Try to fetch thing with id %s", thing_id)
@@ -351,10 +354,7 @@ class ThingiverseFetcher(Fetcher):
             # for (thing_meta, thing_api_json_file) in read_thing_metas_with_path(
             #         Path("rust/workdir/thingiverse_store/data/264000/open_source.csv")):  # HACK
             thing_id = thing_meta["id"]
-            hosting_unit_id = HostingUnitIdWebById(
-                _hosting_id= HostingId.THINGIVERSE_COM,
-                project_id= str(thing_id)
-                )
+            hosting_unit_id = HostingUnitIdWebById(_hosting_id=HostingId.THINGIVERSE_COM, project_id=str(thing_id))
             final_proj_file = Path(f"workdir/{hosting_unit_id.to_path_str()}/data.okh.ttl")
             if final_proj_file.exists():
                 log.debug("Thing %s already fetched; skipping it!", thing_id)
