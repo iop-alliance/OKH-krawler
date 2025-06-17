@@ -65,15 +65,22 @@ class DictUtils:
             raise TypeError
 
     @staticmethod
+    def str_to_datetime(datetime_str: str) -> datetime | None:
+        try:
+            return datetime.fromisoformat(datetime_str)
+        except Exception:
+            if datetime_str == '-001-11-30T00:00:00+00:00':
+                return datetime(1971, 1, 1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None, fold=0)
+            else:
+                return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S%z")
+
+    @staticmethod
     def to_datetime(value: Any) -> datetime | None:
         if value is None:
             return None
         if isinstance(value, str):
             datetime_str: str = value
-            try:
-                return datetime.fromisoformat(datetime_str)
-            except Exception:
-                return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S%z")
+            return DictUtils.str_to_datetime(datetime_str)
         if isinstance(value, int):
             return datetime.fromtimestamp(value)
         return None

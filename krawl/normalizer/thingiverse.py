@@ -164,7 +164,7 @@ class ThingiverseNormalizer(Normalizer):
             file.mime_type = file.evaluate_mime_type()
             added_raw = raw.get("added", None)
             if added_raw:
-                added_fmtd = datetime.strptime(added_raw, "%Y-%m-%dT%H:%M:%S%z")
+                added_fmtd = DictUtils.str_to_datetime(added_raw)
                 file.created_at = added_fmtd
                 file.last_changed = added_fmtd
             file.last_visited = datetime.now(timezone.utc)
