@@ -53,8 +53,9 @@ class NormalizationListener(FetchListener):
             log.warn("Failed to normalize fetch result '%s': %s", fetch_result.data_set.hosting_unit_id, err)
             return
         toml: str = self.serializer_toml.serialize(fetch_result, project)
-        (meta_ttl, ttl) = self.serializer_rdf.serialize(fetch_result, project)
-        self.fetch_result_repository.store_final(fetch_result, toml, meta_ttl, ttl)
+        project.normalized_toml = toml
+        (toml_ttl, meta_ttl, ttl) = self.serializer_rdf.serialize(fetch_result, project)
+        self.fetch_result_repository.store_final(fetch_result, toml_ttl, meta_ttl, ttl)
 
 
 class FetcherFactory:

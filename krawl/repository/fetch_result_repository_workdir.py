@@ -47,6 +47,13 @@ class FetchResultRepositoryWorkdir(FetchResultRepository):
     def __init__(self, repository_config: Config):
         self._workdir = repository_config.workdir
 
+    def _store_text_file(self, dir: Path, file_name: str, content: str) -> None:
+        file_path: Path = Path(os.path.join(dir, file_name))
+        if isinstance(content, str):
+            file_path.write_text(content)
+        else:
+            raise TypeError(f"Text-file content must be of type `str`, but is: {type(content)}")
+
     def _store_file(self, dir: Path, file_stem: str, file_type: ManifestFormat, content: str | bytes | dict) -> None:
         file_path: Path = Path(os.path.join(dir, f"{file_stem}.{file_type}"))
         if isinstance(content, dict):
@@ -74,13 +81,16 @@ class FetchResultRepositoryWorkdir(FetchResultRepository):
         project_dir: Path = self._prepare_store(hosting_unit_id, content_type)
 
         data_set_json: str = json_serialize(fetch_result.data_set)
-        self._store_file(project_dir, "meta", ManifestFormat.JSON, data_set_json)
+        write_raw: bool = False
+        if write_raw:
+            self._store_file(project_dir, "meta", ManifestFormat.JSON, data_set_json)
 
-        self._store_file(project_dir, "orig", fetch_result.data.format, fetch_result.data.content)
+            self._store_file(project_dir, "orig", fetch_result.data.format, fetch_result.data.content)
+
 
         self._finalize_store(hosting_unit_id, content_type, project_dir)
 
-    def store_final(self, fetch_result: FetchResult, normalized_content: str, rdf_meta_content: str,
+    def store_final(self, fetch_result: FetchResult, rdf_normalized_toml_content: str, rdf_meta_content: str,
                     rdf_content: str) -> None:
         hosting_unit_id: HostingUnitId = fetch_result.data_set.hosting_unit_id
         content_type = "complete"
@@ -93,8 +103,8 @@ class FetchResultRepositoryWorkdir(FetchResultRepository):
 
             self._store_file(project_dir, "orig", fetch_result.data.format, fetch_result.data.content)
 
-        self._store_file(project_dir, "normalized.okh", ManifestFormat.TOML, normalized_content)
 
+        self._store_file(project_dir, "normalized.okh_toml", ManifestFormat.TURTLE, rdf_normalized_toml_content)
         self._store_file(project_dir, "meta", ManifestFormat.TURTLE, rdf_meta_content)
         self._store_file(project_dir, "data.okh", ManifestFormat.TURTLE, rdf_content)
 

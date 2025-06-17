@@ -56,6 +56,7 @@ class Project:  # pylint: disable=too-many-instance-attributes
     source: list[File] = field(default_factory=list)
     export: list[File] = field(default_factory=list)
     auxiliary: list[File] = field(default_factory=list)
+    normalized_toml: str | None = None
 
     @property
     def id(self) -> ProjectId:

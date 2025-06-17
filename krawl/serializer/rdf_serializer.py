@@ -6,11 +6,13 @@
 
 from __future__ import annotations
 
+import base64
 from datetime import datetime
 from pathlib import Path
 from re import sub
 from typing import Callable
 from urllib.parse import urlparse, urlunparse
+import zlib
 
 import validators
 from rdflib import DCTERMS, FOAF, OWL, RDF, RDFS, VOID, XSD, Graph, Literal, Namespace, URIRef
@@ -76,15 +78,16 @@ class RDFSerializer(Serializer):
     def extensions(cls) -> list[str]:
         return ["ttl"]
 
-    def serialize(self, fetch_result: FetchResult, project: Project) -> tuple[str, str]:
+    def serialize(self, fetch_result: FetchResult, project: Project) -> tuple[str, str, str]:
         # try:
-        (meta_graph, graph) = self._make_graph(fetch_result, project)
+        (toml_graph, meta_graph, graph) = self._make_graph(fetch_result, project)
 
+        toml_serialized: str = toml_graph.serialize(format="turtle", destination=None, encoding=None)
         meta_serialized: str = meta_graph.serialize(format="turtle", destination=None, encoding=None)
         serialized: str = graph.serialize(format="turtle", destination=None, encoding=None)
         # except Exception as err:
         #     raise SerializerError(f"failed to serialize RDF: {err}") from err
-        return (meta_serialized, serialized)
+        return (toml_serialized, meta_serialized, serialized)
 
     @classmethod
     def _data_provider(cls, hosting_id: HostingId) -> URIRef:
@@ -795,10 +798,15 @@ class RDFSerializer(Serializer):
         graph.bind("xsd", XSD)
 
     @classmethod
-    def _make_graph(cls, fetch_result: FetchResult, project: Project) -> tuple[Graph, Graph]:
+    def _make_graph(cls, fetch_result: FetchResult, project: Project) -> tuple[Graph, Graph, Graph]:
+        namespace = cls._make_project_namespace(project)
+
+        toml_graph: Graph = Graph()
+        cls._setup_graph(toml_graph, meta=True)
+        toml_graph.bind("", namespace)
+
         meta_graph: Graph = Graph()
         cls._setup_graph(meta_graph, meta=True)
-        namespace = cls._make_project_namespace(project)
         meta_graph.bind("", namespace)
 
         graph: Graph = Graph()
@@ -815,6 +823,13 @@ class RDFSerializer(Serializer):
         data_set_subj, subj_src = cls._add_data_set(meta_graph, namespace, fetch_result, project)
 
         module_subject = cls._add_project(graph, namespace, fetch_result, project)
+
+        if project.normalized_toml:
+            compressed_normalized_manifest_toml_content: bytes = zlib.compress(bytearray(project.normalized_toml, 'utf-8'), zlib.Z_BEST_COMPRESSION)
+            b64_bytes: bytes = base64.b64encode(compressed_normalized_manifest_toml_content)
+            b64_str: str = b64_bytes.decode('utf-8')
+            cls.add(toml_graph, module_subject, OKH.normalizedManifestContent, b64_str)
+
         cls.add(meta_graph, data_set_subj, VOID.rootResource, module_subject)
 
         cls.add(graph, module_subject, ODS.hasSource, subj_src)
@@ -850,4 +865,4 @@ class RDFSerializer(Serializer):
         for part_subject in part_subjects:
             cls.add(graph, module_subject, OKH.hasComponent, part_subject)
 
-        return (meta_graph, graph)
+        return (toml_graph, meta_graph, graph)
