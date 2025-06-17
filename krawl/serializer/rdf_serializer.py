@@ -626,7 +626,7 @@ class RDFSerializer(Serializer):
         cls.add(graph, module_subject, OKH.name, project.name)
         # NOTE That is not how this works. It would have to link to an RDF subject (by IRI) that represents the same module but un-frozen/non-permanent. IT would likely be in an other file.
         #cls.add(graph, module_subject, OKH.versionOf, project.repo)
-        # cls.add(graph, module_subject, ODS.source, project.repo)
+        cls.add(graph, module_subject, ODS.source, project.repo)
 
         # TODO FIXME This next line is not really correct, but it needs changes elsewhere (probably even the manifest and/or ontology) to be done right
         # hosting_id = fetch_result.data_set.hosting_unit_id.hosting_id()
