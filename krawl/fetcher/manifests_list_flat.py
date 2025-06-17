@@ -28,25 +28,28 @@ from krawl.model.sourcing_procedure import SourcingProcedure
 from krawl.repository import FetcherStateRepository
 from krawl.util import url_encode_path
 
-__long_name__: str = "manifests-repo"
-__hosting_id__: HostingId = HostingId.MANIFESTS_REPO  # TODO FIXME HACK
+from .manifests_repo import TOML_MANIFEST_FILES_GLOB_1, TOML_MANIFEST_FILES_GLOB_2, YAML_MANIFEST_FILES_GLOB_1, YAML_MANIFEST_FILES_GLOB_2
+
+__long_name__: str = "manifests-list-flat"
+__hosting_id__: HostingId = HostingId.MANIFESTS_LIST_FLAT  # TODO FIXME HACK
 __sourcing_procedure__: SourcingProcedure = SourcingProcedure.MANIFEST
 log = get_child_logger(__long_name__)
 
-MANIFEST_FILE_EXTENSIONS = ['toml', 'yaml', 'yml', 'json', 'ttl', 'rdf', 'jsonld']
-MANIFEST_FILES_GLOB = ("**/?(*.)okh.{", ",".join(MANIFEST_FILE_EXTENSIONS), "}")
-TOML_MANIFEST_FILES_GLOB_1 = "**/okh.toml"
-TOML_MANIFEST_FILES_GLOB_2 = "**/*.okh.toml"
-YAML_MANIFEST_FILES_GLOB_1 = "**/*okh.yml"
-YAML_MANIFEST_FILES_GLOB_2 = "**/*okh.yaml"
+# MANIFEST_FILE_EXTENSIONS = ['toml', 'yaml', 'yml', 'json', 'ttl', 'rdf', 'jsonld']
+# MANIFEST_FILES_GLOB = ("**/?(*.)okh.{", ",".join(MANIFEST_FILE_EXTENSIONS), "}")
+# TOML_MANIFEST_FILES_GLOB_1 = "**/okh.toml"
+# TOML_MANIFEST_FILES_GLOB_2 = "**/*.okh.toml"
 
 
-class ManifestsRepoFetcher(Fetcher):
-    """Fetcher for a local directory.
+class ManifestsListFlatFetcher(Fetcher):
+    """Fetcher for a local list of manifests.
 
-    Said directory might be a git repo "scraped" by the rust okh-scraper.
-    So really, this just parses a bunch of local '?(*.)okh.toml' files
-    within a directory tree."""
+    Said list is a simple text file with one URL per line.
+    You may also think of it as a CSV file with one column and no header.
+    A common way for this list to come into existence,
+    is to scrape a recursive list (Kaspar, OKH v1 style) with the rust okh-scraper.
+    So really, this just parses a single, local 'manifest_urls.csv' file,
+    and downloads each of the manifests."""
     CONFIG_SCHEMA_EXTRA: dict = {
         "scrape-dir": {
             "type": "string",
@@ -58,15 +61,23 @@ class ManifestsRepoFetcher(Fetcher):
                 "description": "Local file-system path to a directory(-tree) containing '?(*.)okh.toml' manifest files"
             }
         },
+        # "list-file": {
+        #     "type": "string",
+        #     "coerce": "strip_str",
+        #     "required": True,
+        #     "nullable": False,
+        #     "meta": {
+        #         "long_name": "list-file",
+        #         "description": "Local file-system path to a (single column) CSV file containing HTTP(S) URLs to manifest files"
+        #     }
+        # },
     }
     CONFIG_SCHEMA = Fetcher._generate_config_schema(long_name=__long_name__, extra_schema=CONFIG_SCHEMA_EXTRA)
 
     def __init__(self, state_repository: FetcherStateRepository, config: Config) -> None:
         super().__init__(state_repository=state_repository)
+        # self.list_file: Path = Path(str(config.get("list-file")))
         self.scrape_dir: Path = Path(str(config.get("scrape-dir")))
-        self.repo_url = unquote(self.scrape_dir.name)
-        # print(self.repo_url)
-        # exit(99)
 
     def __fetch_one(self, hosting_unit_id: HostingUnitIdForge, manifest_url: str,
                     okh_manifest_path: Path) -> FetchResult:
@@ -141,7 +152,7 @@ class ManifestsRepoFetcher(Fetcher):
             raise err
 
     def _extract_url_from_file(self, manifest_file: Path) -> tuple[str, HostingUnitIdForge]:
-        url = f"{self.repo_url}/{url_encode_path(manifest_file)}"
+        url = unquote(manifest_file.parent.name)
         try:
             hosting_unit_id, _path = HostingUnitIdForge.from_url(url)
         except ParserError as err:
@@ -163,9 +174,19 @@ class ManifestsRepoFetcher(Fetcher):
                 potential_toml_manifest_path_rel = potential_toml_manifest_path.relative_to(self.scrape_dir)
 
                 try:
+                    if unquote(potential_toml_manifest_path_rel.parent.name).startswith("https://projects.openhardware.science/"):
+                        log.warn(
+                            f"Manifests-list-flat - HACK Skipping 'openhardware.science' project: {potential_toml_manifest_path_rel}"
+                        )
+                        continue
+                    if unquote(potential_toml_manifest_path_rel.parent.name).startswith("https://field-ready-projects.openknowhow.org/"):
+                        log.warn(
+                            f"Manifests-list-flat - HACK Skipping 'field-ready' project: {potential_toml_manifest_path_rel}"
+                        )
+                        continue
                     manifest_url, hosting_unit_id = self._extract_url_from_file(potential_toml_manifest_path_rel)
                     log.debug(
-                        f"Manifests-repo - hosting unit ID: {hosting_unit_id}\n\t{manifest_url}\n\t{potential_toml_manifest_path_rel}"
+                        f"Manifests-list-flat - hosting unit ID: {hosting_unit_id}\n\t{manifest_url}\n\t{potential_toml_manifest_path_rel}"
                     )
                 except FetcherError as err:
                     log.warn(f"Skipping project file, because: {err}")

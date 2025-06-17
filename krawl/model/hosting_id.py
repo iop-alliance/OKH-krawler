@@ -35,6 +35,7 @@ class HostingType(StrEnum):
     OSHWA = "Oshwa"
     THINGIVERSE = "Thingiverse"
     GIT_REPO = "a_git_repo"
+    VARIOUS = "various"
 
     def __str__(self) -> str:
         match self:
@@ -50,6 +51,8 @@ class HostingType(StrEnum):
                 return "SW|oshwa.org"
             case self.THINGIVERSE:
                 return "SW|thingiverse.com"
+            case self.VARIOUS:
+                return "<UNKNOWN>"
             case _:
                 raise NotImplementedError(f"Missing `__str__()` impl for enum variant {self}")
 
@@ -57,7 +60,7 @@ class HostingType(StrEnum):
         match self:
             case self.FORGE_JO | self.GIT_HUB | self.GIT_LAB | self.GIT_REPO:
                 return HostingCategory.FORGE
-            case self.APPROPEDIA | self.OSHWA | self.THINGIVERSE:
+            case self.APPROPEDIA | self.OSHWA | self.THINGIVERSE | self.VARIOUS:
                 return HostingCategory.OTHER
             case _:
                 raise NotImplementedError(f"Missing `category()` impl for enum variant {self}")
@@ -79,6 +82,7 @@ class HostingId(StrEnum):
     OSHWA_ORG = "oshwa.org"  # "certification.oshwa.org"
     THINGIVERSE_COM = "thingiverse.com"
     MANIFESTS_REPO = "manifests-repo"
+    MANIFESTS_LIST_FLAT = "manifests-list-flat"
 
     def type(self) -> HostingType:
         match self:
@@ -96,6 +100,8 @@ class HostingId(StrEnum):
                 platform_type = HostingType.THINGIVERSE
             case self.MANIFESTS_REPO:
                 platform_type = HostingType.GIT_REPO
+            case self.MANIFESTS_LIST_FLAT:
+                platform_type = HostingType.VARIOUS
             case _:
                 raise NotImplementedError(f"Missing `self.type()` impl for enum variant {self}")
 

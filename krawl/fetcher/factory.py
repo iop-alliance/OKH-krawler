@@ -10,7 +10,7 @@ from collections.abc import Generator
 
 from krawl.config import Config
 from krawl.errors import FetcherError, NormalizerError
-from krawl.fetcher import Fetcher, appropedia, github, manifests_repo, oshwa, thingiverse
+from krawl.fetcher import Fetcher, appropedia, github, manifests_list_flat, manifests_repo, oshwa, thingiverse
 from krawl.fetcher.event import FetchListener
 # from krawl.cli.command.fetch import NormalizationListener
 from krawl.fetcher.result import FetchResult
@@ -33,6 +33,7 @@ _fetcher_classes = {
     github.__hosting_id__: github.GitHubFetcher,
     oshwa.__hosting_id__: oshwa.OshwaFetcher,
     thingiverse.__hosting_id__: thingiverse.ThingiverseFetcher,
+    manifests_list_flat.__hosting_id__: manifests_list_flat.ManifestsListFlatFetcher,
     manifests_repo.__hosting_id__: manifests_repo.ManifestsRepoFetcher,
 }
 
