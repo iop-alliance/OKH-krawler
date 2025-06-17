@@ -150,8 +150,9 @@ class ThingiverseNormalizer(Normalizer):
     def _function(cls, raw_thing: Hit) -> str | None:
         raw_description = raw_thing.get("description")
         if raw_description:
-            return strip_html(raw_description).strip()
-        return None
+            raw_description = strip_html(raw_description).strip()
+            raw_description = raw_description.replace("\r\n", "\n")
+        return raw_description
 
     @classmethod
     def _image(cls, project: Project, images: dict[str, Image], url: str | None, raw: dict) -> None:
