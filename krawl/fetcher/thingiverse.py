@@ -178,7 +178,9 @@ class ThingiverseFetcher(Fetcher):
             "Authorization": f"Bearer {config.access_token}",
         })
 
-    def __fetch_one(self, fetcher_state: _FetcherState, hosting_unit_id: HostingUnitIdWebById, last_visited: datetime,
+    def __fetch_one(self,
+    # fetcher_state: _FetcherState,
+    hosting_unit_id: HostingUnitIdWebById, last_visited: datetime,
                     meta: StorageThingMeta, raw_thing: Hit) -> FetchResult:
         try:
             thing_id = hosting_unit_id.project_id
@@ -235,10 +237,10 @@ class ThingiverseFetcher(Fetcher):
             self._fetched(fetch_result)
 
             # save current progress
-            fetcher_state = _FetcherState.load(self._state_repository)
-            fetcher_state.next_fetch += 1
-            fetcher_state.fetched_ids.append(thing_id)
-            fetcher_state.store(self._state_repository)
+            # fetcher_state = _FetcherState.load(self._state_repository)
+            # fetcher_state.next_fetch += 1
+            # fetcher_state.fetched_ids.append(thing_id)
+            # fetcher_state.store(self._state_repository)
             return fetch_result
         except FetcherError as err:
             self._failed_fetch(FailedFetch(hosting_unit_id=hosting_unit_id, error=err))
@@ -265,8 +267,9 @@ class ThingiverseFetcher(Fetcher):
         except ParserError as err:
             raise FetcherError(f"Invalid {__hosting_id__} project URL: '{project_id.uri}'") from err
         last_visited = datetime.now(timezone.utc)
-        fetcher_state: _FetcherState = _FetcherState.load(self._state_repository)
-        return self.__fetch_one(fetcher_state, hosting_unit_id, last_visited, thing_meta, thing)
+        # fetcher_state: _FetcherState = _FetcherState.load(self._state_repository)
+        # return self.__fetch_one(fetcher_state, hosting_unit_id, last_visited, thing_meta, thing)
+        return self.__fetch_one(hosting_unit_id, last_visited, thing_meta, thing)
 
     def _do_request(self, url, params=None):
 
@@ -317,7 +320,7 @@ class ThingiverseFetcher(Fetcher):
 
     def fetch_all(self, start_over=False) -> Generator[FetchResult]:
         projects_counter: int = 0
-        fetcher_state = _FetcherState.load(self._state_repository, start_over=start_over)
+        # fetcher_state = _FetcherState.load(self._state_repository, start_over=start_over)
 
         # latest_thing_id: int = self.fetch_latest_thing_id()
         # min_thing_id = self.config.fetch_range.min
@@ -364,7 +367,7 @@ class ThingiverseFetcher(Fetcher):
             # next_total_hit_index += 1
             try:
                 hosting_unit_id = HostingUnitIdWebById(_hosting_id=__hosting_id__, project_id=thing_id_str)
-                fetch_result = self.__fetch_one(fetcher_state, hosting_unit_id, last_visited, thing_meta, thing)
+                fetch_result = self.__fetch_one(hosting_unit_id, last_visited, thing_meta, thing)
                 log.debug("yield fetch result #%d: %s", projects_counter, hosting_unit_id)
                 projects_counter += 1
                 yield fetch_result
