@@ -96,6 +96,9 @@ class TOMLSerializer(Serializer):
                 raise SerializerError(
                     f"No data left after removing empty parts; regarding project '{fetch_result.data_set.hosting_unit_id}'"
                 )
+            # TODO HACK Workaround for one specific thingiverse project, ID: 682052
+            if "function" in project_dict_clean and project_dict_clean["function"].startswith("\b"):
+                project_dict_clean["function"] = project_dict_clean["function"][1:]
             serialized = toml.dumps(project_dict_clean)
         except Exception as err:
             serialized_json: str | None = None
