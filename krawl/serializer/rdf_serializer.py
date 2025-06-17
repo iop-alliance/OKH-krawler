@@ -39,7 +39,8 @@ from .util import is_doi, is_web_url
 
 BASE_IRI_MIME = "http://www.iana.org/assignments/media-types"
 BASE_IRI_SCHEMA_ORG = "https://schema.org"
-BASE_IRI_SPDX = "http://spdx.org/rdf/terms"
+# BASE_IRI_SPDX = "http://spdx.org/rdf/terms"
+BASE_IRI_SPDXL = "http://spdx.org/licenses"
 
 BASE_IRI_ODS = "http://w3id.org/oseg/ont/ods"
 BASE_IRI_OKH = "http://w3id.org/oseg/ont/okh"
@@ -52,7 +53,8 @@ BASE_IRI_TSDC_REQUIREMENTS = "http://w3id.org/oseg/ont/tsdc/requirements"
 
 MIME = Namespace(f"{BASE_IRI_MIME}/")
 SCHEMA = Namespace(f"{BASE_IRI_SCHEMA_ORG}/")
-SPDX = Namespace(f"{BASE_IRI_SPDX}#")
+# SPDX = Namespace(f"{BASE_IRI_SPDX}#")
+SPDXL = Namespace(f"{BASE_IRI_SPDXL}/")
 
 ODS = Namespace(f"{BASE_IRI_ODS}#")
 OKH = Namespace(f"{BASE_IRI_OKH}#")
@@ -580,7 +582,7 @@ class RDFSerializer(Serializer):
                 raise TypeError(f"Unknown license type: {type(license_cont)} - content:\n{license_cont}")
             # if project.license.is_spdx:
             if is_spdx_id(license_id):
-                cls.add(graph, subj, ODS.license, SPDX[license_id])
+                cls.add(graph, subj, ODS.license, SPDXL[license_id])
             elif license_id == "LicenseRef-NONE" or license_id == "LicenseRef-NOASSERTION":
                 cls.add(graph, subj, ODS.license, OKHKRAWL.NoAssertionLicense)
             elif license_id == "LicenseRef-AllRightsReserved":
@@ -788,7 +790,8 @@ class RDFSerializer(Serializer):
         graph.bind("okhkrawl", OKHKRAWL)
         graph.bind("owl", OWL)
         graph.bind("schema", SCHEMA)
-        graph.bind("spdx", SPDX)
+        # graph.bind("spdx", SPDX)
+        graph.bind("spdxl", SPDXL)
         graph.bind("xsd", XSD)
 
     @classmethod
