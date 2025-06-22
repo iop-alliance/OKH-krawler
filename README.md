@@ -23,37 +23,50 @@ Please do not yet use for anything then experiments!
 ---
 
 It leverages the _distributed ready_ [Open Know-How (OKH)][OKH]
-[Library of Open Source Hardware (LOSH)](https://losh.opennext.eu).
-The crawler currently searches:
+standard/Ontology.
 
-- [GitHub](https://github.com),
-- [OSHWA](https://certification.oshwa.org), and
+We currently search hardware projects on:
+
+- [Appropedia](https://www.appropedia.org)
+- [OSHWA](https://certification.oshwa.org)
 - [Thingiverse](https://www.thingiverse.com)
+- Custom git repos containig OKH manifests
+- Recursive lists of manifest URLs (alpha stage)
 
-for hardware design projects.
+We also support projects hosted on these platforms,
+but we do not search on them,
+because they intentionally criple their search APIs
+to make this infeasible.
+
+- [GitHub](https://github.com)
+- [GitLab.com](https://gitlab.com)
 
 The projects raw data -
 which is either the contents of an [OKH] meta-data (aka manifest) file,
 or whatever the hosting platforms API
 (or alternatively web interface) provides about the project -
-is then stored as a file.
-Next to it is an other file ([JSON]),
-containing the crawling meta-data,
+is stored as a file.
+This file might already be in the OKH format
+if the platform supplies that,
+or more likely, it is in [JSON];
+Next to it is an other file (always in [JSON]),
+containing the scraping meta-data,
 like the source URL and crawling date.
 
 In a second step, all these files are then
 parsed,
 analyzed,
 sanitized,
-converted to a manifest file for the latest [OKH specification]
-(except it is already in [RDF] format)
-and then converted to [OKH] [RDF] data,
-which is then stored in a file.
+and if necessary converted,
+and we arrive at a manifest file for the latest [OKH specification]
+in the [TOML] format.
+This fiel is then converted to [OKH] [RDF] data,
+and also stored in a file.
 
 These files may then be hosted as-is in a git repo,
-or fed into an [RDF] [Triple-Store] like [Apache Jena], [OxiGraph] or [neo4j]
-Once such a project is found, its metadata is downloaded, parsed and sanitize,
-converted into a [RDF] format and uploaded into the database.
+or fed into an [RDF] [Triple-Store] like [Apache Jena], [OxiGraph] or [neo4j].
+From there, one can query the data through [SPARQL],
+or access it through a search web-UI.
 
 ## Install
 
@@ -171,6 +184,8 @@ of the `bump-my-version` tool installed:
 
 ```shell
 pip install --upgrade bump-my-version
+# ... or if your system does not allow this, use:
+# pipx install bump-my-version
 ```
 
 Then, to see what would happen without actually doing anything,
@@ -184,8 +199,8 @@ bump-my-version bump --dry-run -v --allow-dirty --new-version 3.0.0
 bump-my-version bump --help
 ```
 
-To actually execute a release,
-which crates a git tag, and commits changes to files,
+To actually perform a release,
+which commits changes to files and creates a git tag,
 choose one of these commands:
 
 ```shell
@@ -195,7 +210,8 @@ bump-my-version bump major -v
 bump-my-version bump -v --new-version 3.0.0
 ```
 
-And then push the changes; done!
+And then push the changes;
+done!
 
 [Apache Jena]: https://jena.apache.org/
 [crawler]: https://en.wikipedia.org/wiki/Web_crawler
@@ -211,3 +227,4 @@ And then push the changes; done!
 [YAML]: https://en.wikipedia.org/wiki/YAML
 [JSON]: https://en.wikipedia.org/wiki/JSON
 [Docker]: https://en.wikipedia.org/wiki/Docker_(software)
+[SPARQL]: https://en.wikipedia.org/wiki/SPARQL
