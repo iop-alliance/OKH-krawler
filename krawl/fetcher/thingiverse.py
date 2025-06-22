@@ -256,6 +256,7 @@ class ThingiverseFetcher(Fetcher):
             thing_id: str = hosting_unit_id.project_id
             thing_id_num: int = int(thing_id)
             slice_min_id: int = (thing_id_num // 1000) * 1000
+            # TODO HACK This is a dev machine local path; you'll need the <https://github.com/OSEGermany/okh-scraper/> at the "rust" part of this path.
             slice_file_path = Path(f"rust/workdir/thingiverse_store/data/{slice_min_id}/open_source.csv")
 
             thing_meta: StorageThingMeta | None = None
