@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2022 Andre Lehmann <aisberg@posteo.de>
-# SPDX-FileCopyrightText: 2024 Robin Vobruba <hoijui.quaero@gmail.com>
+# SPDX-FileCopyrightText: 2024-2025 Robin Vobruba <hoijui.quaero@gmail.com>
 #
 # SPDX-License-Identifier: CC0-1.0
 
@@ -33,7 +33,7 @@ RUN wget --quiet -O sanitize-v1-yaml \
 #     --build-arg okh_tool_release="0.5.3" \
 #     --build-arg some_other_var="bla/blu.bli" \
 #     .
-ARG okh_tool_release=0.5.3
+ARG okh_tool_release=2.4.1
 
 ENV OKH_TOOL_PKG="okh-tool-$okh_tool_release-x86_64-unknown-linux-musl"
 ENV OKH_TOOL_DL="https://github.com/OPEN-NEXT/LOSH-OKH-tool/releases/download/$okh_tool_release/$OKH_TOOL_PKG.tar.gz"
