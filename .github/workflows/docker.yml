@@ -33,6 +33,11 @@ jobs:
           username: ${{ vars.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       -
+        name: Prepare docker-ignore
+        run: |
+          echo "/.dockerignore" >> '.git/info/exclude'
+          cp .gitignore .dockerignore
+      -
         name: Prepare build meta-data
         run: |
           # This allows reproducible docker builds
