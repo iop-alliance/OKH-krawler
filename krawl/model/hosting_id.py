@@ -110,7 +110,8 @@ class HostingId(StrEnum):
     @classmethod
     def from_url(cls, url: str) -> HostingId:
         if not (isinstance(url, str) and validators.url(url)):
-            raise ParserError(f"invalid URL '{url}'") from ValueError
+            raise ParserError(
+                f"invalid URL '{url}' (type: {type(url)}, validators.url(url): {validators.url(url)})") from ValueError
         parsed_url = urlparse(url)
         domain = parsed_url.hostname
 
