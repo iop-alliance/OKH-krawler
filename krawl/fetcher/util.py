@@ -119,7 +119,7 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes:
     log.debug('Should have written file "%s".', fn_losh)
 
     # res.check_returncode()
-    with os.fdopen(fd_losh, "rb") as binary_file:
+    with open(fn_losh, "rb") as binary_file:
         manifest_contents = binary_file.read()
     log.debug('Read file "%s".', fn_losh)
 
