@@ -69,10 +69,12 @@ def sanitize_okh_v1_yaml(manifest_file: Path):
     using the external software 'sanitize-v1-yaml'
     from the okh-tool repo."""
 
-    conv_cmd: list[str] = ['sanitize-v1-yaml', '--in-place', str(manifest_file)]
-    # res = subprocess.run(conv_cmd)
+    cmd: list[str] = ['sanitize-v1-yaml', '--in-place', str(manifest_file)]
+    # res = subprocess.run(cmd)
     try:
-        subprocess.check_output(conv_cmd, stderr=subprocess.PIPE)
+        all_out = subprocess.check_output(cmd, stderr=subprocess.PIPE)
+        log.debug('cmd output:\n####################\n%s\n####################"',
+                  all_out.decode(sys.getfilesystemencoding()))
     except subprocess.CalledProcessError as err:
         raise ConversionError(
             "Failed to sanitize OKH v1 manifest,"
@@ -89,20 +91,22 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes:
     # manifest_contents = recuperate_invalid_yaml_manifest(manifest_contents)
 
     (fd_v1, fn_v1) = tempfile.mkstemp()
-    (fd_losh, fn_losh) = tempfile.mkstemp()
+    (_fd_losh, fn_losh) = tempfile.mkstemp()
     # Target file should not yet exist when converting
     os.remove(fn_losh)
 
     with os.fdopen(fd_v1, "wb") as binary_file:
         binary_file.write(manifest_contents)
 
-    conv_cmd = ['okh-tool', 'conv', fn_v1, fn_losh]
+    cmd = ['okh-tool', 'conv', fn_v1, fn_losh]
     try:
-        log.debug('Going to run command "%s" ...', " ".join(conv_cmd))
+        log.debug('Going to run command "%s" ...', " ".join(cmd))
         # proc = psutil.Process()
         # for (path, fd, _position, mode, flags) in proc.open_files():
         #     print("Open File: %s\t%s\t%s\t%s" % (fd, mode, flags, path))
-        subprocess.check_output(conv_cmd, stderr=subprocess.PIPE)
+        all_out = subprocess.check_output(cmd, stderr=subprocess.PIPE)
+        log.debug('cmd output:\n####################\n%s\n####################"',
+                  all_out.decode(sys.getfilesystemencoding()))
     except subprocess.CalledProcessError as err:
         sep = "-" * 80
         raise ConversionError("Failed to convert OKH v1 manifest to OKH LOSH,\n"
