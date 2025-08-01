@@ -9,10 +9,9 @@ from __future__ import annotations
 import base64
 import zlib
 from datetime import datetime
-from pathlib import Path
 from re import sub
 from typing import Callable
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse
 
 import validators
 from rdflib import DCTERMS, FOAF, OWL, RDF, RDFS, VOID, XSD, Graph, Literal, Namespace, URIRef
@@ -212,22 +211,15 @@ class RDFSerializer(Serializer):
     @staticmethod
     def _make_project_namespace(project: Project) -> Namespace:
         parts = urlparse(project.repo)
-        singularized_path: str = RDFSerializer._as_single_path_part(str(parts.path))
-        raw_path: Path
-        if project.version:
-            raw_path = Path(project.version.replace(" ", "_"), singularized_path)
-        else:
-            raw_path = Path(singularized_path)
-        # path: str = RDFSerializer._as_single_path_part(str(raw_path)) + "/"
-        path: str = str(raw_path) + "/"
-        base = urlunparse(components=(
-            parts.scheme,
-            parts.netloc,
-            path,
-            "",
-            "",
-            "",
-        ))
+        path_parts_str: str = str(parts.path)
+        singularized_path: str = RDFSerializer._as_single_path_part(path_parts_str)
+        parts._replace(path=singularized_path)
+        # NOTE For the general/generic case, we need fragment and parameters.
+        #      Take the example for the repo being a youtube video URL:
+        #      <https://www.youtube.com/watch?v=pbqkLcPHhcQ>
+        #      without the parameter, this URL would be equal to
+        #      any other youtube videos.
+        base: str = parts.geturl()
         return Namespace(base)
 
     @staticmethod
