@@ -59,9 +59,8 @@ def recuperate_invalid_yaml_manifest(manifest_contents: bytes) -> bytes:
 
     with open(fn_v1, "rb") as binary_file:
         manifest_contents = binary_file.read()
-        binary_file.close()
-        os.remove(fn_v1)
-        return manifest_contents
+    os.remove(fn_v1)
+    return manifest_contents
 
 
 def sanitize_okh_v1_yaml(manifest_file: Path):
