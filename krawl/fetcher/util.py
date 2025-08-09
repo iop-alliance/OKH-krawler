@@ -117,6 +117,7 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes:
                               f"* input:\n{sep}\n{inpt}\n{sep}\n"
                               # f"* stdout:\n{sep}\n{err.output.decode(sys.getfilesystemencoding())}\n{sep}\n"
                               f"* stderr:\n{sep}\n{stderr}\n{sep}") from err
+    os.remove(fn_v1)
 
     log.debug('done.')
     log.debug('Should have written file "%s".', fn_losh)
@@ -124,12 +125,8 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes:
     # res.check_returncode()
     with open(fn_losh, "rb") as binary_file:
         manifest_contents = binary_file.read()
+    os.remove(fn_losh)
     log.debug('Read file "%s".', fn_losh)
-
-    if os.path.exists(fn_v1):
-        os.remove(fn_v1)
-    if os.path.exists(fn_losh):
-        os.remove(fn_losh)
 
     return manifest_contents
 
