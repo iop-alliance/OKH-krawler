@@ -239,7 +239,6 @@ class AppropediaFetcher(Fetcher):
         response = self._session.get(
             # url="https://www.appropedia.org/w/api.php?action=query&format=json&list=categorymembers&cmlimit=max&cmtitle=Category:Projects",
             url="https://www.appropedia.org/manifests/list.json",
-
             headers={
                 'Accept': 'application/json',
             },

@@ -87,7 +87,6 @@ class FetchResultRepositoryWorkdir(FetchResultRepository):
 
             self._store_file(project_dir, "orig", fetch_result.data.format, fetch_result.data.content)
 
-
         self._finalize_store(hosting_unit_id, content_type, project_dir)
 
     def store_final(self, fetch_result: FetchResult, rdf_normalized_toml_content: str, rdf_meta_content: str,
@@ -102,7 +101,6 @@ class FetchResultRepositoryWorkdir(FetchResultRepository):
             self._store_file(project_dir, "meta", ManifestFormat.JSON, data_set_json)
 
             self._store_file(project_dir, "orig", fetch_result.data.format, fetch_result.data.content)
-
 
         self._store_file(project_dir, "normalized.okh_toml", ManifestFormat.TURTLE, rdf_normalized_toml_content)
         self._store_file(project_dir, "meta", ManifestFormat.TURTLE, rdf_meta_content)
