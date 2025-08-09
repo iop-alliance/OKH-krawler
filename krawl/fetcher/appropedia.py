@@ -176,6 +176,7 @@ class AppropediaFetcher(Fetcher):
                         last_visited: datetime) -> FetchResult:
         try:
             try:
+                log.debug('Downloading "%s" ...', manifest_dl_url)
                 okh_v1_contents = self._download_manifest(manifest_dl_url)
             except NotFound as err:
                 raise FetcherError(f"Failed to download manifest from '{manifest_dl_url}': {err}") from err
@@ -208,6 +209,7 @@ class AppropediaFetcher(Fetcher):
             )
 
             fetch_result = FetchResult(data_set=data_set, data=manifest)
+            log.debug('Post processing "%s" ...', manifest_dl_url)
             self._fetched(fetch_result)
             return fetch_result
         except FetcherError as err:
