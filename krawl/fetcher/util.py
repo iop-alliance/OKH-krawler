@@ -94,6 +94,7 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes:
     (fd_v1, fn_v1) = tempfile.mkstemp(prefix="conv__okh_manifest_old_")
     (fd_losh, fn_losh) = tempfile.mkstemp(prefix="conv__okh_manifest_new_")
     # Target file should not yet exist when converting
+    os.close(fd_losh)
     os.remove(fn_losh)
 
     with os.fdopen(fd_v1, "wb") as binary_file:
