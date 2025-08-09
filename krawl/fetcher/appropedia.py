@@ -165,16 +165,15 @@ class AppropediaFetcher(Fetcher):
         #     raise SystemExit(44)
         return response.content
 
-    def __fetch_one(self, fetcher_state: _FetcherState, hosting_unit_id: HostingUnitIdWebById,
-                    last_visited: datetime) -> FetchResult:
+    def __fetch_one(self, hosting_unit_id: HostingUnitIdWebById, last_visited: datetime) -> FetchResult:
         log.debug('hosting_unit_id.project_id: "%s"', hosting_unit_id.project_id)
         encoded_project_id: str = url_encode(hosting_unit_id.project_id.replace(" ", "_"))
         log.debug('hosting_unit_id.project_id (URL-encoded): "%s"', encoded_project_id)
         manifest_dl_url = f"https://www.appropedia.org/scripts/generateOpenKnowHowManifest.php?title={encoded_project_id}"
-        return self.__fetch_one_raw(fetcher_state, hosting_unit_id, manifest_dl_url, last_visited)
+        return self.__fetch_one_raw(hosting_unit_id, manifest_dl_url, last_visited)
 
-    def __fetch_one_raw(self, fetcher_state: _FetcherState, hosting_unit_id: HostingUnitIdWebById | None,
-                        manifest_dl_url: str, last_visited: datetime) -> FetchResult:
+    def __fetch_one_raw(self, hosting_unit_id: HostingUnitIdWebById | None, manifest_dl_url: str,
+                        last_visited: datetime) -> FetchResult:
         try:
             try:
                 okh_v1_contents = self._download_manifest(manifest_dl_url)
@@ -209,8 +208,6 @@ class AppropediaFetcher(Fetcher):
             )
 
             fetch_result = FetchResult(data_set=data_set, data=manifest)
-            fetcher_state.fetched_ids.append(hosting_unit_id.project_id)
-            fetcher_state.next_fetch += 1
             self._fetched(fetch_result)
             return fetch_result
         except FetcherError as err:
@@ -231,9 +228,7 @@ class AppropediaFetcher(Fetcher):
             raise FetcherError(f"Invalid {__hosting_id__} project URL: '{project_id.uri}'") from err
 
         last_visited = datetime.now(timezone.utc)
-        fetcher_state: _FetcherState = _FetcherState.load(self._state_repository)
-        fetch_result = self.__fetch_one(fetcher_state, hosting_unit_id, last_visited)
-        fetcher_state.store(self._state_repository)
+        fetch_result = self.__fetch_one(hosting_unit_id, last_visited)
         log.debug(f"yield fetch_result {hosting_unit_id}")
 
         return fetch_result
@@ -272,19 +267,18 @@ class AppropediaFetcher(Fetcher):
 
         proj_idx = -1
         last_visited = datetime.now(timezone.utc)
-        fetcher_state: _FetcherState = _FetcherState.load(self._state_repository, start_over=start_over)
-        fetcher_state.total_projects = total_projects
-        fetcher_state.store(self._state_repository)
         for manifest_url in manifest_urls:
             proj_idx += 1
             log.debug("Fetching project %d/%d", proj_idx, total_projects)
-
             # try:
-            fetch_result = self.__fetch_one_raw(fetcher_state, None, manifest_url, last_visited)
+            try:
+                fetch_result = self.__fetch_one_raw(None, manifest_url, last_visited)
+            except FetcherError as err:
+                log.warn(f"Failed to fetch project '{manifest_url}': {err}")
+                continue
             # except FetcherError as err:
             #     log.warn(f"Failed to fetch project '{hosting_unit_id}': {err}")
             #     continue
-            fetcher_state.store(self._state_repository)  # XXX This might be very costly
 
             yield fetch_result
 
