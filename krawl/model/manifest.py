@@ -7,12 +7,16 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from enum import StrEnum
+from logging import DEBUG
 
 import tomli
 import yaml
 
 from krawl.fetcher.util import recuperate_invalid_yaml_manifest
+from krawl.log import get_child_logger
 from krawl.recursive_type import RecDict
+
+log = get_child_logger("model_manifest")
 
 
 class ManifestFormat(StrEnum):
@@ -74,7 +78,15 @@ class Manifest:
                 case ManifestFormat.TOML:
                     deserialized = tomli.loads(content_bytes_orig.decode('utf-8'))
                 case ManifestFormat.YAML:
+                    if log.isEnabledFor(DEBUG):
+                        log.debug("\nXXX YAML manifest BEFORE:")
+                        log.debug(content_bytes_orig.decode('utf-8'))
+                        log.debug("XXX")
                     content_bytes_valid = recuperate_invalid_yaml_manifest(content_bytes_orig)
+                    if log.isEnabledFor(DEBUG):
+                        log.debug("\nYYY YAML manifest AFTER:")
+                        log.debug(content_bytes_valid.decode('utf-8'))
+                        log.debug("YYY")
                     deserialized = yaml.safe_load(content_bytes_valid)
                 case _:
                     raise NotImplementedError
