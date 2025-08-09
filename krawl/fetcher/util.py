@@ -76,11 +76,13 @@ def sanitize_okh_v1_yaml(manifest_file: Path):
         log.debug('cmd output:\n####################\n%s\n####################"',
                   all_out.decode(sys.getfilesystemencoding()))
     except subprocess.CalledProcessError as err:
+        stdout = "" if err.output is None else err.stdout.decode(sys.getfilesystemencoding())
+        stderr = "" if err.stderr is None else err.stderr.decode(sys.getfilesystemencoding())
         raise ConversionError(
             "Failed to sanitize OKH v1 manifest,"
             f" exitcode: {err.returncode},"
-            f" stderr: {err.stderr.decode(sys.getfilesystemencoding())},"
-            f" stdout: {err.output.decode(sys.getfilesystemencoding())}", []) from err
+            f" stderr: {stderr},"
+            f" stdout: {stdout}", []) from err
 
 
 def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes:
@@ -109,11 +111,13 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes:
                   all_out.decode(sys.getfilesystemencoding()))
     except subprocess.CalledProcessError as err:
         sep = "-" * 80
+        inpt = manifest_contents.decode(sys.getfilesystemencoding())
+        stderr = "" if err.stderr is None else err.stderr.decode(sys.getfilesystemencoding())
         raise ConversionError("Failed to convert OKH v1 manifest to OKH LOSH,\n"
                               f"* exitcode: {err.returncode}\n"
-                              f"* input:\n{sep}\n{manifest_contents.decode(sys.getfilesystemencoding())}\n{sep}\n"
+                              f"* input:\n{sep}\n{inpt}\n{sep}\n"
                               # f"* stdout:\n{sep}\n{err.output.decode(sys.getfilesystemencoding())}\n{sep}\n"
-                              f"* stderr:\n{sep}\n{err.stderr.decode(sys.getfilesystemencoding())}\n{sep}") from err
+                              f"* stderr:\n{sep}\n{stderr}\n{sep}") from err
 
     log.debug('done.')
     log.debug('Should have written file "%s".', fn_losh)
