@@ -49,7 +49,7 @@ def recuperate_invalid_yaml_manifest(manifest_contents: bytes) -> bytes:
     Many manifests out there use bad syntax or invalid values,
     which we try to undo as much as possible in here."""
 
-    (fd_v1, fn_v1) = tempfile.mkstemp()
+    (fd_v1, fn_v1) = tempfile.mkstemp(prefix="recuperate_invalid__okh_manifest_old_")
     fp_v1: Path = Path(fn_v1)
 
     with os.fdopen(fd_v1, "wb") as binary_file:
@@ -92,8 +92,8 @@ def convert_okh_v1_to_losh(manifest_contents: bytes) -> bytes:
 
     # manifest_contents = recuperate_invalid_yaml_manifest(manifest_contents)
 
-    (fd_v1, fn_v1) = tempfile.mkstemp()
-    (_fd_losh, fn_losh) = tempfile.mkstemp()
+    (fd_v1, fn_v1) = tempfile.mkstemp(prefix="conv__okh_manifest_old_")
+    (fd_losh, fn_losh) = tempfile.mkstemp(prefix="conv__okh_manifest_new_")
     # Target file should not yet exist when converting
     os.remove(fn_losh)
 
