@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 import validators
 
 from krawl.errors import ParserError
+from krawl.util import url_encode_no_safe
 
 
 class HostingCategory(StrEnum):
@@ -110,8 +111,14 @@ class HostingId(StrEnum):
     @classmethod
     def from_url(cls, url: str) -> HostingId:
         if not (isinstance(url, str) and validators.url(url)):
-            raise ParserError(
-                f"invalid URL '{url}' (type: {type(url)}, validators.url(url): {validators.url(url)})") from ValueError
+            # HACK Circumvents bug with appropedia projects with a slash ('/') in their name,
+            #      e.g. <https://www.appropedia.org/Renewable_Energy_Research_in_India%3FRenewable_Energy_Resources_and_Rural_Applications_in_the_Developing_World>
+            if isinstance(url, str) and "appropedia.org" in url:
+                url_approp_parts = url.rsplit('/', 1)
+                url = url_approp_parts[0] + '/' + url_encode_no_safe(url_approp_parts[1].replace(" ", "_"))
+            if not (isinstance(url, str) and validators.url(url)):
+                raise ParserError(f"invalid URL '{url}' (type: {type(url)}, validators.url(url): {validators.url(url)})"
+                                 ) from ValueError
         parsed_url = urlparse(url)
         domain = parsed_url.hostname
 

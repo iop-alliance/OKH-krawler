@@ -76,5 +76,9 @@ def url_encode(raw_url_part: str) -> str:
     return urllib.parse.quote(urllib.parse.unquote(raw_url_part), safe=';/?:@&=+,')
 
 
+def url_encode_no_safe(raw_url_part: str) -> str:
+    return urllib.parse.quote(urllib.parse.unquote(raw_url_part))
+
+
 def url_encode_path(url_path_part: Path) -> str:
     return url_encode(str(url_path_part))
